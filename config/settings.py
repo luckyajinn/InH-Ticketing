@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     # Our apps
     "accounts",
     "core",
+    "tickets",
 ]
 
 MIDDLEWARE = [
@@ -151,6 +152,29 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+}
+
+# --------------------------------------------------------------------------
+# Tickets and attachments
+# --------------------------------------------------------------------------
+# People see ticket #1001, #1002, ... rather than the raw database IDs.
+TICKET_NUMBER_OFFSET = 1000
+
+# Uploaded files live here. They are NOT served publicly: every download goes
+# through a view that checks the person may see that ticket (and that note).
+MEDIA_ROOT = Path(os.environ.get("MEDIA_ROOT", BASE_DIR / "media"))
+MEDIA_URL = "/media/"
+
+ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024  # 10 MB per file
+ATTACHMENT_MAX_FILES = 5  # per request or reply
+ATTACHMENT_EXTENSIONS = {
+    # images
+    ".png", ".jpg", ".jpeg", ".gif", ".webp", ".heic", ".bmp",
+    # documents
+    ".pdf", ".txt", ".log", ".csv", ".rtf", ".doc", ".docx", ".xls", ".xlsx",
+    ".ppt", ".pptx", ".odt", ".ods",
+    # email and archives
+    ".eml", ".msg", ".zip",
 }
 
 # --------------------------------------------------------------------------

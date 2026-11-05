@@ -1,0 +1,22 @@
+{% load ticket_tags %}
+{# One message on the timeline: the original request, a reply, or an internal note. #}
+<li class="tl-item tl-comment{% if internal %} tl-note{% endif %}">
+  <span class="avatar av-{{ author.avatar_variant }} tl-avatar" aria-hidden="true">{{ author.initials }}{% if internal %}<span class="avatar-lock">{% icon "lock" %}</span>{% endif %}</span>
+  <article class="comment{% if internal %} is-note{% endif %}"
+           aria-label="{% if internal %}Internal note{% elif author.pk == ticket.requester_id %}Message{% else %}Public reply{% endif %} from {{ author }}">
+    {% if internal %}<div class="note-band">{% icon "lock" %}<span>Internal note: not visible to requester</span></div>{% endif %}
+    <header class="comment-head">
+      <span class="comment-author">{% if not user.is_agent and author.pk == user.pk %}You{% else %}{{ author }}{% endif %}</span>
+      {% if author.pk == ticket.requester_id %}
+        {% if user.is_agent %}<span class="role-tag">Requester</span>{% endif %}
+      {% elif author.is_agent %}
+        <span class="role-tag role-it">IT</span>
+        {% if user.is_agent and not internal %}<span class="chip">{% icon "globe" %}Public reply</span>{% endif %}
+      {% endif %}
+      {% if source == "email" %}<span class="chip">{% icon "mail" %}via email</span>{% endif %}
+      <time class="comment-time" datetime="{{ at|date:'c' }}">{{ at|date:"M j, g:i A" }}</time>
+    </header>
+    <div class="comment-body">{{ body|linebreaks }}</div>
+    {% include "tickets/partials/attachments.html" with files=files %}
+  </article>
+</li>

@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% load ticket_tags %}
+
+{% block title %}#{{ ticket.number }} {{ ticket.subject }}{% endblock %}
+
+{% block content %}
+{# IT view: everything, including internal notes and history. #}
+<a class="back-link" href="{% url 'tickets:queue' %}">{% icon "arrow-left" %}Queue</a>
+<header class="detail-head">
+  <p class="eyebrow">#{{ ticket.number }}</p>
+  <h1 class="detail-title">{{ ticket.subject }}</h1>
+  <div class="detail-badges">
+    {% include "tickets/partials/status.html" with t=ticket %}
+    {% include "tickets/partials/priority.html" with t=ticket %}
+    {% if ticket.is_blocking %}<span class="chip chip-block">{% icon "flag" %}Blocking work</span>{% endif %}
+    <span class="detail-meta">Opened by {{ ticket.requester }} {{ ticket.created_at|ago }} via {% if ticket.source == "email" %}email{% else %}the web form{% endif %}</span>
+  </div>
+</header>
+
+<div class="detail-grid">
+  <div class="detail-main">
+    <h2 class="section-title">Timeline</h2>
+    <ol class="timeline">
+      {% include "tickets/partials/message.html" with author=ticket.requester body=ticket.description at=ticket.created_at internal=False source=ticket.source files=original_attachments %}
+      {% for item in timeline %}
+        {% if item.kind == "event" %}
+          {% include "tickets/partials/event.html" with e=item.event %}
+        {% else %}
+          {% with c=item.comment %}
+          {% include "tickets/partials/message.html" with author=c.author body=c.body at=c.created_at internal=c.is_internal source=c.source files=c.attachments.all %}
+          {% endwith %}
+        {% endif %}
+      {% endfor %}
+    </ol>
+
+    <form class="composer" id="reply" method="post" action="{% url 'tickets:reply' ticket.number %}" enctype="multipart/form-data" novalidate aria-labelledby="composer-heading">
+      {% csrf_token %}
+      <h2 class="visually-hidden" id="composer-heading">Reply or add a note</h2>
+      <div class="composer-head">
+        <fieldset class="mode-toggle">
+          <legend class="visually-hidden">Message type</legend>
+          <input type="radio" name="visibility" id="mode-public" value="public"{% if reply_form.visibility.value != "internal" %} checked{% endif %}>
+          <label for="mode-public">{% icon "globe" %}Public reply</label>
+          <input type="radio" name="visibility" id="mode-internal" value="internal"{% if reply_form.visibility.value == "internal" %} checked{% endif %}>
+          <label for="mode-internal">{% icon "lock" %}Internal note</label>
+        </fieldset>
+        <p class="composer-audience" id="composer-audience">
+          <span class="when-public">{{ ticket.requester }} will see this.</span>
+          <span class="when-internal">Only IT staff can see this.</span>
+        </p>
+      </div>
+      <div class="composer-banner">{% icon "lock" %}<span>Internal note: not visible to requester</span></div>
+      <label class="visually-hidden" for="composer-text">Message</label>
+      <textarea id="composer-text" name="body" class="composer-text" rows="5"
+                placeholder="Reply to {{ ticket.requester }}..."
+                data-placeholder-public="Reply to {{ ticket.requester }}..."
+                data-placeholder-internal="Add a note for the IT team..."
+                aria-describedby="composer-audience{% if reply_form.body.errors %} composer-error{% endif %}"
+                {% if reply_form.errors %}autofocus{% endif %}>{{ reply_form.body.value|default:'' }}</textarea>
+      {% if reply_form.body.errors %}<p class="field-error" id="composer-error">{% icon "alert" %}{{ reply_form.body.errors.0 }}</p>{% endif %}
+      {% if reply_form.attachments.errors %}<p class="field-error">{% icon "alert" %}{{ reply_form.attachments.errors.0 }}</p>{% endif %}
+      {% if reply_form.visibility.errors %}<p class="field-error">{% icon "alert" %}{{ reply_form.visibility.errors.0 }}</p>{% endif %}
+      <div class="composer-foot">
+        <label class="btn btn-ghost btn-sm file-btn">{% icon "clip" %}Attach<input type="file" name="attachments" class="file-input" multiple data-file-list="composer-files"></label>
+        <span class="composer-files" id="composer-files" aria-live="polite"></span>
+        <button type="submit" class="btn btn-primary composer-send">
+          <span class="when-public">{% icon "send" %} Send public reply</span>
+          <span class="when-internal">{% icon "lock" %} Add internal note</span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <aside class="side-panel" aria-label="Ticket properties">
+    <section class="panel">
+      <h2 class="panel-title">Properties</h2>
+      <form method="post" action="{% url 'tickets:update' ticket.number %}" data-autosubmit>
+        {% csrf_token %}
+        {% with f=props_form %}
+        <div class="prop-field"><label for="{{ f.status.id_for_label }}">Status</label>{{ f.status }}</div>
+        <div class="prop-field"><label for="{{ f.priority.id_for_label }}">Priority</label>{{ f.priority }}</div>
+        <div class="prop-field">
+          <label for="{{ f.assignee.id_for_label }}">Assignee</label>{{ f.assignee }}
+          {% if ticket.assignee_id != user.pk %}
+          <span class="prop-extra"><button type="submit" class="link-btn" formaction="{% url 'tickets:assign_to_me' ticket.number %}">Assign to me</button></span>
+          {% endif %}
+        </div>
+        <div class="prop-field"><label for="{{ f.category.id_for_label }}">Category</label>{{ f.category }}</div>
+        {% for field in f %}{% for error in field.errors %}<p class="field-error">{% icon "alert" %}{{ field.label }}: {{ error }}</p>{% endfor %}{% endfor %}
+        {% endwith %}
+        <div class="props-actions">
+          <p class="props-hint">Changes are logged in the timeline.</p>
+          <button type="submit" class="btn btn-sm props-save">Save</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel-title">Requester</h2>
+      <div class="person">
+        {% include "tickets/partials/avatar.html" with u=ticket.requester size="avatar-lg" %}
+        <div><p class="person-name">{{ ticket.requester }}</p><p class="person-title">{{ ticket.requester.email }}</p></div>
+      </div>
+      <h3 class="panel-subtitle">Other tickets from {{ ticket.requester }}</h3>
+      {% if other_tickets %}
+      <ul class="mini-list">
+        {% for o in other_tickets %}
+        <li><a href="{{ o.get_absolute_url }}"><span class="ticket-num">#{{ o.number }}</span>{{ o.subject }}</a>{% include "tickets/partials/status.html" with t=o %}</li>
+        {% endfor %}
+      </ul>
+      {% else %}<p class="muted small">None</p>{% endif %}
+    </section>
+
+    <section class="panel">
+      <h2 class="panel-title">Details</h2>
+      <dl class="dl">
+        <dt>Ticket</dt><dd>#{{ ticket.number }}</dd>
+        <dt>Source</dt><dd>{% if ticket.source == "email" %}{% icon "mail" %}Email{% else %}{% icon "globe" %}Web form{% endif %}</dd>
+        <dt>Created</dt><dd>{{ ticket.created_at|date:"M j, g:i A" }}</dd>
+        <dt>Updated</dt><dd>{{ ticket.updated_at|date:"M j, g:i A" }}</dd>
+        <dt>Blocking</dt><dd>{% if ticket.is_blocking %}Yes, flagged by requester{% else %}No{% endif %}</dd>
+      </dl>
+      <h3 class="panel-subtitle">Attachments</h3>
+      {% if all_attachments %}
+        {% include "tickets/partials/attachments.html" with files=all_attachments %}
+      {% else %}<p class="muted small">None</p>{% endif %}
+    </section>
+  </aside>
+</div>
+{% endblock %}

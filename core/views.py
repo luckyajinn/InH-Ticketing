@@ -1,6 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import redirect
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET
 
@@ -8,8 +8,8 @@ from django.views.decorators.http import require_GET
 @login_required
 @require_GET
 def home(request):
-    """Landing page after sign-in. Tickets arrive in milestone 2."""
-    return render(request, "core/home.html")
+    """IT lands on the queue; everyone else on their own tickets."""
+    return redirect("tickets:queue" if request.user.is_agent else "tickets:mine")
 
 
 @never_cache

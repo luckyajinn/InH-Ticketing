@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load ticket_tags %}
+
+{% block title %}New request{% endblock %}
+{% block page_class %}page-narrow{% endblock %}
+
+{% block content %}
+<a class="back-link" href="{% url 'tickets:mine' %}">{% icon "arrow-left" %}{% if user.is_agent %}My requests{% else %}My tickets{% endif %}</a>
+<div class="page-head">
+  <div>
+    <h1>New request</h1>
+    <p class="page-sub">Tell IT what's wrong or what you need.</p>
+  </div>
+</div>
+
+<form class="card" method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+  {% for error in form.non_field_errors %}<p class="field-error" role="alert">{% icon "alert" %}{{ error }}</p>{% endfor %}
+
+  <div class="field">
+    <label for="{{ form.subject.id_for_label }}">Subject</label>
+    <input class="input" type="text" name="subject" id="{{ form.subject.id_for_label }}" maxlength="200" autocomplete="off" required
+           value="{{ form.subject.value|default:'' }}"
+           aria-describedby="subject-hint{% if form.subject.errors %} subject-error{% endif %}"{% if form.subject.errors %} aria-invalid="true"{% endif %}>
+    <p class="hint" id="subject-hint">One line, like an email subject. For example: "Can't connect to the VPN from home".</p>
+    {% if form.subject.errors %}<p class="field-error" id="subject-error">{% icon "alert" %}{{ form.subject.errors.0 }}</p>{% endif %}
+  </div>
+
+  <div class="field">
+    <label for="{{ form.category.id_for_label }}">Category</label>
+    <select class="select" name="category" id="{{ form.category.id_for_label }}" required
+            {% if form.category.errors %}aria-invalid="true" aria-describedby="category-error"{% endif %}>
+      {% for value, label in form.category.field.choices %}
+      <option value="{{ value }}"{% if value|stringformat:"s" == form.category.value|stringformat:"s" %} selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    {% if form.category.errors %}<p class="field-error" id="category-error">{% icon "alert" %}{{ form.category.errors.0 }}</p>{% endif %}
+  </div>
+
+  <div class="field">
+    <label for="{{ form.description.id_for_label }}">Description</label>
+    <textarea class="textarea" name="description" id="{{ form.description.id_for_label }}" rows="6" required
+              aria-describedby="description-hint{% if form.description.errors %} description-error{% endif %}"{% if form.description.errors %} aria-invalid="true"{% endif %}>{{ form.description.value|default:'' }}</textarea>
+    <p class="hint" id="description-hint">What happened, what you expected, any error message, and when it started.</p>
+    {% if form.description.errors %}<p class="field-error" id="description-error">{% icon "alert" %}{{ form.description.errors.0 }}</p>{% endif %}
+  </div>
+
+  <div class="field">
+    <div class="check">
+      <input type="checkbox" name="is_blocking" id="id_is_blocking" aria-describedby="blocking-hint"{% if form.is_blocking.value %} checked{% endif %}>
+      <label for="id_is_blocking">This is blocking my work</label>
+    </div>
+    <p class="hint check-hint" id="blocking-hint">Tick this if you can't do your job until it's fixed. IT uses it when setting the priority.</p>
+  </div>
+
+  <div class="field">
+    <span class="label" id="files-label">Attachments <span class="optional">(optional)</span></span>
+    <label class="dropzone">
+      {% icon "upload" %}
+      <span class="dropzone-title" id="drop-title">Drop screenshots or files here, or <u>browse</u></span>
+      <span class="dropzone-sub">Up to 5 files, 10 MB each</span>
+      <input type="file" name="attachments" class="file-input" multiple data-file-list="new-files" aria-labelledby="files-label drop-title">
+    </label>
+    <p class="hint" id="new-files" aria-live="polite"></p>
+    {% if form.attachments.errors %}<p class="field-error">{% icon "alert" %}{{ form.attachments.errors.0 }}</p>{% endif %}
+  </div>
+
+  <div class="form-actions">
+    <a class="btn" href="{% url 'tickets:mine' %}">Cancel</a>
+    <button type="submit" class="btn btn-primary">Submit request</button>
+  </div>
+</form>
+{% endblock %}

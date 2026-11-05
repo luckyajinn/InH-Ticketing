@@ -41,6 +41,11 @@ class User(AbstractUser):
         return self.role in {self.Role.AGENT, self.Role.ADMIN}
 
     @property
+    def avatar_variant(self) -> int:
+        """One of six avatar colours, stable per person."""
+        return (self.pk or 0) % 6 + 1
+
+    @property
     def initials(self) -> str:
         parts = str(self).replace(".", " ").split()
         return "".join(p[0] for p in parts[:2]).upper() or "?"

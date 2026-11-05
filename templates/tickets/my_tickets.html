@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load ticket_tags %}
+
+{% block title %}{% if user.is_agent %}My requests{% else %}My tickets{% endif %}{% endblock %}
+{% block page_class %}page-narrow{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{% if user.is_agent %}My requests{% else %}My tickets{% endif %}</h1>
+    <p class="page-sub">Requests you've raised with IT.</p>
+  </div>
+  <a class="btn btn-primary btn-lg" href="{% url 'tickets:new' %}">{% icon "plus" %}New request</a>
+</div>
+
+<div class="list-toolbar">
+  <nav class="segmented" aria-label="Show tickets">
+    <a href="?show=open"{% if show == "open" %} aria-current="page"{% endif %}>Open <span class="count">{{ counts.open }}</span></a>
+    <a href="?show=closed"{% if show == "closed" %} aria-current="page"{% endif %}>Closed <span class="count">{{ counts.closed }}</span></a>
+  </nav>
+  <p class="list-sort">Most recently updated first</p>
+</div>
+
+<ul class="ticket-list">
+  {% for t in page %}
+  <li>
+    <a class="ticket-link{% if t.status == 'waiting' %} needs-reply{% endif %}" href="{{ t.get_absolute_url }}">
+      <span class="ticket-num">#{{ t.number }}</span>
+      <span class="ticket-main">
+        <span class="ticket-subject">{{ t.subject }}</span>
+        <span class="ticket-meta">
+          {{ t.category }} &middot;
+          {% if t.is_open %}
+            {% if t.assignee %}With {{ t.assignee }}{% else %}Waiting for IT to pick it up{% endif %}
+          {% else %}
+            {% if t.assignee %}Handled by {{ t.assignee }}{% else %}Closed{% endif %}
+          {% endif %}
+          {% if t.status == "waiting" %} &middot; <span class="reply-needed">Your reply needed</span>{% endif %}
+        </span>
+      </span>
+      <span class="ticket-status">{% include "tickets/partials/status.html" with t=t %}</span>
+      <span class="ticket-updated">Updated <time datetime="{{ t.last_public|date:'c' }}">{{ t.last_public|ago }}</time></span>
+    </a>
+  </li>
+  {% empty %}
+  <li class="empty">
+    <p>No {{ show }} requests.</p>
+    <p><a href="{% url 'tickets:new' %}">Start a new request</a></p>
+  </li>
+  {% endfor %}
+</ul>
+{% include "tickets/partials/pagination.html" %}
+{% endblock %}

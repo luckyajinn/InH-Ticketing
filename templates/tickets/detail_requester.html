@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% load ticket_tags %}
+
+{% block title %}#{{ ticket.number }} {{ ticket.subject }}{% endblock %}
+{% block page_class %}page-medium{% endblock %}
+
+{% block content %}
+{# Requester view. The server only sends public replies here: no internal notes, no history. #}
+{% with who=ticket.assignee|default:"IT" %}
+<a class="back-link" href="{% url 'tickets:mine' %}">{% icon "arrow-left" %}{% if user.is_agent %}My requests{% else %}My tickets{% endif %}</a>
+<header class="detail-head">
+  <p class="eyebrow">#{{ ticket.number }}</p>
+  <h1 class="detail-title">{{ ticket.subject }}</h1>
+  <div class="detail-badges">
+    {% include "tickets/partials/status.html" with t=ticket %}
+    <span class="detail-meta">Opened {{ ticket.created_at|date:"M j, g:i A" }} &middot; {{ ticket.category }}</span>
+  </div>
+</header>
+
+<div class="detail-grid">
+  <div class="detail-main">
+    {% if ticket.status == "new" %}
+      <div class="callout">{% icon "clock" %}<div><p class="callout-title">We've received your request.</p><p class="callout-text">Someone from IT will pick it up soon.</p></div></div>
+    {% elif ticket.status == "open" or ticket.status == "in_progress" %}
+      <div class="callout">{% icon "user" %}<div><p class="callout-title">{{ who }} is working on this.</p><p class="callout-text">Replies from IT will appear below.</p></div></div>
+    {% elif ticket.status == "waiting" %}
+      <div class="callout callout-waiting">{% icon "reply" %}<div><p class="callout-title">{{ who }} is waiting for your reply.</p><p class="callout-text">This request is paused until you answer. Reply below.</p></div></div>
+    {% elif ticket.status == "resolved" %}
+      <div class="callout callout-resolved">{% icon "check-circle" %}<div>
+        <p class="callout-title">{% if resolved_event.actor_id == user.pk %}You{% else %}{{ resolved_event.actor|default:who }}{% endif %} marked this as resolved{% if resolved_event %} on {{ resolved_event.created_at|date:"M j" }}{% endif %}.</p>
+        <p class="callout-text">If everything is working, there's nothing more to do.</p>
+      </div></div>
+    {% else %}
+      <div class="callout callout-closed">{% icon "lock" %}<div><p class="callout-title">This request is closed.</p><p class="callout-text">Need more help with this? Start a new request and mention #{{ ticket.number }}.</p></div></div>
+    {% endif %}
+
+    <h2 class="section-title">Conversation</h2>
+    <ol class="timeline">
+      {% include "tickets/partials/message.html" with author=ticket.requester body=ticket.description at=ticket.created_at internal=False source=ticket.source files=original_attachments %}
+      {% for item in timeline %}
+        {% with c=item.comment %}
+        {% include "tickets/partials/message.html" with author=c.author body=c.body at=c.created_at internal=c.is_internal source=c.source files=c.attachments.all %}
+        {% endwith %}
+      {% endfor %}
+    </ol>
+
+    {% if ticket.status == "closed" %}
+      <div class="resolve-row">
+        <div><p class="resolve-q">Still having trouble?</p><p class="resolve-sub">Closed requests can't be reopened, but a new one only takes a minute.</p></div>
+        <a class="btn btn-primary" href="{% url 'tickets:new' %}">{% icon "plus" %}Start a new request</a>
+      </div>
+    {% elif ticket.status == "resolved" %}
+      <form class="resolve-row" method="post" action="{% url 'tickets:reopen' ticket.number %}">
+        {% csrf_token %}
+        <div><p class="resolve-q">Not fixed after all?</p><p class="resolve-sub">Reopen the request and tell {{ who }} what's still wrong.</p></div>
+        <button type="submit" class="btn btn-primary">{% icon "status" %}This is still a problem</button>
+      </form>
+    {% else %}
+      <form class="reply-card" id="reply" method="post" action="{% url 'tickets:reply' ticket.number %}" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        <label for="reply-text" class="reply-label">{% if reopened %}Tell IT what's still not working{% elif ticket.status == "waiting" %}Reply to {{ who }}{% else %}Add a reply{% endif %}</label>
+        <textarea id="reply-text" name="body" class="textarea" rows="4"{% if reopened or reply_form.errors %} autofocus{% endif %}
+                  aria-describedby="reply-hint{% if reply_form.body.errors %} reply-error{% endif %}"{% if reply_form.body.errors %} aria-invalid="true"{% endif %}>{{ reply_form.body.value|default:'' }}</textarea>
+        {% if reply_form.body.errors %}<p class="field-error" id="reply-error">{% icon "alert" %}{{ reply_form.body.errors.0 }}</p>{% endif %}
+        {% if reply_form.attachments.errors %}<p class="field-error">{% icon "alert" %}{{ reply_form.attachments.errors.0 }}</p>{% endif %}
+        <div class="reply-foot">
+          <label class="btn btn-ghost btn-sm file-btn">{% icon "clip" %}Attach file<input type="file" name="attachments" class="file-input" multiple data-file-list="reply-files"></label>
+          <span class="reply-hint" id="reply-hint"><span id="reply-files" aria-live="polite"></span></span>
+          <button type="submit" class="btn btn-primary">{% icon "send" %}Send reply</button>
+        </div>
+      </form>
+      <form class="resolve-row" method="post" action="{% url 'tickets:resolve' ticket.number %}">
+        {% csrf_token %}
+        <div><p class="resolve-q">Fixed it yourself, or no longer needed?</p><p class="resolve-sub">Let IT know so they can close it.</p></div>
+        <button type="submit" class="btn">{% icon "check" %}Mark as resolved</button>
+      </form>
+    {% endif %}
+  </div>
+
+  <aside class="side-panel" aria-label="Request details">
+    <section class="panel">
+      <h2 class="panel-title">Request details</h2>
+      <dl class="dl">
+        <dt>Reference</dt><dd>#{{ ticket.number }}</dd>
+        <dt>Status</dt><dd>{% include "tickets/partials/status.html" with t=ticket %}</dd>
+        <dt>Assigned to</dt><dd>{% if ticket.assignee %}{{ ticket.assignee }} <span class="role-tag role-it">IT</span>{% else %}<span class="muted">Not assigned yet</span>{% endif %}</dd>
+        <dt>Category</dt><dd>{{ ticket.category }}</dd>
+        <dt>Opened</dt><dd>{{ ticket.created_at|date:"M j, g:i A" }}</dd>
+        {% if ticket.is_blocking %}<dt>Blocking</dt><dd>You said this blocks your work</dd>{% endif %}
+      </dl>
+    </section>
+  </aside>
+</div>
+{% endwith %}
+{% endblock %}

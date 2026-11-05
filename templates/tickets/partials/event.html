@@ -1,0 +1,15 @@
+{% load ticket_tags %}
+{# One line of history. Only IT ever sees these. #}
+<li class="tl-item tl-event">
+  <span class="tl-event-icon" aria-hidden="true">{% if e.kind == "status" %}{% icon "status" %}{% elif e.kind == "priority" %}{% icon "signal" %}{% elif e.kind == "assignee" %}{% icon "user" %}{% else %}{% icon "tag" %}{% endif %}</span>
+  <span class="visually-hidden">History: </span>
+  {% if e.kind == "assignee" %}
+    {% if not e.new_value %}Unassigned{% if e.actor %} by {{ e.actor }}{% endif %}
+    {% elif e.actor and e.new_value == e.actor|stringformat:"s" %}<strong>{{ e.new_value }}</strong> assigned this to themselves
+    {% else %}Assigned to <strong>{{ e.new_value }}</strong>{% if e.actor %} by {{ e.actor }}{% endif %}{% endif %}
+  {% else %}
+    {{ e.get_kind_display }} {% if e.old_value %}changed <strong>{{ e.old_value }}</strong> &rarr; {% else %}set to {% endif %}<strong>{{ e.new_value }}</strong>{% if e.actor %} by {{ e.actor }}{% else %} automatically{% endif %}
+  {% endif %}
+  {% if e.note %}({{ e.note }}){% endif %}
+  <time datetime="{{ e.created_at|date:'c' }}">&middot; {{ e.created_at|date:"M j, g:i A" }}</time>
+</li>

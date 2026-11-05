@@ -14,19 +14,19 @@ class HomeTests(TestCase):
             response, reverse("accounts:signin") + "?next=/", fetch_redirect_response=False
         )
 
-    def test_shows_name_role_and_version(self):
+    def test_header_shows_name_role_and_version(self):
         self.client.force_login(entra.sync_user(claims(roles=["Agent"])))
-        response = self.client.get(reverse("core:home"))
-        self.assertContains(response, "Welcome, Dana Whitfield")
-        self.assertContains(response, 'class="badge role-agent"')
+        response = self.client.get(reverse("core:home"), follow=True)
+        self.assertContains(response, "Dana Whitfield")
+        self.assertContains(response, '<span class="role-tag role-it">')
         self.assertContains(response, f"v{__version__}")
         # Agents aren't admins, so no admin link.
-        self.assertNotContains(response, "Open the admin site")
+        self.assertNotContains(response, 'href="/admin/"')
 
     def test_admin_sees_admin_link(self):
         self.client.force_login(entra.sync_user(claims(roles=["Admin"])))
-        response = self.client.get(reverse("core:home"))
-        self.assertContains(response, "Open the admin site")
+        response = self.client.get(reverse("core:home"), follow=True)
+        self.assertContains(response, 'href="/admin/"')
 
 
 class HealthTests(TestCase):

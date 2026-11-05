@@ -1,0 +1,7 @@
+{% load ticket_tags %}{% if files %}
+<ul class="attachments" aria-label="Attachments">
+  {% for f in files %}
+  <li><a class="attachment" href="{{ f.get_absolute_url }}">{% icon "clip" %}<span class="attachment-name">{{ f.original_name }}</span><span class="attachment-size">{{ f.size|filesizeformat }}</span></a></li>
+  {% endfor %}
+</ul>
+{% endif %}

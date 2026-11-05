@@ -18,8 +18,11 @@ COPY . .
 # throwaway that exists only during the build; the real one comes from .env.
 RUN DJANGO_SECRET_KEY=build-only-not-secret python manage.py collectstatic --noinput
 
-# Don't run as root inside the container.
-RUN useradd --system --create-home --uid 10001 app && chown -R app /app
+# Don't run as root inside the container. /app/media holds uploaded
+# attachments and is mounted as a volume by compose.yaml.
+RUN useradd --system --create-home --uid 10001 app \
+    && mkdir -p /app/media \
+    && chown -R app /app
 USER app
 
 EXPOSE 8000

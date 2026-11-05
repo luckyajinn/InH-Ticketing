@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% load ticket_tags %}
+
+{% block title %}Queue: {{ current.label }}{% endblock %}
+
+{% block main %}
+{% if messages %}<div class="page-wide-messages">{% include "partials/messages.html" %}</div>{% endif %}
+<div class="queue-layout">
+  <nav class="queue-views" aria-label="Queue views">
+    <h2 class="views-title">Views</h2>
+    <ul class="views-list">
+      {% for v in views %}
+      <li>
+        <a class="view-link" href="?view={{ v.id }}"{% if v.current %} aria-current="page"{% endif %}>
+          {% icon v.icon %}<span>{{ v.label }}</span>
+          <span class="count">{{ v.count }}<span class="visually-hidden"> ticket{{ v.count|pluralize }}</span></span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </nav>
+
+  <div class="queue-main">
+    <div class="page-head">
+      <div>
+        <p class="eyebrow">Queue</p>
+        <h1 id="queue-title">{{ current.label }}</h1>
+      </div>
+    </div>
+
+    <form class="filters" role="search" aria-label="Filter tickets" method="get">
+      <input type="hidden" name="view" value="{{ current.id }}">
+      <div class="search-field">
+        <label for="q-search" class="visually-hidden">Search tickets</label>
+        {% icon "search" %}
+        <input type="search" id="q-search" name="q" value="{{ q }}" class="input" placeholder="Search number, subject or requester" autocomplete="off">
+      </div>
+      <label for="q-cat" class="visually-hidden">Category</label>
+      <select id="q-cat" name="category" class="select" onchange="this.form.requestSubmit()">
+        <option value="">All categories</option>
+        {% for c in categories %}<option value="{{ c.pk }}"{% if category == c.pk|stringformat:"s" %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
+      </select>
+      <label for="q-pri" class="visually-hidden">Priority</label>
+      <select id="q-pri" name="priority" class="select" onchange="this.form.requestSubmit()">
+        <option value="">All priorities</option>
+        {% for value, label in priorities %}<option value="{{ value }}"{% if priority == value|stringformat:"s" %} selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="btn">Filter</button>
+      {% if filtered %}<a class="btn btn-ghost" href="?view={{ current.id }}">Clear filters</a>{% endif %}
+    </form>
+
+    <p class="queue-summary">
+      {{ page.paginator.count }} ticket{{ page.paginator.count|pluralize }}{% if filtered %} match{{ page.paginator.count|pluralize:"es," }} your filters{% endif %}
+      &middot; sorted by {{ sort_label }}
+    </p>
+
+    <div class="table-wrap" role="region" aria-labelledby="queue-title" tabindex="0">
+      <table class="queue-table">
+        <caption class="visually-hidden">Tickets in this view. Open a ticket from its subject.</caption>
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Subject</th>
+            <th scope="col">Requester</th>
+            <th scope="col">Category</th>
+            <th scope="col">Priority</th>
+            <th scope="col">Status</th>
+            <th scope="col">Assignee</th>
+            <th scope="col" class="col-age">Age</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in page %}
+          <tr class="{% if t.priority == 4 %}is-urgent{% elif t.priority == 3 %}is-high{% endif %}" data-href="{{ t.get_absolute_url }}">
+            <td><span class="ticket-num">#{{ t.number }}</span></td>
+            <td class="col-subject">
+              <a class="subject-link" href="{{ t.get_absolute_url }}">{{ t.subject }}</a>
+              {% if t.source == "email" %}<span class="row-flag" title="Created from an email">{% icon "mail" %}<span class="visually-hidden">(created from email)</span></span>{% endif %}
+              {% if t.is_blocking %}<span class="row-flag row-flag-block" title="Requester says this is blocking their work">{% icon "flag" %}<span class="visually-hidden">(blocking work)</span></span>{% endif %}
+            </td>
+            <td>{{ t.requester }}</td>
+            <td>{{ t.category }}</td>
+            <td>{% include "tickets/partials/priority.html" with t=t %}</td>
+            <td>{% include "tickets/partials/status.html" with t=t %}</td>
+            <td>{% if t.assignee %}<span class="assignee">{% include "tickets/partials/avatar.html" with u=t.assignee size="avatar-xs" %}{{ t.assignee }}</span>{% else %}<span class="unassigned">Unassigned</span>{% endif %}</td>
+            <td class="col-age"><span aria-hidden="true" title="Created {{ t.created_at|date:'M j, g:i A' }}">{{ t.created_at|short_age }}</span><span class="visually-hidden">{{ t.created_at|long_age }}</span></td>
+          </tr>
+          {% empty %}
+          <tr class="empty-row"><td colspan="8">No tickets here{% if filtered %} match these filters.{% else %}. Nice work.{% endif %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "tickets/partials/pagination.html" %}
+  </div>
+</div>
+{% endblock %}

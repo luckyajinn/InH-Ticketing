@@ -1,0 +1,1 @@
+{% load ticket_tags %}<span class="prio prio-{{ t.priority_css }}">{% if t.priority == 4 %}{% icon "alert" %}{% else %}<span class="prio-bars" aria-hidden="true"><i></i><i></i><i></i></span>{% endif %}{{ t.get_priority_display }}</span>
