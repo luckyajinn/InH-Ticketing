@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Sign-in problem{% endblock %}
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block main %}
+<div class="signin">
+  <div class="signin-card">
+    <div class="signin-mark"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-lock"/></svg></div>
+    <h1>Couldn't sign you in</h1>
+    <p class="signin-lede" role="alert">{{ message }}</p>
+    <a class="btn btn-primary btn-block" href="{% url 'accounts:signin' %}">Back to sign-in</a>
+  </div>
+</div>
+{% endblock %}

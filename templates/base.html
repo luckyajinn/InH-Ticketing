@@ -1,0 +1,51 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ APP_NAME }}{% endblock %} · {{ APP_NAME }}</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+{% include "partials/icons.html" %}
+<a class="skip-link" href="#main">Skip to content</a>
+
+{% block header %}
+{% if user.is_authenticated %}
+<header class="app-header">
+  <div class="app-header-inner">
+    <a class="brand" href="{% url 'core:home' %}">
+      <span class="brand-mark"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-ticket"/></svg></span>{{ APP_NAME }}
+    </a>
+    <div class="user-chip">
+      <span class="avatar" aria-hidden="true">{{ user.initials }}</span>
+      <span class="user-name">{{ user }}</span>
+      <span class="badge role-{{ user.role }}">{{ user.get_role_display }}</span>
+      <form class="signout-form" method="post" action="{% url 'accounts:signout' %}">
+        {% csrf_token %}
+        <button class="signout" type="submit">
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-signout"/></svg>
+          <span class="signout-label">Sign out</span>
+          <span class="sr-only">of {{ APP_NAME }}</span>
+        </button>
+      </form>
+    </div>
+  </div>
+</header>
+{% endif %}
+{% endblock %}
+
+<main id="main">
+{% block main %}
+  <div class="page {% block page_class %}{% endblock %}">
+    {% include "partials/messages.html" %}
+    {% block content %}{% endblock %}
+  </div>
+{% endblock %}
+</main>
+
+{% block footer %}
+<footer class="app-footer">{{ APP_NAME }} v{{ APP_VERSION }}</footer>
+{% endblock %}
+</body>
+</html>

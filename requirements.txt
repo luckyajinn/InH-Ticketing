@@ -1,0 +1,9 @@
+# Runtime dependencies for InH-Ticketing.
+# Pinned to compatible minor versions; bump deliberately.
+Django~=6.1.3
+msal~=1.39.0                 # Microsoft's auth library (Entra ID sign-in, later Graph mail)
+psycopg[binary]~=3.3.8       # PostgreSQL driver
+dj-database-url~=3.1.2       # Reads DATABASE_URL into Django settings
+whitenoise~=6.12.0           # Serves static files (CSS) without a separate web server
+python-dotenv~=1.2.4         # Loads .env for local development
+gunicorn~=26.2.0; sys_platform != "win32"   # Production web server (Linux/Docker only)

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Sign in{% endblock %}
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block main %}
+<div class="signin">
+  {% include "partials/messages.html" %}
+  <div class="signin-card">
+    <div class="signin-mark"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-ticket"/></svg></div>
+    <h1>{{ APP_NAME }}</h1>
+    <p class="signin-lede">Request help from IT and follow your tickets in one place.</p>
+
+    {% if not entra_configured %}
+    <p class="setup-warning" role="alert">
+      <strong>Setup needed:</strong> Microsoft 365 sign-in isn't configured. Fill in the
+      <code>ENTRA_*</code> values in <code>.env</code>; see <code>docs/entra-setup.md</code>.
+    </p>
+    {% endif %}
+
+    <a class="btn btn-primary btn-lg btn-block btn-wrap"
+       href="{% url 'accounts:login' %}?next={{ next|urlencode }}"
+       {% if not entra_configured %}aria-disabled="true" tabindex="-1"{% endif %}>
+      <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-signin"/></svg>
+      Sign in with your Microsoft 365 work account
+    </a>
+
+    <p class="signin-note">
+      <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-lock"/></svg>
+      <span>You'll sign in on Microsoft's page. {{ APP_NAME }} never sees your password.</span>
+    </p>
+  </div>
+  <p class="signin-help">Can't sign in? Contact IT.</p>
+</div>
+{% endblock %}

@@ -1,0 +1,2256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InH-Ticketing UI mockup</title>
+<script>
+  /* Mockup only: apply a forced theme before first paint, if one was picked in the toolbar. */
+  try {
+    var t = localStorage.getItem('inh-mock-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) {}
+</script>
+<style>
+/* =====================================================================
+   InH-Ticketing: design tokens
+   Everything above the "Mockup-only" block is meant to move into the
+   real app's single stylesheet (static/css/app.css) unchanged.
+   ===================================================================== */
+:root {
+  color-scheme: light;
+
+  /* Type */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 20px;
+  --fs-2xl: 22px;
+
+  /* Spacing (4px scale) */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-pill: 999px;
+
+  /* Layout */
+  --header-h: 52px;
+  --page-max: 1200px;
+  --app-max: 1440px;
+
+  /* Surfaces and text */
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --surface-2: #f1f3f6;
+  --surface-hover: #eceff4;
+  --row-hover: #f5f7fb;
+  --input-bg: #ffffff;
+  --border: #e0e4ea;
+  --border-strong: #c5ccd6;
+  --text: #1a1d23;
+  --text-muted: #5a6371;
+  --link: #2a55c9;
+  --accent: #2f5bd3;
+  --accent-hover: #2449b0;
+  --accent-text: #ffffff;
+  --accent-soft: #e8eefc;
+  --accent-soft-text: #1d3f9e;
+  --focus: #2f5bd3;
+  --focus-ring: rgba(47, 91, 211, .28);
+  --danger: #b42318;
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, .06);
+  --shadow-md: 0 6px 20px rgba(16, 24, 40, .14);
+  --toast-bg: #1a1d23;
+  --toast-text: #ffffff;
+
+  /* Status badges (text always included; colour is a second cue) */
+  --st-new-bg: #dbeafe;       --st-new-text: #1d4ed8;
+  --st-open-bg: #ccfbf1;      --st-open-text: #115e59;
+  --st-progress-bg: #ede9fe;  --st-progress-text: #6d28d9;
+  --st-waiting-bg: #fce7f3;   --st-waiting-text: #be185d;
+  --st-resolved-bg: #dcfce7;  --st-resolved-text: #166534;
+  --st-closed-bg: #e5e7eb;    --st-closed-text: #374151;
+
+  /* Priorities */
+  --pr-high-bg: #ffedd5;  --pr-high-text: #9a3412;  --pr-high-edge: #ea580c;
+  --pr-urgent-bg: #b91c1c; --pr-urgent-text: #ffffff;
+
+  /* Internal notes: the one place amber is used */
+  --note-bg: #fffbeb;
+  --note-border: #f2d48a;
+  --note-edge: #d97706;
+  --note-band-bg: #fef3c7;
+  --note-band-text: #92400e;
+  --note-btn-bg: #92400e;
+  --note-btn-hover: #7a350b;
+  --note-btn-text: #ffffff;
+  --note-ring: rgba(217, 119, 6, .32);
+
+  /* Avatars */
+  --av-1-bg: #dbeafe; --av-1-text: #1e3a8a;
+  --av-2-bg: #dcfce7; --av-2-text: #14532d;
+  --av-3-bg: #ede9fe; --av-3-text: #4c1d95;
+  --av-4-bg: #ffe4e6; --av-4-text: #881337;
+  --av-5-bg: #ccfbf1; --av-5-text: #134e4a;
+  --av-6-bg: #e2e8f0; --av-6-text: #1e293b;
+
+  /* ---- Mockup-only tokens (toolbar and design notes; not part of the app) ---- */
+  --mock-h: 40px;
+  --mock-bg: #26143f;
+  --mock-text: #f3e8ff;
+  --mock-muted: #c4b5fd;
+  --mock-accent: #d8b4fe;
+  --mock-note-bg: #f6f0ff;
+  --mock-note-text: #4c1d95;
+  --mock-note-border: #7c3aed;
+  --mock-note-label-text: #ffffff;
+}
+
+/* Dark theme: follows the operating system. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0f1115;
+    --surface: #171a20;
+    --surface-2: #1d2128;
+    --surface-hover: #242a33;
+    --row-hover: #1b1f26;
+    --input-bg: #12151a;
+    --border: #2a3039;
+    --border-strong: #3b4350;
+    --text: #e6e8ec;
+    --text-muted: #a3abb8;
+    --link: #8fb0ff;
+    --accent: #3d6ae0;
+    --accent-hover: #3459c4;
+    --accent-text: #ffffff;
+    --accent-soft: #1c2a4a;
+    --accent-soft-text: #c7d7ff;
+    --focus: #8fb0ff;
+    --focus-ring: rgba(143, 176, 255, .32);
+    --danger: #f97066;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, .4);
+    --shadow-md: 0 6px 20px rgba(0, 0, 0, .55);
+    --toast-bg: #e6e8ec;
+    --toast-text: #0f1115;
+    --st-new-bg: #172554;      --st-new-text: #bfdbfe;
+    --st-open-bg: #042f2e;     --st-open-text: #99f6e4;
+    --st-progress-bg: #2e1065; --st-progress-text: #ddd6fe;
+    --st-waiting-bg: #4a0a26;  --st-waiting-text: #fbcfe8;
+    --st-resolved-bg: #052e16; --st-resolved-text: #bbf7d0;
+    --st-closed-bg: #2a2d33;   --st-closed-text: #d1d5db;
+    --pr-high-bg: #431407;  --pr-high-text: #fed7aa;  --pr-high-edge: #f97316;
+    --pr-urgent-bg: #b91c1c; --pr-urgent-text: #ffffff;
+    --note-bg: #241d0e;
+    --note-border: #5a4513;
+    --note-edge: #d97706;
+    --note-band-bg: #3a2c0b;
+    --note-band-text: #fcd34d;
+    --note-btn-bg: #f59e0b;
+    --note-btn-hover: #fbbf24;
+    --note-btn-text: #1c1206;
+    --note-ring: rgba(245, 158, 11, .35);
+    --av-1-bg: #1e3a8a; --av-1-text: #dbeafe;
+    --av-2-bg: #14532d; --av-2-text: #dcfce7;
+    --av-3-bg: #4c1d95; --av-3-text: #ede9fe;
+    --av-4-bg: #881337; --av-4-text: #ffe4e6;
+    --av-5-bg: #134e4a; --av-5-text: #ccfbf1;
+    --av-6-bg: #334155; --av-6-text: #e2e8f0;
+    --mock-note-bg: #1d1430;
+    --mock-note-text: #e9d5ff;
+    --mock-note-border: #a78bfa;
+    --mock-note-label-text: #1d1430;
+  }
+}
+/* Mockup only: the toolbar's theme switch forces dark. Same values as the media query above. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0f1115;
+  --surface: #171a20;
+  --surface-2: #1d2128;
+  --surface-hover: #242a33;
+  --row-hover: #1b1f26;
+  --input-bg: #12151a;
+  --border: #2a3039;
+  --border-strong: #3b4350;
+  --text: #e6e8ec;
+  --text-muted: #a3abb8;
+  --link: #8fb0ff;
+  --accent: #3d6ae0;
+  --accent-hover: #3459c4;
+  --accent-text: #ffffff;
+  --accent-soft: #1c2a4a;
+  --accent-soft-text: #c7d7ff;
+  --focus: #8fb0ff;
+  --focus-ring: rgba(143, 176, 255, .32);
+  --danger: #f97066;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .4);
+  --shadow-md: 0 6px 20px rgba(0, 0, 0, .55);
+  --toast-bg: #e6e8ec;
+  --toast-text: #0f1115;
+  --st-new-bg: #172554;      --st-new-text: #bfdbfe;
+  --st-open-bg: #042f2e;     --st-open-text: #99f6e4;
+  --st-progress-bg: #2e1065; --st-progress-text: #ddd6fe;
+  --st-waiting-bg: #4a0a26;  --st-waiting-text: #fbcfe8;
+  --st-resolved-bg: #052e16; --st-resolved-text: #bbf7d0;
+  --st-closed-bg: #2a2d33;   --st-closed-text: #d1d5db;
+  --pr-high-bg: #431407;  --pr-high-text: #fed7aa;  --pr-high-edge: #f97316;
+  --pr-urgent-bg: #b91c1c; --pr-urgent-text: #ffffff;
+  --note-bg: #241d0e;
+  --note-border: #5a4513;
+  --note-edge: #d97706;
+  --note-band-bg: #3a2c0b;
+  --note-band-text: #fcd34d;
+  --note-btn-bg: #f59e0b;
+  --note-btn-hover: #fbbf24;
+  --note-btn-text: #1c1206;
+  --note-ring: rgba(245, 158, 11, .35);
+  --av-1-bg: #1e3a8a; --av-1-text: #dbeafe;
+  --av-2-bg: #14532d; --av-2-text: #dcfce7;
+  --av-3-bg: #4c1d95; --av-3-text: #ede9fe;
+  --av-4-bg: #881337; --av-4-text: #ffe4e6;
+  --av-5-bg: #134e4a; --av-5-text: #ccfbf1;
+  --av-6-bg: #334155; --av-6-text: #e2e8f0;
+  --mock-note-bg: #1d1430;
+  --mock-note-text: #e9d5ff;
+  --mock-note-border: #a78bfa;
+  --mock-note-label-text: #1d1430;
+}
+
+/* =====================================================================
+   Base
+   ===================================================================== */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-sans);
+  font-size: var(--fs-md);
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 { margin: 0; line-height: 1.25; font-weight: 650; }
+p { margin: 0; }
+a { color: var(--link); text-underline-offset: 2px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+h1[tabindex="-1"]:focus { outline: none; }
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+.icon {
+  display: inline-block;
+  flex: none;
+  width: 16px; height: 16px;
+  vertical-align: -3px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.skip-link {
+  position: absolute; left: var(--sp-2); top: -100px; z-index: 300;
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--surface); color: var(--text);
+  border-radius: var(--radius); box-shadow: var(--shadow-md);
+}
+.skip-link:focus { top: calc(var(--mock-h) + var(--sp-2)); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+/* =====================================================================
+   Mockup toolbar (designer control, not part of the app)
+   ===================================================================== */
+.mockbar {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; gap: 10px;
+  height: var(--mock-h);
+  padding: 0 10px;
+  color: var(--mock-text);
+  background-color: var(--mock-bg);
+  background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.045) 0 10px, transparent 10px 20px);
+  border-bottom: 2px dashed var(--mock-accent);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1;
+}
+.mockbar-tag {
+  flex: none;
+  padding: 5px 8px;
+  border-radius: 4px;
+  background: var(--mock-accent);
+  color: var(--mock-bg);
+  font-family: var(--font-mono);
+  font-size: 11px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+}
+.mockbar-scroll {
+  position: relative; /* contains the visually-hidden labels so they can't widen the page */
+  flex: 1; min-width: 0;
+  display: flex; align-items: center; gap: 4px;
+  overflow-x: auto;
+  padding: 4px 2px;
+  scrollbar-width: none;
+}
+.mockbar-scroll::-webkit-scrollbar { display: none; }
+.mockbar-group {
+  flex: none;
+  margin: 0 2px 0 10px;
+  color: var(--mock-muted);
+  font-size: 10.5px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+}
+.mockbar-link, .mockbar-btn {
+  flex: none;
+  padding: 5px 9px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: rgba(255,255,255,.08);
+  color: var(--mock-text);
+  font-size: 12px; line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.mockbar-link:hover, .mockbar-btn:hover { background: rgba(255,255,255,.18); }
+.mockbar-link[aria-current="page"] { background: var(--mock-text); color: var(--mock-bg); font-weight: 700; }
+.mockbar-btn[aria-pressed="true"] { border-color: var(--mock-accent); }
+.mockbar :focus-visible { outline: 2px solid var(--mock-accent); outline-offset: 1px; }
+.mockbar-spacer { flex: 1 0 12px; }
+.mockbar-ctrl { flex: none; display: inline-flex; align-items: center; gap: 6px; color: var(--mock-muted); }
+.mockbar-select {
+  appearance: none;
+  padding: 4px 8px;
+  border: 1px solid rgba(255,255,255,.25);
+  border-radius: 4px;
+  background: rgba(255,255,255,.08);
+  color: var(--mock-text);
+  font-size: 12px;
+  cursor: pointer;
+}
+.mockbar-select option { color: #111; background: #fff; }
+
+/* Design notes: annotations inside screens, styled like the toolbar */
+.design-note {
+  display: flex; gap: 10px; align-items: flex-start;
+  margin-top: var(--sp-6);
+  padding: 10px 12px;
+  border: 1.5px dashed var(--mock-note-border);
+  border-radius: 8px;
+  background: var(--mock-note-bg);
+  color: var(--mock-note-text);
+  font-size: 12.5px; line-height: 1.45;
+}
+.design-note-label {
+  flex: none;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--mock-note-border);
+  color: var(--mock-note-label-text);
+  font-family: var(--font-mono);
+  font-size: 10.5px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase;
+}
+.design-note a { color: inherit; font-weight: 650; }
+.notes-off .design-note { display: none; }
+
+/* =====================================================================
+   App chrome
+   ===================================================================== */
+.app-header { background: var(--surface); border-bottom: 1px solid var(--border); }
+.app-header-inner {
+  display: flex; align-items: center; gap: var(--sp-6);
+  max-width: var(--app-max); min-height: var(--header-h);
+  margin: 0 auto; padding: 0 var(--sp-5);
+}
+.brand {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  color: var(--text); text-decoration: none;
+  font-size: 15px; font-weight: 700; letter-spacing: -.01em;
+  white-space: nowrap;
+}
+.brand-mark {
+  display: grid; place-items: center;
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  background: var(--accent); color: var(--accent-text);
+}
+.brand-mark .icon { width: 18px; height: 18px; }
+.app-nav { position: relative; display: flex; gap: var(--sp-1); }
+.app-nav a {
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  font-weight: 550;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.app-nav a:hover { background: var(--surface-hover); color: var(--text); }
+.app-nav a[aria-current="page"] { background: var(--surface-2); color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
+.user-chip { margin-left: auto; display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+.user-name { font-weight: 600; white-space: nowrap; }
+.signout {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-left: var(--sp-2);
+  padding: 6px 8px;
+  border-radius: var(--radius);
+  color: var(--text-muted); text-decoration: none; font-size: var(--fs-sm);
+}
+.signout:hover { background: var(--surface-hover); color: var(--text); }
+
+.page { max-width: var(--page-max); margin: 0 auto; padding: var(--sp-6) var(--sp-5) 56px; }
+.page-narrow { max-width: 820px; }
+.page-medium { max-width: 1080px; }
+.page-head {
+  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between;
+  gap: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+.page-head h1 { font-size: var(--fs-2xl); }
+.page-sub { margin-top: var(--sp-1); color: var(--text-muted); }
+.eyebrow { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-muted); margin-bottom: 2px; }
+.back-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-bottom: var(--sp-3);
+  color: var(--text-muted);
+  font-size: var(--fs-sm); font-weight: 600;
+  text-decoration: none;
+}
+.back-link:hover { color: var(--text); text-decoration: underline; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--sp-5); }
+
+/* =====================================================================
+   Controls
+   ===================================================================== */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-md); font-weight: 600; line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.btn:hover { background: var(--surface-hover); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.btn-note { background: var(--note-btn-bg); border-color: var(--note-btn-bg); color: var(--note-btn-text); }
+.btn-note:hover { background: var(--note-btn-hover); border-color: var(--note-btn-hover); }
+.btn-ghost { background: transparent; border-color: transparent; color: var(--text-muted); }
+.btn-ghost:hover { background: var(--surface-hover); color: var(--text); }
+.btn-sm { min-height: 28px; padding: 0 10px; font-size: var(--fs-sm); }
+.btn-lg { min-height: 40px; padding: 0 18px; font-size: 15px; }
+.btn-block { width: 100%; }
+.btn-wrap { white-space: normal; text-align: center; padding-top: 10px; padding-bottom: 10px; }
+.link-btn {
+  padding: 0; border: 0; background: none;
+  color: var(--link); font-size: 12.5px; font-weight: 600;
+  text-decoration: underline; text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.input, .select, .textarea {
+  display: block;
+  width: 100%;
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background-color: var(--input-bg);
+  color: var(--text);
+  font-size: var(--fs-md);
+}
+.textarea { resize: vertical; line-height: 1.5; }
+.select {
+  appearance: none;
+  padding-right: 30px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--text-muted) 50%),
+    linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
+  background-position: calc(100% - 15px) 52%, calc(100% - 10px) 52%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+.select-sm { min-height: 32px; padding-top: 4px; padding-bottom: 4px; font-size: var(--fs-sm); }
+.input::placeholder, .textarea::placeholder { color: var(--text-muted); opacity: 1; }
+.input:focus, .select:focus, .textarea:focus {
+  outline: 2px solid transparent; /* keeps a ring in Windows high-contrast mode */
+  border-color: var(--focus);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+[aria-invalid="true"] { border-color: var(--danger) !important; }
+.file-input { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+.file-btn { position: relative; }
+.file-btn:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* Badges, chips, priority */
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 0 8px;
+  border-radius: var(--radius-pill);
+  background: var(--b-bg); color: var(--b-text);
+  font-size: var(--fs-xs); font-weight: 650; line-height: 20px;
+  white-space: nowrap;
+}
+.badge::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.status-new      { --b-bg: var(--st-new-bg);      --b-text: var(--st-new-text); }
+.status-open     { --b-bg: var(--st-open-bg);     --b-text: var(--st-open-text); }
+.status-progress { --b-bg: var(--st-progress-bg); --b-text: var(--st-progress-text); }
+.status-waiting  { --b-bg: var(--st-waiting-bg);  --b-text: var(--st-waiting-text); }
+.status-resolved { --b-bg: var(--st-resolved-bg); --b-text: var(--st-resolved-text); }
+.status-closed   { --b-bg: var(--st-closed-bg);   --b-text: var(--st-closed-text); }
+/* Second, non-colour cue: each status has its own glyph shape */
+.status-new::before { background: transparent; border: 1.5px solid currentColor; }
+.status-progress::before { background: linear-gradient(90deg, currentColor 50%, transparent 50%); border: 1.5px solid currentColor; }
+.status-waiting::before { width: 6px; border-radius: 1px; background: linear-gradient(90deg, currentColor 0 2px, transparent 2px 4px, currentColor 4px); }
+.status-resolved::before { width: 4px; height: 8px; margin: 0 1px 2px; border-radius: 0; background: none; border: solid currentColor; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.status-closed::before { border-radius: 1.5px; }
+
+.prio { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; line-height: 20px; white-space: nowrap; }
+.prio-bars { display: inline-flex; align-items: flex-end; gap: 2px; height: 12px; }
+.prio-bars i { display: block; width: 3px; border-radius: 1px; background: var(--border-strong); }
+.prio-bars i:nth-child(1) { height: 4px; }
+.prio-bars i:nth-child(2) { height: 8px; }
+.prio-bars i:nth-child(3) { height: 12px; }
+.prio-low { color: var(--text-muted); }
+.prio-low i:nth-child(1) { background: currentColor; }
+.prio-normal { color: var(--text); }
+.prio-normal i:nth-child(-n+2) { background: currentColor; }
+.prio-high { padding: 0 8px; border-radius: var(--radius-pill); background: var(--pr-high-bg); color: var(--pr-high-text); font-weight: 650; }
+.prio-high i { background: currentColor; }
+.prio-urgent { padding: 0 8px; border-radius: var(--radius-pill); background: var(--pr-urgent-bg); color: var(--pr-urgent-text); font-weight: 700; }
+.prio-urgent .icon { width: 13px; height: 13px; stroke-width: 2.2; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 0 7px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  color: var(--text-muted);
+  font-size: 11.5px; font-weight: 600; line-height: 18px;
+  white-space: nowrap;
+}
+.chip .icon { width: 12px; height: 12px; }
+.chip-block { color: var(--pr-high-text); border-color: currentColor; }
+.role-tag {
+  display: inline-block;
+  padding: 0 5px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 10.5px; font-weight: 700; line-height: 16px;
+  letter-spacing: .05em; text-transform: uppercase;
+  white-space: nowrap;
+}
+.role-it { background: var(--accent-soft); border-color: transparent; color: var(--accent-soft-text); }
+
+.avatar {
+  position: relative;
+  display: inline-grid; place-items: center; flex: none;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--av-bg); color: var(--av-text);
+  font-size: 12px; font-weight: 700; letter-spacing: .02em;
+}
+.avatar-xs { width: 20px; height: 20px; font-size: 9px; }
+.avatar-lg { width: 40px; height: 40px; font-size: 14px; }
+.av-1 { --av-bg: var(--av-1-bg); --av-text: var(--av-1-text); }
+.av-2 { --av-bg: var(--av-2-bg); --av-text: var(--av-2-text); }
+.av-3 { --av-bg: var(--av-3-bg); --av-text: var(--av-3-text); }
+.av-4 { --av-bg: var(--av-4-bg); --av-text: var(--av-4-text); }
+.av-5 { --av-bg: var(--av-5-bg); --av-text: var(--av-5-text); }
+.av-6 { --av-bg: var(--av-6-bg); --av-text: var(--av-6-text); }
+
+.ticket-num { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-muted); white-space: nowrap; }
+
+/* Toast */
+.toast {
+  position: fixed; left: 50%; bottom: 20px; z-index: 200;
+  width: max-content; max-width: calc(100vw - 32px);
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--toast-bg); color: var(--toast-text);
+  box-shadow: var(--shadow-md);
+  font-size: var(--fs-sm); font-weight: 500;
+  opacity: 0; pointer-events: none;
+  transform: translate(-50%, 8px);
+  transition: opacity .15s, transform .15s;
+}
+.toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
+
+/* =====================================================================
+   1. Sign-in
+   ===================================================================== */
+.signin {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--sp-4);
+  min-height: calc(100vh - var(--mock-h));
+  min-height: calc(100dvh - var(--mock-h));
+  padding: var(--sp-8) var(--sp-4);
+}
+.signin-card {
+  width: 100%; max-width: 420px;
+  padding: var(--sp-8) 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+}
+.signin-mark {
+  display: grid; place-items: center;
+  width: 48px; height: 48px;
+  margin: 0 auto var(--sp-4);
+  border-radius: 12px;
+  background: var(--accent); color: var(--accent-text);
+}
+.signin-mark .icon { width: 28px; height: 28px; }
+.signin-card h1 { font-size: var(--fs-2xl); }
+.signin-lede { margin: var(--sp-2) 0 var(--sp-6); color: var(--text-muted); }
+.signin-note {
+  display: flex; gap: var(--sp-2); align-items: flex-start;
+  margin-top: var(--sp-4);
+  color: var(--text-muted); font-size: 12.5px; text-align: left;
+}
+.signin-help { color: var(--text-muted); font-size: var(--fs-sm); text-align: center; }
+.signin .design-note { width: 100%; max-width: 420px; margin-top: 0; }
+
+/* =====================================================================
+   2. Requester: My tickets
+   ===================================================================== */
+.list-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); margin-bottom: var(--sp-3); }
+.segmented { display: inline-flex; padding: 2px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); }
+.segmented button {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px;
+  border: 0; border-radius: var(--radius-sm);
+  background: transparent; color: var(--text-muted);
+  font-size: var(--fs-sm); font-weight: 600;
+  cursor: pointer;
+}
+.segmented button[aria-pressed="true"] { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm), 0 0 0 1px var(--border); }
+.count {
+  display: inline-block; min-width: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2); color: var(--text-muted);
+  font-size: 11.5px; font-weight: 650; line-height: 18px;
+  text-align: center; font-variant-numeric: tabular-nums;
+}
+.segmented [aria-pressed="true"] .count { background: var(--accent-soft); color: var(--accent-soft-text); }
+.list-sort { color: var(--text-muted); font-size: 12.5px; }
+
+.ticket-list { list-style: none; margin: 0; padding: 0; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); }
+.ticket-list > li + li { border-top: 1px solid var(--border); }
+.ticket-link {
+  display: grid; grid-template-columns: 56px minmax(0, 1fr) 150px 130px;
+  align-items: center; gap: var(--sp-3);
+  padding: 14px var(--sp-4);
+  color: inherit; text-decoration: none;
+}
+.ticket-link:hover { background: var(--row-hover); }
+.ticket-link:focus-visible { outline-offset: -2px; }
+.ticket-main { display: flex; flex-direction: column; min-width: 0; }
+.ticket-subject { font-weight: 600; overflow-wrap: anywhere; }
+.ticket-link:hover .ticket-subject { text-decoration: underline; }
+.ticket-meta { color: var(--text-muted); font-size: 12.5px; }
+.reply-needed { color: var(--st-waiting-text); font-weight: 700; }
+.ticket-updated { color: var(--text-muted); font-size: 12.5px; text-align: right; white-space: nowrap; }
+.needs-reply { box-shadow: inset 3px 0 0 var(--st-waiting-text); }
+.empty { padding: var(--sp-8) var(--sp-4); text-align: center; color: var(--text-muted); }
+.empty p + p { margin-top: var(--sp-2); }
+
+/* =====================================================================
+   3. Requester: New request
+   ===================================================================== */
+.field { margin-bottom: 18px; }
+.field > label, .label { display: block; margin-bottom: 6px; font-weight: 650; }
+.optional { color: var(--text-muted); font-weight: 400; }
+.hint { margin-top: 6px; color: var(--text-muted); font-size: var(--fs-sm); }
+.field-error { display: flex; gap: 6px; align-items: center; margin-top: 6px; color: var(--danger); font-size: var(--fs-sm); font-weight: 600; }
+.check { display: flex; align-items: flex-start; gap: 10px; }
+.check input { width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--accent); flex: none; }
+.check label { font-weight: 650; }
+.check-hint { margin-left: 28px; }
+.dropzone {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  padding: 22px var(--sp-4);
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  text-align: center;
+  cursor: pointer;
+}
+.dropzone:hover, .dropzone.is-over { border-color: var(--accent); background: var(--accent-soft); }
+.dropzone:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+.dropzone > .icon { width: 24px; height: 24px; margin-bottom: 2px; }
+.dropzone-title { color: var(--text); font-weight: 600; }
+.dropzone-title u { color: var(--link); }
+.dropzone-sub { font-size: 12.5px; }
+.file-list { list-style: none; margin: var(--sp-2) 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-sm); }
+.file-list li { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.file-list .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-list .size { color: var(--text-muted); white-space: nowrap; }
+.hint-box {
+  display: flex; gap: 10px; align-items: flex-start;
+  margin: var(--sp-2) 0 var(--sp-5);
+  padding: 12px 14px;
+  border-radius: var(--radius-lg);
+  background: var(--accent-soft); color: var(--text);
+  font-size: var(--fs-sm);
+}
+.hint-box > .icon { margin-top: 1px; color: var(--accent-soft-text); }
+.form-actions { display: flex; justify-content: flex-end; gap: var(--sp-2); padding-top: var(--sp-4); border-top: 1px solid var(--border); }
+
+/* =====================================================================
+   4 + 6. Ticket detail (shared)
+   ===================================================================== */
+.detail-head { margin-bottom: var(--sp-5); }
+.detail-title { margin: 2px 0 10px; font-size: var(--fs-2xl); overflow-wrap: anywhere; }
+.detail-badges { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+.detail-meta { color: var(--text-muted); font-size: var(--fs-sm); }
+.detail-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--sp-6); align-items: start; }
+.detail-main { min-width: 0; }
+.section-title { margin-bottom: var(--sp-3); font-size: var(--fs-md); }
+
+/* Timeline */
+.timeline { position: relative; list-style: none; margin: 0 0 var(--sp-4); padding: 0; }
+.timeline::before { content: ""; position: absolute; left: 15px; top: 12px; bottom: 12px; width: 2px; background: var(--border); }
+.tl-item { position: relative; padding-left: 48px; }
+.tl-comment { margin-bottom: var(--sp-4); }
+.tl-avatar { position: absolute; left: 0; top: 2px; box-shadow: 0 0 0 4px var(--bg); }
+.avatar-lock {
+  position: absolute; right: -5px; bottom: -5px;
+  display: grid; place-items: center;
+  width: 17px; height: 17px;
+  border-radius: 50%;
+  background: var(--note-edge); color: #fff;
+  box-shadow: 0 0 0 2px var(--bg);
+}
+.avatar-lock .icon { width: 10px; height: 10px; stroke-width: 2.6; }
+.comment { overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); }
+.comment-head {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--sp-2);
+  padding: var(--sp-2) 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+  font-size: var(--fs-sm);
+}
+.comment-author { font-weight: 650; }
+.comment-time { margin-left: auto; color: var(--text-muted); font-size: var(--fs-xs); white-space: nowrap; }
+.comment-body { padding: var(--sp-3) 14px; overflow-wrap: anywhere; }
+.comment-body p + p { margin-top: var(--sp-2); }
+.attachments { list-style: none; display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: 0; padding: 0 14px var(--sp-3); }
+.attachment {
+  display: inline-flex; align-items: center; gap: 6px; max-width: 100%;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface); color: var(--text);
+  font-size: 12.5px; text-decoration: none;
+}
+.attachment:hover { border-color: var(--border-strong); }
+.attachment-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.attachment-size { color: var(--text-muted); white-space: nowrap; }
+
+/* Internal note: amber card, lock, and an explicit label on every note */
+.comment.is-note { border-color: var(--note-border); border-left: 4px solid var(--note-edge); background: var(--note-bg); }
+.comment.is-note .comment-head { background: transparent; border-bottom-color: var(--note-border); }
+.note-band {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 14px;
+  border-bottom: 1px solid var(--note-border);
+  background: var(--note-band-bg); color: var(--note-band-text);
+  font-size: var(--fs-xs); font-weight: 700; letter-spacing: .01em;
+}
+.note-band .icon { width: 14px; height: 14px; stroke-width: 2.2; }
+
+/* System events: small, muted, on the rail */
+.tl-event { margin: -6px 0 var(--sp-3); padding-top: 2px; color: var(--text-muted); font-size: 12.5px; }
+.tl-event-icon {
+  position: absolute; left: 6px; top: 1px;
+  display: grid; place-items: center;
+  width: 20px; height: 20px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface-2); color: var(--text-muted);
+  box-shadow: 0 0 0 3px var(--bg);
+}
+.tl-event-icon .icon { width: 11px; height: 11px; stroke-width: 2.2; }
+.tl-event strong { color: var(--text); font-weight: 600; }
+.tl-event time { white-space: nowrap; }
+
+/* Composer (agent) */
+.composer {
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  transition: background-color .15s, border-color .15s;
+}
+.composer:focus-within { box-shadow: 0 0 0 3px var(--focus-ring); }
+.composer-head {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3);
+  padding: 10px var(--sp-3);
+  border-bottom: 1px solid var(--border);
+}
+.mode-toggle { display: inline-flex; margin: 0; padding: 2px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface-2); }
+.mode-toggle input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.mode-toggle label {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: var(--fs-sm); font-weight: 650;
+  cursor: pointer; white-space: nowrap;
+}
+.mode-toggle input:checked + label { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm), 0 0 0 1px var(--border); }
+.mode-toggle input[value="internal"]:checked + label { background: var(--note-band-bg); color: var(--note-band-text); box-shadow: 0 0 0 1px var(--note-edge); }
+.mode-toggle input:focus-visible + label { outline: 2px solid var(--focus); outline-offset: 1px; }
+.composer-audience { flex: 1 1 220px; min-width: 0; color: var(--text-muted); font-size: 12.5px; overflow-wrap: anywhere; }
+.composer-banner {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px var(--sp-3);
+  border-bottom: 1px solid var(--note-border);
+  background: var(--note-band-bg); color: var(--note-band-text);
+  font-size: var(--fs-sm); font-weight: 700;
+}
+.composer-text {
+  display: block; width: 100%; min-height: 120px;
+  padding: var(--sp-3);
+  border: 0; outline: none;
+  background: transparent; color: var(--text);
+  font-size: var(--fs-md); line-height: 1.5;
+  resize: vertical;
+}
+.composer-text::placeholder { color: var(--text-muted); opacity: 1; }
+.composer .field-error { margin: 0; padding: 0 var(--sp-3) var(--sp-2); }
+.composer-foot { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); border-top: 1px solid var(--border); }
+.composer-files { flex: 1; min-width: 0; color: var(--text-muted); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.composer[data-mode="internal"] { border-color: var(--note-edge); border-left: 4px solid var(--note-edge); background: var(--note-bg); }
+.composer[data-mode="internal"]:focus-within { box-shadow: 0 0 0 3px var(--note-ring); }
+.composer[data-mode="internal"] .composer-head,
+.composer[data-mode="internal"] .composer-foot { border-color: var(--note-border); }
+
+/* Side panel */
+.side-panel { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+.panel { padding: 14px var(--sp-4); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); }
+.panel-title { margin-bottom: var(--sp-3); color: var(--text-muted); font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.panel-subtitle { margin: var(--sp-4) 0 var(--sp-2); font-size: 12.5px; font-weight: 650; }
+.prop-field { display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-2); }
+.prop-field > label { color: var(--text-muted); font-size: var(--fs-sm); font-weight: 600; }
+.prop-extra { grid-column: 2; margin-top: -2px; }
+.props-hint { margin-top: 10px; color: var(--text-muted); font-size: var(--fs-xs); }
+.dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px var(--sp-3); margin: 0; font-size: var(--fs-sm); }
+.dl dt { color: var(--text-muted); }
+.dl dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.dl dd .icon { width: 14px; height: 14px; margin-right: 4px; color: var(--text-muted); }
+.person { display: flex; align-items: center; gap: 10px; margin-bottom: var(--sp-3); }
+.person-name { font-weight: 650; }
+.person-title { color: var(--text-muted); font-size: 12.5px; }
+.mini-list { list-style: none; display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; font-size: var(--fs-sm); }
+.mini-list li { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); min-width: 0; }
+.mini-list a, .mini-list .mini-text { min-width: 0; overflow: hidden; color: var(--text); text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+.mini-list a:hover { text-decoration: underline; }
+.mini-list .ticket-num { margin-right: 4px; }
+.panel .attachments { padding: 0; }
+.muted { color: var(--text-muted); }
+.panel-tip { display: flex; gap: 10px; align-items: flex-start; font-size: var(--fs-sm); }
+.panel-tip > .icon { margin-top: 1px; color: var(--text-muted); }
+
+/* Requester detail extras */
+.callout {
+  display: flex; gap: var(--sp-3); align-items: flex-start;
+  margin-bottom: var(--sp-5);
+  padding: var(--sp-3) 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+.callout > .icon { width: 18px; height: 18px; margin-top: 1px; color: var(--accent); }
+.callout-title { font-weight: 650; }
+.callout-text { color: var(--text-muted); font-size: var(--fs-sm); }
+.callout-waiting  { border-color: transparent; background: var(--st-waiting-bg); }
+.callout-waiting > .icon { color: var(--st-waiting-text); }
+.callout-resolved { border-color: transparent; background: var(--st-resolved-bg); }
+.callout-resolved > .icon { color: var(--st-resolved-text); }
+.callout-closed   { border-color: transparent; background: var(--st-closed-bg); }
+.callout-closed > .icon { color: var(--st-closed-text); }
+.reply-card { padding: 14px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); }
+.reply-label { display: block; margin-bottom: var(--sp-2); font-weight: 650; }
+.reply-foot { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); margin-top: 10px; }
+.reply-hint { margin-right: auto; color: var(--text-muted); font-size: 12.5px; }
+.reply-card .field-error { margin-top: var(--sp-2); }
+.resolve-row {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3);
+  margin-top: var(--sp-4);
+  padding: var(--sp-3) 14px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+}
+.resolve-q { font-weight: 650; }
+.resolve-sub { color: var(--text-muted); font-size: var(--fs-sm); }
+
+/* =====================================================================
+   5. Agent queue
+   ===================================================================== */
+.queue-layout {
+  display: grid; grid-template-columns: 224px minmax(0, 1fr);
+  max-width: var(--app-max);
+  min-height: calc(100vh - var(--mock-h) - var(--header-h));
+  margin: 0 auto;
+}
+.queue-views { padding: var(--sp-5) var(--sp-3); border-right: 1px solid var(--border); background: var(--surface); }
+.views-title { margin: 0 0 var(--sp-2); padding: 0 var(--sp-2); color: var(--text-muted); font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.views-list { position: relative; list-style: none; display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 0; }
+.view-link {
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: 7px var(--sp-2);
+  border-radius: var(--radius);
+  color: var(--text); text-decoration: none; font-weight: 550;
+  white-space: nowrap;
+}
+.view-link:hover { background: var(--surface-hover); }
+.view-link > .icon { color: var(--text-muted); }
+.view-link .count { margin-left: auto; }
+.view-link[aria-current="page"] { background: var(--accent-soft); color: var(--accent-soft-text); font-weight: 650; }
+.view-link[aria-current="page"] > .icon { color: inherit; }
+.view-link[aria-current="page"] .count { background: var(--surface); color: var(--accent-soft-text); }
+.queue-main { min-width: 0; padding: var(--sp-5) var(--sp-6) 56px; }
+.filters { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-2); }
+.search-field { position: relative; flex: 1 1 260px; min-width: 0; }
+.search-field > .icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
+.search-field .input { padding-left: 34px; }
+.filters .select { flex: 0 1 172px; width: auto; }
+.queue-summary { margin: 0 0 10px; color: var(--text-muted); font-size: 12.5px; }
+.table-wrap { position: relative; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); }
+.queue-table { width: 100%; min-width: 880px; border-collapse: collapse; font-size: var(--fs-sm); }
+.queue-table th {
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2); color: var(--text-muted);
+  font-size: var(--fs-xs); font-weight: 650; text-align: left;
+  white-space: nowrap;
+}
+.queue-table td { padding: 9px var(--sp-3); border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; }
+.queue-table tbody tr:last-child td { border-bottom: 0; }
+.queue-table tbody tr[data-id] { cursor: pointer; }
+.queue-table tbody tr[data-id]:hover { background: var(--row-hover); }
+.queue-table .col-subject { min-width: 280px; white-space: normal; }
+.queue-table .col-age { text-align: right; font-variant-numeric: tabular-nums; }
+.queue-table tr.is-urgent td:first-child { box-shadow: inset 4px 0 0 var(--pr-urgent-bg); }
+.queue-table tr.is-high td:first-child { box-shadow: inset 4px 0 0 var(--pr-high-edge); }
+.queue-table tr.is-urgent .subject-link { font-weight: 700; }
+.subject-link { color: var(--text); font-weight: 600; text-decoration: none; }
+.subject-link:hover { text-decoration: underline; }
+.row-flag { display: inline-flex; margin-left: 6px; color: var(--text-muted); vertical-align: -2px; }
+.row-flag .icon { width: 14px; height: 14px; }
+.row-flag-block { color: var(--pr-high-text); }
+.assignee { display: inline-flex; align-items: center; gap: 6px; }
+.unassigned { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font-style: italic; }
+.unassigned::before { content: ""; width: 18px; height: 18px; border: 1.5px dashed var(--border-strong); border-radius: 50%; }
+.empty-row td { padding: var(--sp-8) var(--sp-4); text-align: center; color: var(--text-muted); white-space: normal; }
+
+/* =====================================================================
+   Responsive
+   ===================================================================== */
+@media (max-width: 980px) {
+  .detail-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 900px) {
+  .queue-layout { grid-template-columns: minmax(0, 1fr); min-height: 0; }
+  .queue-views { padding: var(--sp-2) var(--sp-4); border-right: 0; border-bottom: 1px solid var(--border); }
+  .views-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .views-list { flex-direction: row; gap: var(--sp-1); overflow-x: auto; scrollbar-width: thin; }
+  .view-link .count { margin-left: 2px; }
+  .queue-main { padding: var(--sp-4) var(--sp-4) 48px; }
+}
+@media (max-width: 640px) {
+  .app-header-inner { flex-wrap: wrap; gap: 6px var(--sp-3); min-height: 0; padding: var(--sp-2) var(--sp-4); }
+  .app-nav { order: 3; flex: 1 0 100%; overflow-x: auto; margin: 0 -6px; }
+  .user-name, .signout-text {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+  }
+  .page { padding: var(--sp-4) var(--sp-4) 48px; }
+  .page-head h1, .detail-title { font-size: var(--fs-xl); }
+  .input, .select, .textarea, .composer-text { font-size: 16px; } /* stops iOS zooming into fields */
+  .card { padding: var(--sp-4); }
+  .signin-card { padding: var(--sp-6) var(--sp-5); }
+  .ticket-link {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "num status" "main main" "updated updated";
+    gap: 4px var(--sp-3);
+    padding: var(--sp-3) var(--sp-4);
+  }
+  .ticket-link > .ticket-num { grid-area: num; }
+  .ticket-link > .ticket-main { grid-area: main; }
+  .ticket-link > .ticket-status { grid-area: status; justify-self: end; }
+  .ticket-link > .ticket-updated { grid-area: updated; text-align: left; }
+  .filters .select { flex: 1 1 calc(50% - 4px); }
+  .form-actions { flex-direction: column-reverse; }
+  .form-actions .btn { width: 100%; }
+  .timeline::before { left: 13px; }
+  .tl-item { padding-left: 40px; }
+  .tl-avatar { width: 28px; height: 28px; font-size: 11px; }
+  .tl-event-icon { left: 4px; }
+  .comment-head, .comment-body { padding-left: var(--sp-3); padding-right: var(--sp-3); }
+  .composer-foot .btn-primary, .composer-foot .btn-note { margin-left: auto; }
+}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main" id="skip-link">Skip to main content</a>
+
+<!-- Icon sprite: simple stroke icons, all generic -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h15A1.5 1.5 0 0 1 21 7.5V10a2 2 0 0 0 0 4v2.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 16.5V14a2 2 0 0 0 0-4Z"/><path d="M15 6.5v11" stroke-dasharray="2 2.5"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 7 8.5 6 8.5-6"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3Z"/></symbol>
+  <symbol id="i-clip" viewBox="0 0 24 24"><path d="m20.5 11.5-8.3 8.3a5 5 0 0 1-7.1-7.1l8.5-8.5a3.4 3.4 0 0 1 4.8 4.8l-8.5 8.5a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4M5 4h12l-2.5 4.5L17 13H5"/></symbol>
+  <symbol id="i-building" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2M10.5 21v-2.5h3V21"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4.5 6v5.5c0 4.6 3.1 8.2 7.5 9.5 4.4-1.3 7.5-4.9 7.5-9.5V6Z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.2a6.5 6.5 0 0 1 3.5 5.8"/></symbol>
+  <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M3 13.5h5l1.5 3h5l1.5-3h5"/><path d="M5.5 5h13L21 13.5V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5.5Z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 9v6M14 9v6"/></symbol>
+  <symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3.5 12V4.5a1 1 0 0 1 1-1H12l8.5 8.5-8.5 8.5Z"/><circle cx="8" cy="8" r="1.2"/></symbol>
+  <symbol id="i-signal" viewBox="0 0 24 24"><path d="M6 20v-4M12 20v-9M18 20V5"/></symbol>
+  <symbol id="i-status" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.5-4.5L4 8M4 4v4h4M4 13a8 8 0 0 0 14.5 4.5L20 16M20 20v-4h-4"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4 2.8 19.5h18.4Z"/><path d="M12 10v4.5M12 17.2v.1"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M21 3 10.5 13.5M21 3l-6.5 18-4-7.5L3 9.5Z"/></symbol>
+  <symbol id="i-reply" viewBox="0 0 24 24"><path d="M9.5 14.5 4.5 9.5l5-5"/><path d="M4.5 9.5h10a5 5 0 0 1 5 5v5"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15.5V4M7 9l5-5 5 5M4 15.5V19a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3.5"/></symbol>
+  <symbol id="i-signout" viewBox="0 0 24 24"><path d="M15 16.5 19.5 12 15 7.5M19.5 12H9M10 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h5"/></symbol>
+</svg>
+
+<!-- ================= MOCKUP TOOLBAR (designer control, not part of the app) ================= -->
+<nav class="mockbar" aria-label="Mockup controls, not part of the app">
+  <span class="mockbar-tag">Mockup</span>
+  <div class="mockbar-scroll">
+    <a class="mockbar-link" href="#signin" data-screen-link="signin">Sign-in</a>
+    <span class="mockbar-group" aria-hidden="true">Requester</span>
+    <a class="mockbar-link" href="#my-tickets" data-screen-link="my-tickets"><span class="visually-hidden">Requester: </span>My tickets</a>
+    <a class="mockbar-link" href="#new-request" data-screen-link="new-request"><span class="visually-hidden">Requester: </span>New request</a>
+    <a class="mockbar-link" href="#request/1044" data-screen-link="request"><span class="visually-hidden">Requester: </span>Ticket detail</a>
+    <span class="mockbar-group" aria-hidden="true">Agent</span>
+    <a class="mockbar-link" href="#queue" data-screen-link="queue"><span class="visually-hidden">Agent: </span>Queue</a>
+    <a class="mockbar-link" href="#ticket/1044" data-screen-link="ticket"><span class="visually-hidden">Agent: </span>Ticket detail</a>
+    <span class="mockbar-spacer"></span>
+    <button type="button" class="mockbar-btn" id="notes-toggle" aria-pressed="true">Design notes</button>
+    <label class="mockbar-ctrl" for="theme-select">Theme
+      <select class="mockbar-select" id="theme-select">
+        <option value="system">System</option>
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+    </label>
+  </div>
+</nav>
+
+<!-- ================= APP HEADERS (one per role; base.html in Django) ================= -->
+<header class="app-header" id="header-requester" hidden>
+  <div class="app-header-inner">
+    <a class="brand" href="#my-tickets"><span class="brand-mark"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-ticket"/></svg></span>InH-Ticketing</a>
+    <nav class="app-nav" aria-label="Main">
+      <a href="#my-tickets" data-nav="my-tickets request">My tickets</a>
+      <a href="#new-request" data-nav="new-request">New request</a>
+    </nav>
+    <div class="user-chip">
+      <span class="avatar av-1" aria-hidden="true">DW</span>
+      <span class="user-name">Dana Whitfield</span>
+      <span class="role-tag"><span class="visually-hidden">Role: </span>Requester</span>
+      <a class="signout" href="#signin"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-signout"/></svg><span class="signout-text">Sign out</span></a>
+    </div>
+  </div>
+</header>
+
+<header class="app-header" id="header-agent" hidden>
+  <div class="app-header-inner">
+    <a class="brand" href="#queue"><span class="brand-mark"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-ticket"/></svg></span>InH-Ticketing</a>
+    <nav class="app-nav" aria-label="Main">
+      <a href="#queue" data-nav="queue ticket">Queue</a>
+    </nav>
+    <div class="user-chip">
+      <span class="avatar av-3" aria-hidden="true">CJ</span>
+      <span class="user-name">Chris J.</span>
+      <span class="role-tag role-it"><span class="visually-hidden">Role: </span>Agent</span>
+      <a class="signout" href="#signin"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-signout"/></svg><span class="signout-text">Sign out</span></a>
+    </div>
+  </div>
+</header>
+
+<main id="main" tabindex="-1">
+
+  <!-- ================= 1. SIGN-IN ================= -->
+  <section class="screen signin" data-screen="signin" aria-labelledby="signin-title" hidden>
+    <div class="signin-card">
+      <div class="signin-mark"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-ticket"/></svg></div>
+      <h1 id="signin-title" tabindex="-1">InH-Ticketing</h1>
+      <p class="signin-lede">Report an IT problem or ask for access or equipment, then follow every update from the help desk in one place.</p>
+      <a class="btn btn-primary btn-lg btn-block btn-wrap" href="#my-tickets">
+        <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-building"/></svg>
+        Sign in with your Microsoft 365 work account
+      </a>
+      <p class="signin-note">
+        <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-shield"/></svg>
+        <span>You sign in on your company's Microsoft 365 page. InH-Ticketing never sees or stores your password.</span>
+      </p>
+    </div>
+    <p class="signin-help">Can't sign in? Call the IT desk on ext. 4357 or email <a href="mailto:it-help@example.com">it-help@example.com</a>.</p>
+    <div class="design-note" role="note"><span class="design-note-label">Design note</span><span>One button, no password field, no sign-up and no reset flow. Entra ID handles it all over OIDC. Role (Requester, Agent, Admin) comes from Entra group membership, so everyone lands on the right home screen.</span></div>
+  </section>
+
+  <!-- ================= 2. REQUESTER: MY TICKETS ================= -->
+  <section class="screen" data-screen="my-tickets" aria-labelledby="mt-title" hidden>
+    <div class="page page-narrow">
+      <div class="page-head">
+        <div>
+          <h1 id="mt-title" tabindex="-1">My tickets</h1>
+          <p class="page-sub">Requests you've raised with IT.</p>
+        </div>
+        <a class="btn btn-primary btn-lg" href="#new-request"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-plus"/></svg>New request</a>
+      </div>
+      <div class="list-toolbar">
+        <div class="segmented" role="group" aria-label="Show tickets">
+          <button type="button" data-mt-filter="open" aria-pressed="true">Open <span class="count" id="mt-count-open">0</span></button>
+          <button type="button" data-mt-filter="closed" aria-pressed="false">Closed <span class="count" id="mt-count-closed">0</span></button>
+        </div>
+        <p class="list-sort">Most recently updated first</p>
+      </div>
+      <ul class="ticket-list" id="my-ticket-list" aria-live="polite"></ul>
+      <div class="hint-box" style="margin-top:16px">
+        <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-mail"/></svg>
+        <p>You can also email <a href="mailto:it-help@example.com">it-help@example.com</a>. Each new email becomes a ticket here, and replies to our emails are added to the right ticket.</p>
+      </div>
+      <div class="design-note" role="note"><span class="design-note-label">Design note</span><span>Requesters never see or set priority. Tickets that are waiting on them get a pink edge and a "Your reply needed" line, so the one thing they must act on stands out. Resolved tickets sit under Closed but can still be reopened.</span></div>
+    </div>
+  </section>
+
+  <!-- ================= 3. REQUESTER: NEW REQUEST ================= -->
+  <section class="screen" data-screen="new-request" aria-labelledby="nr-title" hidden>
+    <div class="page page-narrow">
+      <a class="back-link" href="#my-tickets"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow-left"/></svg>My tickets</a>
+      <div class="page-head">
+        <div>
+          <h1 id="nr-title" tabindex="-1">New request</h1>
+          <p class="page-sub">Tell IT what's wrong or what you need. You'll get an email each time someone replies.</p>
+        </div>
+      </div>
+      <form class="card" id="nr-form" novalidate>
+        <div class="field">
+          <label for="nr-subject">Subject</label>
+          <input class="input" id="nr-subject" name="subject" type="text" maxlength="120" autocomplete="off" required aria-describedby="nr-subject-hint nr-subject-err">
+          <p class="hint" id="nr-subject-hint">One line, like an email subject. For example: "Can't connect to the VPN from home".</p>
+          <p class="field-error" id="nr-subject-err" hidden>Enter a subject.</p>
+        </div>
+        <div class="field">
+          <label for="nr-category">Category</label>
+          <select class="select" id="nr-category" name="category" required aria-describedby="nr-category-err">
+            <option value="">Choose a category</option>
+            <option value="Hardware">Hardware: laptop, monitor, printer, phone</option>
+            <option value="Software">Software: apps, installs, updates</option>
+            <option value="Access">Access: accounts, sign-in, shared drives</option>
+            <option value="Network">Network: Wi-Fi, VPN, internet</option>
+            <option value="Other">Other, or not sure</option>
+          </select>
+          <p class="field-error" id="nr-category-err" hidden>Choose a category. Pick "Other, or not sure" if nothing fits.</p>
+        </div>
+        <div class="field">
+          <label for="nr-desc">Description</label>
+          <textarea class="textarea" id="nr-desc" name="description" rows="6" required aria-describedby="nr-desc-hint nr-desc-err"></textarea>
+          <p class="hint" id="nr-desc-hint">What happened, what you expected, any error message, and when it started.</p>
+          <p class="field-error" id="nr-desc-err" hidden>Describe the problem or what you need.</p>
+        </div>
+        <div class="field">
+          <div class="check">
+            <input type="checkbox" id="nr-blocking" name="blocking" aria-describedby="nr-blocking-hint">
+            <label for="nr-blocking">This is blocking my work</label>
+          </div>
+          <p class="hint check-hint" id="nr-blocking-hint">Tick this if you can't do your job until it's fixed. IT uses it when setting the priority.</p>
+        </div>
+        <div class="field">
+          <span class="label" id="nr-files-label">Attachments <span class="optional">(optional)</span></span>
+          <label class="dropzone" id="nr-drop">
+            <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-upload"/></svg>
+            <span class="dropzone-title" id="nr-drop-title">Drop screenshots or files here, or <u>browse</u></span>
+            <span class="dropzone-sub">Up to 10 MB each</span>
+            <input type="file" id="nr-files" class="file-input" multiple aria-labelledby="nr-files-label nr-drop-title">
+          </label>
+          <ul class="file-list" id="nr-file-list" aria-label="Files to attach"></ul>
+        </div>
+        <div class="hint-box">
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-mail"/></svg>
+          <p><strong>Prefer email?</strong> Send it to <a href="mailto:it-help@example.com">it-help@example.com</a> and we'll create the ticket for you.</p>
+        </div>
+        <div class="form-actions">
+          <a class="btn" href="#my-tickets">Cancel</a>
+          <button type="submit" class="btn btn-primary">Submit request</button>
+        </div>
+      </form>
+      <div class="design-note" role="note"><span class="design-note-label">Design note</span><span>There is deliberately no priority field. The checkbox is a signal; IT sets the real priority during triage. Category options carry examples so people pick the right one without knowing IT's vocabulary.</span></div>
+    </div>
+  </section>
+
+  <!-- ================= 4. REQUESTER: TICKET DETAIL ================= -->
+  <section class="screen" data-screen="request" aria-labelledby="rq-title" hidden>
+    <div class="page page-medium" id="req-detail"></div>
+  </section>
+
+  <!-- ================= 5. AGENT: QUEUE ================= -->
+  <section class="screen" data-screen="queue" aria-labelledby="queue-title" hidden>
+    <div class="queue-layout">
+      <nav class="queue-views" aria-label="Queue views">
+        <h2 class="views-title">Views</h2>
+        <ul class="views-list" id="queue-views"></ul>
+      </nav>
+      <div class="queue-main">
+        <div class="page-head">
+          <div>
+            <p class="eyebrow">Queue</p>
+            <h1 id="queue-title" tabindex="-1">All open</h1>
+          </div>
+        </div>
+        <div class="filters" role="search" aria-label="Filter tickets">
+          <div class="search-field">
+            <label for="q-search" class="visually-hidden">Search tickets</label>
+            <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-search"/></svg>
+            <input type="search" id="q-search" class="input" placeholder="Search number, subject or requester" autocomplete="off">
+          </div>
+          <label for="q-cat" class="visually-hidden">Category</label>
+          <select id="q-cat" class="select">
+            <option value="">All categories</option>
+            <option>Hardware</option><option>Software</option><option>Access</option><option>Network</option><option>Other</option>
+          </select>
+          <label for="q-pri" class="visually-hidden">Priority</label>
+          <select id="q-pri" class="select">
+            <option value="">All priorities</option>
+            <option>Urgent</option><option>High</option><option>Normal</option><option>Low</option>
+          </select>
+          <button type="button" class="btn btn-ghost" id="queue-clear" hidden>Clear filters</button>
+        </div>
+        <p class="queue-summary" id="queue-summary" aria-live="polite"></p>
+        <div class="table-wrap" role="region" aria-labelledby="queue-title" tabindex="0">
+          <table class="queue-table">
+            <caption class="visually-hidden">Tickets in this view. Open a ticket from its subject.</caption>
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Subject</th>
+                <th scope="col">Requester</th>
+                <th scope="col">Category</th>
+                <th scope="col">Priority</th>
+                <th scope="col">Status</th>
+                <th scope="col">Assignee</th>
+                <th scope="col" class="col-age">Age</th>
+              </tr>
+            </thead>
+            <tbody id="queue-body"></tbody>
+          </table>
+        </div>
+        <div class="design-note" role="note"><span class="design-note-label">Design note</span><span>Sorted by priority, then oldest first. Urgent rows get a red edge and a solid red pill; High gets an orange edge and pill; Normal and Low stay quiet. Small icons mark email-sourced and "blocking my work" tickets. Click any row to open it.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 6. AGENT: TICKET DETAIL ================= -->
+  <section class="screen" data-screen="ticket" aria-labelledby="ad-title" hidden>
+    <div class="page" id="agent-detail"></div>
+  </section>
+
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<noscript><p style="padding:16px">This mockup uses JavaScript to switch screens. Open it in a browser with JavaScript turned on.</p></noscript>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ------------------------------------------------------------------
+     Helpers
+     ------------------------------------------------------------------ */
+  var $ = function (sel, root) { return (root || document).querySelector(sel); };
+  var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function icon(name, cls) {
+    return '<svg class="icon' + (cls ? ' ' + cls : '') + '" aria-hidden="true" focusable="false"><use href="#i-' + name + '"></use></svg>';
+  }
+  function paras(s) {
+    return esc(s).split(/\n{2,}/).map(function (p) { return '<p>' + p.replace(/\n/g, '<br>') + '</p>'; }).join('');
+  }
+  function storeGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function storeSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* private mode etc. */ } }
+
+  /* ------------------------------------------------------------------
+     Mock clock: "now" is fixed so ages in the sample data stay sensible.
+     ------------------------------------------------------------------ */
+  var NOW = new Date(2026, 10, 5, 10, 45);
+  var tick = 0;
+  function stamp() { tick += 1; return new Date(NOW.getTime() + tick * 60000); }
+  function at(s) { return new Date(s); } // 'YYYY-MM-DDTHH:MM' is parsed as local time
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function sameDay(a, b) { return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); }
+  function yesterday() { var y = new Date(NOW); y.setDate(y.getDate() - 1); return y; }
+  function hhmm(d) { return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+  function fmtDate(d) { return MONTHS[d.getMonth()] + ' ' + d.getDate(); }
+  function fmtDateTime(d) {
+    if (sameDay(d, NOW) || d > NOW) return 'Today, ' + hhmm(d);
+    if (sameDay(d, yesterday())) return 'Yesterday, ' + hhmm(d);
+    return fmtDate(d) + ', ' + hhmm(d);
+  }
+  function when(d) {
+    if (sameDay(d, NOW) || d > NOW) return 'today at ' + hhmm(d);
+    if (sameDay(d, yesterday())) return 'yesterday at ' + hhmm(d);
+    return 'on ' + fmtDate(d);
+  }
+  function iso(d) {
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + hhmm(d);
+  }
+  function ageParts(d) {
+    var m = Math.max(0, Math.floor((NOW - d) / 60000));
+    if (m < 60) return [m, 'm', 'minute'];
+    var h = Math.floor(m / 60);
+    if (h < 24) return [h, 'h', 'hour'];
+    var dd = Math.floor(h / 24);
+    return [dd, 'd', 'day'];
+  }
+  function ageShort(d) { var p = ageParts(d); return p[0] + p[1]; }
+  function ageLong(d) { var p = ageParts(d); return p[0] + ' ' + p[2] + (p[0] === 1 ? '' : 's') + ' old'; }
+  function ago(d) {
+    var m = Math.floor((NOW - d) / 60000);
+    if (m < 1) return 'just now';
+    if (m < 60) return m + ' min ago';
+    var h = Math.floor(m / 60);
+    if (h < 24) return h + ' hour' + (h === 1 ? '' : 's') + ' ago';
+    if (sameDay(d, yesterday())) return 'yesterday';
+    return fmtDate(d);
+  }
+
+  /* ------------------------------------------------------------------
+     Reference data
+     ------------------------------------------------------------------ */
+  var STATUSES = ['New', 'Open', 'In Progress', 'Waiting on User', 'Resolved', 'Closed'];
+  var STATUS_KEY = { 'New': 'new', 'Open': 'open', 'In Progress': 'progress', 'Waiting on User': 'waiting', 'Resolved': 'resolved', 'Closed': 'closed' };
+  var OPEN = ['New', 'Open', 'In Progress', 'Waiting on User'];
+  var PRIORITIES = ['Low', 'Normal', 'High', 'Urgent'];
+  var RANK = { Low: 0, Normal: 1, High: 2, Urgent: 3 };
+  var CATEGORIES = ['Hardware', 'Software', 'Access', 'Network', 'Other'];
+  var MAILBOX = 'it-help@example.com';
+
+  /* Fictional people. Agents are shown by first name and initial. */
+  var PEOPLE = {
+    dana:   { name: 'Dana Whitfield',  initials: 'DW', av: 1, email: 'dana.whitfield@example.com',  title: 'Accounts Payable Lead',  dept: 'Finance',    location: 'Head office, floor 3', phone: 'ext. 2214' },
+    tom:    { name: 'Tom Reyes',       initials: 'TR', av: 2, email: 'tom.reyes@example.com',       title: 'Regional Sales Manager', dept: 'Sales',      location: 'Remote',               phone: 'ext. 2381' },
+    elena:  { name: 'Elena Brooks',    initials: 'EB', av: 4, email: 'elena.brooks@example.com',    title: 'HR Advisor',             dept: 'People',     location: 'Head office, floor 2', phone: 'ext. 2140' },
+    aisha:  { name: 'Aisha Kamara',    initials: 'AK', av: 5, email: 'aisha.kamara@example.com',    title: 'Office Coordinator',     dept: 'Facilities', location: 'Head office, floor 2', phone: 'ext. 2105' },
+    marcus: { name: 'Marcus Oyelaran', initials: 'MO', av: 3, email: 'marcus.oyelaran@example.com', title: 'Operations Manager',     dept: 'Operations', location: 'Warehouse office',     phone: 'ext. 2460' },
+    owen:   { name: 'Owen Patel',      initials: 'OP', av: 6, email: 'owen.patel@example.com',      title: 'Financial Analyst',      dept: 'Finance',    location: 'Head office, floor 3', phone: 'ext. 2231' },
+    ben:    { name: 'Ben Hollis',      initials: 'BH', av: 2, email: 'ben.hollis@example.com',      title: 'Facilities Lead',        dept: 'Facilities', location: 'Head office, floor 1', phone: 'ext. 2101' },
+    chris:  { name: 'Chris J.', initials: 'CJ', av: 3, agent: true },
+    sam:    { name: 'Sam P.',   initials: 'SP', av: 5, agent: true },
+    alex:   { name: 'Alex M.',  initials: 'AM', av: 6, agent: true }
+  };
+  var AGENTS = ['chris', 'sam', 'alex'];
+  var ME_REQ = 'dana';
+  var ME_AGENT = 'chris';
+
+  function msg(by, w, via, body, files) { return { t: 'msg', by: by, at: at(w), via: via, body: body, files: files || [] }; }
+  function note(by, w, body) { return { t: 'note', by: by, at: at(w), body: body, files: [] }; }
+  function ev(w, kind, props) { var e = { t: 'event', kind: kind, at: at(w) }; for (var k in props) e[k] = props[k]; return e; }
+  function evNow(kind, props) { var e = { t: 'event', kind: kind, at: stamp() }; for (var k in props) e[k] = props[k]; return e; }
+
+  /* ------------------------------------------------------------------
+     Sample tickets (every status, priority, category and source covered)
+     ------------------------------------------------------------------ */
+  var TICKETS = [
+    {
+      id: 1036, subject: 'Second monitor for my home office', requester: 'dana', assignee: 'sam',
+      category: 'Hardware', status: 'Closed', priority: 'Low', source: 'web', blocking: false,
+      created: at('2026-10-20T10:02'), linked: [],
+      timeline: [
+        msg('dana', '2026-10-20T10:02', 'web', "Could I have a second monitor for working from home? I'm home on Mondays and Fridays and spend most of the day switching between spreadsheets."),
+        ev('2026-10-20T10:02', 'created', { via: 'web' }),
+        ev('2026-10-20T11:30', 'assign', { to: 'sam', by: 'sam' }),
+        ev('2026-10-20T11:30', 'status', { from: 'New', to: 'Open', by: 'sam' }),
+        msg('sam', '2026-10-21T09:15', 'web', "Hi Dana, that's approved. A 24-inch monitor and cable will be couriered to your home address this week."),
+        ev('2026-10-23T12:04', 'status', { from: 'Open', to: 'Resolved', by: 'sam' }),
+        ev('2026-10-30T12:04', 'status', { from: 'Resolved', to: 'Closed', reason: 'automatically, 7 days after it was resolved' })
+      ]
+    },
+    {
+      id: 1040, subject: 'How do I set an out-of-office reply on the Facilities shared mailbox?', requester: 'ben', assignee: 'alex',
+      category: 'Other', status: 'Waiting on User', priority: 'Low', source: 'email', blocking: false,
+      created: at('2026-10-28T16:22'), linked: [],
+      timeline: [
+        msg('ben', '2026-10-28T16:22', 'email', "Hi,\n\nHow do I turn on an automatic reply for the Facilities shared mailbox? The team is at a trade show next week and I want people to know replies will be slow.\n\nBen"),
+        ev('2026-10-28T16:22', 'created', { via: 'email' }),
+        ev('2026-10-29T09:10', 'assign', { to: 'alex', by: 'alex' }),
+        msg('alex', '2026-10-29T09:20', 'web', "Hi Ben, open the shared mailbox in Outlook on the web, then go to Settings > Mail > Automatic replies and switch them on. If you can't see Settings for the shared mailbox, reply here and I'll check your permissions."),
+        ev('2026-10-29T09:20', 'status', { from: 'New', to: 'Waiting on User', by: 'alex' }),
+        ev('2026-11-02T09:00', 'system', { text: 'Reminder emailed to Ben Hollis (no reply for 3 working days)' })
+      ]
+    },
+    {
+      id: 1041, subject: 'Teams camera not detected', requester: 'dana', assignee: 'alex',
+      category: 'Hardware', status: 'Resolved', priority: 'Normal', source: 'web', blocking: false,
+      created: at('2026-10-29T13:40'), linked: [],
+      timeline: [
+        msg('dana', '2026-10-29T13:40', 'web', 'Teams says "No camera detected" in every meeting. The camera works fine in the Camera app, so it seems to be just Teams. It started after a restart yesterday.'),
+        ev('2026-10-29T13:40', 'created', { via: 'web' }),
+        ev('2026-10-29T14:05', 'assign', { to: 'alex', by: 'sam' }),
+        ev('2026-10-29T14:05', 'status', { from: 'New', to: 'Open', by: 'alex' }),
+        msg('alex', '2026-10-30T10:02', 'web', "Hi Dana, I've pushed a Teams update to your laptop. Please quit Teams fully (right-click its icon in the taskbar and choose Quit), open it again and try a test call."),
+        ev('2026-10-30T10:02', 'status', { from: 'Open', to: 'Waiting on User', by: 'alex' }),
+        msg('dana', '2026-10-30T11:15', 'email', 'That fixed it, thank you!\n\nDana'),
+        ev('2026-10-30T11:15', 'status', { from: 'Waiting on User', to: 'Open', reason: 'requester replied' }),
+        ev('2026-10-30T11:40', 'status', { from: 'Open', to: 'Resolved', by: 'alex' })
+      ]
+    },
+    {
+      id: 1043, subject: 'New-hire laptop setup: Jordan Kim, starts Monday 9 Nov', requester: 'marcus', assignee: 'sam',
+      category: 'Hardware', status: 'In Progress', priority: 'Normal', source: 'web', blocking: false,
+      created: at('2026-11-02T11:15'), linked: [],
+      timeline: [
+        msg('marcus', '2026-11-02T11:15', 'web', 'Jordan Kim joins Operations on Monday 9 November. Please set up a standard laptop with Office and Teams, plus access to the Operations shared drive. Jordan will need a headset as well.'),
+        ev('2026-11-02T11:15', 'created', { via: 'web' }),
+        ev('2026-11-02T11:40', 'assign', { to: 'sam', by: 'sam' }),
+        ev('2026-11-02T11:40', 'status', { from: 'New', to: 'In Progress', by: 'sam' }),
+        note('sam', '2026-11-04T15:10', 'Imaged LT-0517 and enrolled it. Account and Operations drive access are done. Still waiting on a Visio licence from procurement for the Operations standard build.'),
+        msg('sam', '2026-11-04T15:16', 'web', "Hi Marcus, the laptop and headset are ready. I'll leave them on Jordan's desk on Monday morning and come over at 9:30 to help with the first sign-in.")
+      ]
+    },
+    {
+      id: 1044, subject: 'Outlook keeps prompting for my password', requester: 'dana', assignee: 'chris',
+      category: 'Software', status: 'Waiting on User', priority: 'High', source: 'web', blocking: true,
+      created: at('2026-11-03T09:12'),
+      linked: [
+        { id: 1029, subject: 'Outlook password prompts after firmware update', status: 'Resolved' },
+        { id: 1031, subject: 'Outlook keeps asking me to sign in', status: 'Closed' }
+      ],
+      timeline: [
+        msg('dana', '2026-11-03T09:12', 'web', "Since Monday morning Outlook on my laptop keeps popping up a sign-in box asking for my password, every 20 to 30 minutes. I type it in, it works for a while, then it asks again.\n\nOutlook on the web is fine; it's only the desktop app. Screenshot attached.", [['outlook-prompt.png', '184 KB']]),
+        ev('2026-11-03T09:12', 'created', { via: 'web' }),
+        ev('2026-11-03T09:31', 'priority', { from: 'Normal', to: 'High', by: 'sam', reason: 'requester marked it as blocking their work' }),
+        ev('2026-11-03T09:31', 'assign', { to: 'chris', by: 'sam' }),
+        ev('2026-11-03T09:48', 'status', { from: 'New', to: 'Open', by: 'chris' }),
+        note('chris', '2026-11-03T10:05', "Sign-in logs show Outlook desktop on LT-0482 failing its token refresh because the device reports as non-compliant. It dropped out of compliance after the 30 Oct firmware update.\n\nPlan: ask Dana to re-sync in Company Portal. If that doesn't hold, re-enrol the device."),
+        msg('chris', '2026-11-03T10:12', 'web', 'Hi Dana, thanks for the screenshot, that helps.\n\nCould you open Company Portal on your laptop, go to Devices, select your laptop and click "Check status"? Then close and reopen Outlook. Let me know if the password box comes back.'),
+        ev('2026-11-03T10:12', 'status', { from: 'Open', to: 'In Progress', by: 'chris' }),
+        msg('dana', '2026-11-04T16:41', 'email', "Hi Chris,\n\nI did that and it was fine all morning, but the box came back at about 4pm, same as before. Photo of the screen attached.\n\nThanks, Dana", [['IMG_2207.jpg', '1.2 MB']]),
+        note('sam', '2026-11-05T08:55', "Seen the same thing on two other Finance laptops after the firmware push (#1029, #1031). Re-enrolment fixed both and took about 15 minutes. Happy to take this one if you're busy."),
+        msg('chris', '2026-11-05T10:20', 'web', "Thanks Dana, and sorry this is dragging on. The quickest fix is to re-enrol your laptop, which I can do remotely. It takes about 15 minutes and needs one restart.\n\nAre you free today at 2:00pm or 3:30pm?"),
+        ev('2026-11-05T10:20', 'status', { from: 'In Progress', to: 'Waiting on User', by: 'chris' })
+      ]
+    },
+    {
+      id: 1045, subject: 'Request access to the Finance shared drive', requester: 'owen', assignee: 'chris',
+      category: 'Access', status: 'In Progress', priority: 'Normal', source: 'web', blocking: false,
+      created: at('2026-11-03T14:05'), linked: [],
+      timeline: [
+        msg('owen', '2026-11-03T14:05', 'web', 'I moved from Sales to the Finance team this week. Please could I have access to the Finance shared drive? I mainly need the Month-end and Budgets 2027 folders.'),
+        ev('2026-11-03T14:05', 'created', { via: 'web' }),
+        ev('2026-11-03T14:30', 'assign', { to: 'chris', by: 'sam' }),
+        ev('2026-11-03T15:02', 'status', { from: 'New', to: 'Open', by: 'chris' }),
+        note('chris', '2026-11-03T15:05', "Finance drive access needs sign-off from the folder owner (Finance Director). Approval request sent through the access review form. Remove Owen's Sales drive access once this is done."),
+        msg('chris', '2026-11-03T15:08', 'web', "Hi Owen, access to the Finance drive needs approval from the folder owner, so I've sent the request. That usually takes less than a working day, and I'll update you here as soon as it's through."),
+        ev('2026-11-03T15:08', 'status', { from: 'Open', to: 'In Progress', by: 'chris' })
+      ]
+    },
+    {
+      id: 1046, subject: 'VPN drops every 10 minutes', requester: 'tom', assignee: 'chris',
+      category: 'Network', status: 'Open', priority: 'Urgent', source: 'email', blocking: false,
+      created: at('2026-11-05T06:12'), linked: [],
+      timeline: [
+        msg('tom', '2026-11-05T06:12', 'email', "Hi IT,\n\nMy VPN has been dropping every 10 minutes or so since yesterday afternoon, and each time I have to reconnect. I'm presenting to a client at 1pm today and need the CRM for the whole call.\n\nTom"),
+        ev('2026-11-05T06:12', 'created', { via: 'email' }),
+        ev('2026-11-05T08:31', 'priority', { from: 'Normal', to: 'Urgent', by: 'chris' }),
+        ev('2026-11-05T08:31', 'assign', { to: 'chris', by: 'chris' }),
+        ev('2026-11-05T08:31', 'status', { from: 'New', to: 'Open', by: 'chris' }),
+        note('chris', '2026-11-05T08:40', "Two other remote users on the same home broadband provider reported drops this week. Suspect Monday's VPN idle-timeout change. Checking the firewall logs before rolling it back."),
+        msg('chris', '2026-11-05T08:44', 'web', 'Hi Tom, we\'re on it and we know about your 1pm. In the meantime, choose "Backup gateway" in the VPN client before you connect; it isn\'t affected. I\'ll update you by 11:00.')
+      ]
+    },
+    {
+      id: 1047, subject: "New phone: can't approve MFA sign-in requests", requester: 'elena', assignee: null,
+      category: 'Access', status: 'New', priority: 'High', source: 'web', blocking: true,
+      created: at('2026-11-05T09:58'), linked: [],
+      timeline: [
+        msg('elena', '2026-11-05T09:58', 'web', "I replaced my phone at the weekend and the authenticator app didn't carry over. Email still works on my laptop, but Teams and the HR system keep asking me to approve a sign-in on my phone, and the new phone never gets the request."),
+        ev('2026-11-05T09:58', 'created', { via: 'web' }),
+        ev('2026-11-05T10:06', 'priority', { from: 'Normal', to: 'High', by: 'sam', reason: 'requester marked it as blocking their work' })
+      ]
+    },
+    {
+      id: 1048, subject: '2nd-floor printer by the kitchen keeps jamming', requester: 'aisha', assignee: null,
+      category: 'Hardware', status: 'New', priority: 'Normal', source: 'email', blocking: false,
+      created: at('2026-11-05T10:20'), linked: [],
+      timeline: [
+        msg('aisha', '2026-11-05T10:20', 'email', 'Hi,\n\nThe printer on the 2nd floor by the kitchen is jammed again and says "Paper jam in tray 2". I\'ve opened every tray and can\'t see any paper. People keep sending jobs to it and nothing comes out.\n\nPhoto of the display attached.\n\nAisha', [['printer-display.jpg', '640 KB']]),
+        ev('2026-11-05T10:20', 'created', { via: 'email' })
+      ]
+    },
+    {
+      id: 1049, subject: 'Software install request: Power BI Desktop', requester: 'dana', assignee: null,
+      category: 'Software', status: 'New', priority: 'Low', source: 'web', blocking: false,
+      created: at('2026-11-05T10:31'), linked: [],
+      timeline: [
+        msg('dana', '2026-11-05T10:31', 'web', 'Please could you install Power BI Desktop on my laptop? I need it for the month-end reports from next week. My manager has approved it.'),
+        ev('2026-11-05T10:31', 'created', { via: 'web' }),
+        ev('2026-11-05T10:38', 'priority', { from: 'Normal', to: 'Low', by: 'sam' })
+      ]
+    }
+  ];
+
+  function getTicket(id) { for (var i = 0; i < TICKETS.length; i++) if (TICKETS[i].id === id) return TICKETS[i]; return null; }
+  function isOpen(t) { return OPEN.indexOf(t.status) !== -1; }
+  function lastAt(t) { return t.timeline[t.timeline.length - 1].at; }
+  /* What a requester counts as "last update": public messages and status changes only. */
+  function lastPublicAt(t) {
+    for (var i = t.timeline.length - 1; i >= 0; i--) {
+      var it = t.timeline[i];
+      if (it.t === 'msg' || (it.t === 'event' && it.kind === 'status')) return it.at;
+    }
+    return t.created;
+  }
+  function firstName(id) { return PEOPLE[id].name.split(' ')[0]; }
+
+  /* ------------------------------------------------------------------
+     Shared fragments (these map 1:1 to Django template includes)
+     ------------------------------------------------------------------ */
+  function statusBadge(s) { return '<span class="badge status-' + STATUS_KEY[s] + '">' + esc(s) + '</span>'; }
+  function prioBadge(p) {
+    if (p === 'Urgent') return '<span class="prio prio-urgent">' + icon('alert') + 'Urgent</span>';
+    return '<span class="prio prio-' + p.toLowerCase() + '"><span class="prio-bars" aria-hidden="true"><i></i><i></i><i></i></span>' + esc(p) + '</span>';
+  }
+  function avatar(id, cls) {
+    var p = PEOPLE[id];
+    return '<span class="avatar av-' + p.av + (cls ? ' ' + cls : '') + '" aria-hidden="true">' + esc(p.initials) + '</span>';
+  }
+  var ARROW = '<span aria-hidden="true"> &rarr; </span><span class="visually-hidden"> to </span>';
+  var EVENT_ICON = { created: 'plus', status: 'status', priority: 'signal', assign: 'user', category: 'tag', system: 'clock' };
+
+  function eventText(e) {
+    var by = e.by ? ' by ' + esc(PEOPLE[e.by].name) : '';
+    var why = e.reason ? ' (' + esc(e.reason) + ')' : '';
+    switch (e.kind) {
+      case 'created':
+        return e.via === 'email' ? 'Ticket created from an email to <strong>' + MAILBOX + '</strong>' : 'Ticket created from the web form';
+      case 'status':
+        return 'Status changed <strong>' + esc(e.from) + '</strong>' + ARROW + '<strong>' + esc(e.to) + '</strong>' + by + why;
+      case 'priority':
+        return (e.from ? 'Priority changed <strong>' + esc(e.from) + '</strong>' + ARROW + '<strong>' + esc(e.to) + '</strong>'
+                       : 'Priority set to <strong>' + esc(e.to) + '</strong>') + by + why;
+      case 'assign':
+        if (!e.to) return 'Unassigned' + by;
+        if (e.by === e.to) return '<strong>' + esc(PEOPLE[e.to].name) + '</strong> assigned this to themselves';
+        return 'Assigned to <strong>' + esc(PEOPLE[e.to].name) + '</strong>' + by;
+      case 'category':
+        return 'Category changed <strong>' + esc(e.from) + '</strong>' + ARROW + '<strong>' + esc(e.to) + '</strong>' + by;
+      default:
+        return esc(e.text || '');
+    }
+  }
+  function eventHTML(e) {
+    return '<li class="tl-item tl-event"><span class="tl-event-icon" aria-hidden="true">' + icon(EVENT_ICON[e.kind] || 'clock') + '</span>' +
+      '<span class="visually-hidden">System event: </span>' + eventText(e) +
+      ' <time datetime="' + iso(e.at) + '">&middot; ' + fmtDateTime(e.at) + '</time></li>';
+  }
+  function filesHTML(files) {
+    if (!files || !files.length) return '';
+    return '<ul class="attachments" aria-label="Attachments">' + files.map(function (f) {
+      return '<li><a class="attachment" href="#" data-noop="Attachments open from storage in the real app.">' + icon('clip') +
+        '<span class="attachment-name">' + esc(f[0]) + '</span><span class="attachment-size">' + esc(f[1]) + '</span></a></li>';
+    }).join('') + '</ul>';
+  }
+  /* viewer: 'agent' or 'requester' */
+  function commentHTML(m, viewer) {
+    var p = PEOPLE[m.by];
+    var isNote = m.t === 'note';
+    var who = (viewer === 'requester' && m.by === ME_REQ) ? 'You' : p.name;
+    var tags = '';
+    if (p.agent) tags += '<span class="role-tag role-it">IT</span>';
+    else if (viewer === 'agent') tags += '<span class="role-tag">Requester</span>';
+    if (viewer === 'agent' && !isNote && p.agent) tags += '<span class="chip">' + icon('globe') + 'Public reply</span>';
+    if (m.via === 'email') tags += '<span class="chip">' + icon('mail') + 'via email</span>';
+    var kind = isNote ? 'Internal note' : (p.agent ? 'Public reply' : 'Message');
+    return '<li class="tl-item tl-comment' + (isNote ? ' tl-note' : '') + '">' +
+      '<span class="avatar av-' + p.av + ' tl-avatar" aria-hidden="true">' + esc(p.initials) +
+        (isNote ? '<span class="avatar-lock">' + icon('lock') + '</span>' : '') + '</span>' +
+      '<article class="comment' + (isNote ? ' is-note' : '') + '" aria-label="' + kind + ' from ' + esc(who) + '">' +
+        (isNote ? '<div class="note-band">' + icon('lock') + '<span>Internal note: not visible to requester</span></div>' : '') +
+        '<header class="comment-head"><span class="comment-author">' + esc(who) + '</span>' + tags +
+          '<time class="comment-time" datetime="' + iso(m.at) + '">' + fmtDateTime(m.at) + '</time></header>' +
+        '<div class="comment-body">' + paras(m.body) + '</div>' +
+        filesHTML(m.files) +
+      '</article></li>';
+  }
+  function designNote(html) {
+    return '<div class="design-note" role="note"><span class="design-note-label">Design note</span><span>' + html + '</span></div>';
+  }
+  function notFound(backHref, backLabel, id) {
+    return '<a class="back-link" href="' + backHref + '">' + icon('arrow-left') + backLabel + '</a>' +
+      '<h1 class="detail-title" tabindex="-1">Ticket #' + esc(id) + ' isn\'t in the mockup data</h1>';
+  }
+
+  /* ------------------------------------------------------------------
+     Toast / live announcements
+     ------------------------------------------------------------------ */
+  var toastTimer;
+  function toast(text) {
+    var el = $('#toast');
+    el.textContent = text;
+    el.classList.add('is-visible');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.classList.remove('is-visible'); }, 3800);
+  }
+
+  /* ------------------------------------------------------------------
+     2. Requester: My tickets
+     ------------------------------------------------------------------ */
+  var myFilter = 'open';
+  function reqItemHTML(t) {
+    var u = lastPublicAt(t);
+    var waiting = t.status === 'Waiting on User';
+    var who;
+    if (!isOpen(t)) who = t.assignee ? 'Handled by ' + esc(PEOPLE[t.assignee].name) : 'Closed';
+    else who = t.assignee ? 'With ' + esc(PEOPLE[t.assignee].name) : 'Waiting for IT to pick it up';
+    return '<li><a class="ticket-link' + (waiting ? ' needs-reply' : '') + '" href="#request/' + t.id + '">' +
+      '<span class="ticket-num">#' + t.id + '</span>' +
+      '<span class="ticket-main"><span class="ticket-subject">' + esc(t.subject) + '</span>' +
+        '<span class="ticket-meta">' + esc(t.category) + ' &middot; ' + who +
+          (waiting ? ' &middot; <span class="reply-needed">Your reply needed</span>' : '') + '</span></span>' +
+      '<span class="ticket-status">' + statusBadge(t.status) + '</span>' +
+      '<span class="ticket-updated">Updated <time datetime="' + iso(u) + '">' + ago(u) + '</time></span>' +
+    '</a></li>';
+  }
+  function renderMyTickets() {
+    var mine = TICKETS.filter(function (t) { return t.requester === ME_REQ; })
+      .sort(function (a, b) { return lastPublicAt(b) - lastPublicAt(a); });
+    var open = mine.filter(isOpen);
+    var closed = mine.filter(function (t) { return !isOpen(t); });
+    $('#mt-count-open').textContent = open.length;
+    $('#mt-count-closed').textContent = closed.length;
+    $$('[data-mt-filter]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-mt-filter') === myFilter)); });
+    var list = myFilter === 'open' ? open : closed;
+    $('#my-ticket-list').innerHTML = list.length ? list.map(reqItemHTML).join('') :
+      '<li class="empty"><p>No ' + myFilter + ' requests.</p><p><a href="#new-request">Start a new request</a></p></li>';
+  }
+
+  /* ------------------------------------------------------------------
+     4. Requester: ticket detail (public replies only)
+     ------------------------------------------------------------------ */
+  var reqReopened = false;
+  function reqCallout(t) {
+    var a = t.assignee ? esc(PEOPLE[t.assignee].name) : 'IT';
+    var resolvedEv = null;
+    for (var i = t.timeline.length - 1; i >= 0; i--) {
+      var it = t.timeline[i];
+      if (it.t === 'event' && it.kind === 'status' && it.to === 'Resolved') { resolvedEv = it; break; }
+    }
+    function box(kind, ic, title, text) {
+      return '<div class="callout callout-' + kind + '">' + icon(ic) + '<div><p class="callout-title">' + title + '</p><p class="callout-text">' + text + '</p></div></div>';
+    }
+    switch (t.status) {
+      case 'New': return box('neutral', 'clock', "We've received your request.", 'Someone from IT will pick it up soon, usually within one working day.');
+      case 'Open':
+      case 'In Progress': return box('neutral', 'user', a + ' is working on this.', "You'll get an email whenever there's an update.");
+      case 'Waiting on User': return box('waiting', 'reply', a + ' is waiting for your reply.', 'This request is paused until you answer. Reply below, or reply to our email.');
+      case 'Resolved':
+        var closeOn = resolvedEv ? new Date(resolvedEv.at.getTime() + 7 * 864e5) : null;
+        var resolver = !resolvedEv || !resolvedEv.by ? a : (resolvedEv.by === ME_REQ ? 'You' : esc(PEOPLE[resolvedEv.by].name));
+        return box('resolved', 'check-circle', resolver + ' marked this as resolved' + (resolvedEv ? ' on ' + fmtDate(resolvedEv.at) : '') + '.',
+          "If everything is working, there's nothing more to do" + (closeOn ? '. It closes automatically on ' + fmtDate(closeOn) + '.' : '.'));
+      default: return box('closed', 'lock', 'This request is closed.', 'Need more help with this? Start a new request and mention #' + t.id + '.');
+    }
+  }
+  function reqActions(t) {
+    var a = t.assignee ? esc(PEOPLE[t.assignee].name) : 'IT';
+    if (t.status === 'Closed') {
+      return '<div class="resolve-row"><div><p class="resolve-q">Still having trouble?</p><p class="resolve-sub">Closed requests can\'t be reopened, but a new one only takes a minute.</p></div>' +
+        '<a class="btn btn-primary" href="#new-request">' + icon('plus') + 'Start a new request</a></div>';
+    }
+    if (t.status === 'Resolved') {
+      return '<div class="resolve-row"><div><p class="resolve-q">Not fixed after all?</p><p class="resolve-sub">Reopen the request and tell ' + a + ' what\'s still wrong.</p></div>' +
+        '<button type="button" class="btn btn-primary" data-req-action="reopen">' + icon('status') + 'This is still a problem</button></div>';
+    }
+    var waiting = t.status === 'Waiting on User';
+    return '<form class="reply-card" id="req-reply" novalidate>' +
+        '<label for="req-reply-text" class="reply-label">' + (reqReopened ? "Tell IT what's still not working" : (waiting ? 'Reply to ' + a : 'Add a reply')) + '</label>' +
+        '<textarea id="req-reply-text" class="textarea" rows="4" aria-describedby="req-reply-hint req-reply-error"></textarea>' +
+        '<p class="field-error" id="req-reply-error" hidden>Write a reply first.</p>' +
+        '<div class="reply-foot">' +
+          '<label class="btn btn-ghost btn-sm file-btn">' + icon('clip') + 'Attach file<input type="file" class="file-input" multiple></label>' +
+          '<span class="reply-hint" id="req-reply-hint">' + (t.assignee ? a + ' gets an email when you reply.' : 'IT gets an email when you reply.') + '</span>' +
+          '<button type="submit" class="btn btn-primary">' + icon('send') + 'Send reply</button>' +
+        '</div>' +
+      '</form>' +
+      '<div class="resolve-row"><div><p class="resolve-q">Fixed it yourself, or no longer needed?</p><p class="resolve-sub">Let IT know so they can close it.</p></div>' +
+        '<button type="button" class="btn" data-req-action="resolve">' + icon('check') + 'Mark as resolved</button></div>';
+  }
+  function renderRequesterDetail(id) {
+    var root = $('#req-detail');
+    var t = getTicket(id);
+    if (!t) { root.innerHTML = notFound('#my-tickets', 'My tickets', id); return; }
+    var pubs = t.timeline.filter(function (i) { return i.t === 'msg'; }); // server-side filter in the real app
+    var a = t.assignee ? esc(PEOPLE[t.assignee].name) + ' <span class="role-tag role-it">IT</span>' : '<span class="muted">Not assigned yet</span>';
+    root.innerHTML =
+      '<a class="back-link" href="#my-tickets">' + icon('arrow-left') + 'My tickets</a>' +
+      '<header class="detail-head">' +
+        '<p class="eyebrow">#' + t.id + '</p>' +
+        '<h1 class="detail-title" id="rq-title" tabindex="-1">' + esc(t.subject) + '</h1>' +
+        '<div class="detail-badges">' + statusBadge(t.status) + '<span class="detail-meta">Opened ' + when(t.created) + ' &middot; ' + esc(t.category) + '</span></div>' +
+      '</header>' +
+      '<div class="detail-grid">' +
+        '<div class="detail-main">' +
+          reqCallout(t) +
+          '<h2 class="section-title">Conversation</h2>' +
+          '<ol class="timeline">' + pubs.map(function (m) { return commentHTML(m, 'requester'); }).join('') + '</ol>' +
+          reqActions(t) +
+          designNote('Requesters only ever see public replies. Internal notes and system events are left out on the server, not hidden with CSS. <a href="#ticket/' + t.id + '">Compare with the agent view of #' + t.id + '</a>.') +
+        '</div>' +
+        '<aside class="side-panel" aria-label="Request details">' +
+          '<section class="panel"><h2 class="panel-title">Request details</h2><dl class="dl">' +
+            '<dt>Reference</dt><dd>#' + t.id + '</dd>' +
+            '<dt>Status</dt><dd>' + statusBadge(t.status) + '</dd>' +
+            '<dt>Assigned to</dt><dd>' + a + '</dd>' +
+            '<dt>Category</dt><dd>' + esc(t.category) + '</dd>' +
+            '<dt>Opened</dt><dd>' + fmtDateTime(t.created) + '</dd>' +
+            '<dt>Last update</dt><dd>' + fmtDateTime(lastPublicAt(t)) + '</dd>' +
+            (t.blocking ? '<dt>Blocking</dt><dd>You said this blocks your work</dd>' : '') +
+          '</dl></section>' +
+          '<section class="panel panel-tip" aria-label="Reply by email">' + icon('mail') +
+            '<p>You can reply by email too. Reply to any update we send and keep <strong>[#' + t.id + ']</strong> in the subject.</p></section>' +
+        '</aside>' +
+      '</div>';
+
+    var form = $('#req-reply');
+    if (form) {
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var ta = $('#req-reply-text');
+        var body = ta.value.trim();
+        if (!body) { $('#req-reply-error').hidden = false; ta.setAttribute('aria-invalid', 'true'); ta.focus(); return; }
+        t.timeline.push({ t: 'msg', by: ME_REQ, at: stamp(), via: 'web', body: body, files: [] });
+        var note = '';
+        if (t.status === 'Waiting on User') {
+          t.timeline.push(evNow('status', { from: 'Waiting on User', to: 'Open', reason: 'requester replied' }));
+          t.status = 'Open';
+          note = ' The ticket is back with IT.';
+        }
+        reqReopened = false;
+        renderRequesterDetail(t.id);
+        toast('Reply sent.' + note);
+      });
+    }
+    $$('[data-req-action]', root).forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var action = btn.getAttribute('data-req-action');
+        if (action === 'resolve') {
+          t.timeline.push(evNow('status', { from: t.status, to: 'Resolved', by: ME_REQ }));
+          t.status = 'Resolved';
+          renderRequesterDetail(t.id);
+          toast('Marked as resolved. Thanks for letting IT know.');
+          $('#rq-title').focus();
+        } else if (action === 'reopen') {
+          t.timeline.push(evNow('status', { from: 'Resolved', to: 'Open', by: ME_REQ, reason: 'reopened by requester' }));
+          t.status = 'Open';
+          reqReopened = true;
+          renderRequesterDetail(t.id);
+          toast('Request reopened. Tell IT what is still wrong.');
+          $('#req-reply-text').focus();
+        }
+      });
+    });
+  }
+
+  /* ------------------------------------------------------------------
+     5. Agent: queue
+     ------------------------------------------------------------------ */
+  var FOURTEEN_DAYS = 14 * 864e5;
+  function byPriorityThenOldest(a, b) { return (RANK[b.priority] - RANK[a.priority]) || (a.created - b.created); }
+  var VIEWS = [
+    { id: 'unassigned', label: 'Unassigned', icon: 'inbox', test: function (t) { return isOpen(t) && !t.assignee; } },
+    { id: 'mine', label: 'Assigned to me', icon: 'user', test: function (t) { return isOpen(t) && t.assignee === ME_AGENT; } },
+    { id: 'open', label: 'All open', icon: 'users', test: isOpen },
+    { id: 'waiting', label: 'Waiting on user', icon: 'pause', test: function (t) { return t.status === 'Waiting on User'; } },
+    { id: 'resolved', label: 'Recently resolved', icon: 'check-circle', sortLabel: 'last 14 days, most recent first',
+      test: function (t) { return !isOpen(t) && (NOW - lastAt(t)) < FOURTEEN_DAYS; },
+      sort: function (a, b) { return lastAt(b) - lastAt(a); } }
+  ];
+  var queueView = 'open';
+  var qf = { q: '', cat: '', pri: '' };
+
+  function renderQueue(view) {
+    var v = null;
+    VIEWS.forEach(function (x) { if (x.id === view) v = x; });
+    if (!v) v = VIEWS[2];
+    queueView = v.id;
+    $('#queue-views').innerHTML = VIEWS.map(function (x) {
+      var n = TICKETS.filter(x.test).length;
+      return '<li><a class="view-link" href="#queue/' + x.id + '"' + (x.id === queueView ? ' aria-current="page"' : '') + '>' +
+        icon(x.icon) + '<span>' + x.label + '</span><span class="count">' + n + '<span class="visually-hidden"> ' + (n === 1 ? 'ticket' : 'tickets') + '</span></span></a></li>';
+    }).join('');
+    $('#queue-title').textContent = v.label;
+    renderQueueRows();
+  }
+  function rowHTML(t) {
+    var cls = t.priority === 'Urgent' ? 'is-urgent' : (t.priority === 'High' ? 'is-high' : '');
+    return '<tr class="' + cls + '" data-id="' + t.id + '">' +
+      '<td><span class="ticket-num">#' + t.id + '</span></td>' +
+      '<td class="col-subject"><a class="subject-link" href="#ticket/' + t.id + '">' + esc(t.subject) + '</a>' +
+        (t.source === 'email' ? '<span class="row-flag" title="Created from an email">' + icon('mail') + '<span class="visually-hidden">(created from email)</span></span>' : '') +
+        (t.blocking ? '<span class="row-flag row-flag-block" title="Requester says this is blocking their work">' + icon('flag') + '<span class="visually-hidden">(blocking work)</span></span>' : '') +
+      '</td>' +
+      '<td>' + esc(PEOPLE[t.requester].name) + '</td>' +
+      '<td>' + esc(t.category) + '</td>' +
+      '<td>' + prioBadge(t.priority) + '</td>' +
+      '<td>' + statusBadge(t.status) + '</td>' +
+      '<td>' + (t.assignee ? '<span class="assignee">' + avatar(t.assignee, 'avatar-xs') + esc(PEOPLE[t.assignee].name) + '</span>' : '<span class="unassigned">Unassigned</span>') + '</td>' +
+      '<td class="col-age"><span aria-hidden="true" title="Created ' + fmtDateTime(t.created) + '">' + ageShort(t.created) + '</span><span class="visually-hidden">' + ageLong(t.created) + '</span></td>' +
+    '</tr>';
+  }
+  function renderQueueRows() {
+    var v = null;
+    VIEWS.forEach(function (x) { if (x.id === queueView) v = x; });
+    var q = qf.q.trim().toLowerCase().replace(/^#/, '');
+    var active = !!(q || qf.cat || qf.pri);
+    var rows = TICKETS.filter(v.test).filter(function (t) {
+      if (qf.cat && t.category !== qf.cat) return false;
+      if (qf.pri && t.priority !== qf.pri) return false;
+      if (q && String(t.id).indexOf(q) === -1 && t.subject.toLowerCase().indexOf(q) === -1 && PEOPLE[t.requester].name.toLowerCase().indexOf(q) === -1) return false;
+      return true;
+    }).sort(v.sort || byPriorityThenOldest);
+    $('#queue-summary').textContent = rows.length + (rows.length === 1 ? ' ticket' : ' tickets') + (active ? (rows.length === 1 ? ' matches' : ' match') + ' your filters' : '') +
+      ' · sorted by ' + (v.sortLabel || 'priority, then oldest first');
+    $('#queue-clear').hidden = !active;
+    $('#queue-body').innerHTML = rows.length ? rows.map(rowHTML).join('') :
+      '<tr class="empty-row"><td colspan="8">No tickets here' + (active ? ' match these filters.' : '. Nice work.') + '</td></tr>';
+  }
+  function bindQueue() {
+    $('#q-search').addEventListener('input', function (e) { qf.q = e.target.value; renderQueueRows(); });
+    $('#q-cat').addEventListener('change', function (e) { qf.cat = e.target.value; renderQueueRows(); });
+    $('#q-pri').addEventListener('change', function (e) { qf.pri = e.target.value; renderQueueRows(); });
+    $('#queue-clear').addEventListener('click', function () {
+      qf = { q: '', cat: '', pri: '' };
+      $('#q-search').value = ''; $('#q-cat').value = ''; $('#q-pri').value = '';
+      renderQueueRows();
+      $('#q-search').focus();
+    });
+    $('#queue-body').addEventListener('click', function (e) {
+      if (e.target.closest('a')) return;
+      var tr = e.target.closest('tr[data-id]');
+      if (tr) go('ticket/' + tr.getAttribute('data-id'));
+    });
+  }
+
+  /* ------------------------------------------------------------------
+     6. Agent: ticket detail
+     ------------------------------------------------------------------ */
+  function opt(value, current, label) {
+    return '<option value="' + esc(value) + '"' + (value === current ? ' selected' : '') + '>' + esc(label == null ? value : label) + '</option>';
+  }
+  function agentBadgesHTML(t) {
+    return statusBadge(t.status) + prioBadge(t.priority) +
+      (t.blocking ? '<span class="chip chip-block">' + icon('flag') + 'Blocking work</span>' : '') +
+      '<span class="detail-meta">Opened by ' + esc(PEOPLE[t.requester].name) + ' ' + when(t.created) + ' via ' + (t.source === 'email' ? 'email' : 'the web form') + '</span>';
+  }
+  function composerHTML(t) {
+    var r = PEOPLE[t.requester];
+    return '<form class="composer" id="composer" data-mode="public" novalidate aria-labelledby="composer-heading">' +
+      '<h2 class="visually-hidden" id="composer-heading">Reply or add a note</h2>' +
+      '<div class="composer-head">' +
+        '<fieldset class="mode-toggle"><legend class="visually-hidden">Message type</legend>' +
+          '<input type="radio" name="mode" id="mode-public" value="public" checked><label for="mode-public">' + icon('globe') + 'Public reply</label>' +
+          '<input type="radio" name="mode" id="mode-internal" value="internal"><label for="mode-internal">' + icon('lock') + 'Internal note</label>' +
+        '</fieldset>' +
+        '<p class="composer-audience" id="composer-audience" aria-live="polite"></p>' +
+      '</div>' +
+      '<div class="composer-banner" id="composer-banner" hidden>' + icon('lock') + '<span>Internal note: not visible to requester</span></div>' +
+      '<label class="visually-hidden" for="composer-text" id="composer-label">Public reply to ' + esc(r.name) + '</label>' +
+      '<textarea id="composer-text" class="composer-text" rows="5" aria-describedby="composer-audience composer-error"></textarea>' +
+      '<p class="field-error" id="composer-error" hidden>Write a message first.</p>' +
+      '<div class="composer-foot">' +
+        '<label class="btn btn-ghost btn-sm file-btn">' + icon('clip') + 'Attach<input type="file" class="file-input" id="composer-file" multiple></label>' +
+        '<span class="composer-files" id="composer-files"></span>' +
+        '<button type="submit" class="btn btn-primary" id="composer-send"></button>' +
+      '</div>' +
+    '</form>';
+  }
+  function setComposerMode(t, mode) {
+    var r = PEOPLE[t.requester];
+    var internal = mode === 'internal';
+    $('#composer').setAttribute('data-mode', mode);
+    $('#composer-banner').hidden = !internal;
+    $('#composer-audience').textContent = internal
+      ? 'Only IT staff can see this. It is not emailed to anyone.'
+      : r.name + ' will see this and get it by email at ' + r.email + '.';
+    $('#composer-label').textContent = internal ? 'Internal note, not visible to requester' : 'Public reply to ' + r.name;
+    $('#composer-text').placeholder = internal ? 'Add a note for the IT team...' : 'Reply to ' + firstName(t.requester) + '...';
+    var send = $('#composer-send');
+    send.className = 'btn ' + (internal ? 'btn-note' : 'btn-primary');
+    send.innerHTML = internal ? icon('lock') + 'Add internal note' : icon('send') + 'Send public reply';
+  }
+  function linkedHTML(t) {
+    if (!t.linked.length) return '<p class="muted" style="font-size:13px">None</p>';
+    return '<ul class="mini-list">' + t.linked.map(function (l) {
+      return '<li><span class="mini-text"><span class="ticket-num">#' + l.id + '</span>' + esc(l.subject) + '</span>' + statusBadge(l.status) + '</li>';
+    }).join('') + '</ul>';
+  }
+  function allFiles(t) {
+    var out = [];
+    t.timeline.forEach(function (i) { (i.files || []).forEach(function (f) { out.push(f); }); });
+    return out;
+  }
+  function renderAgentDetail(id) {
+    var root = $('#agent-detail');
+    var t = getTicket(id);
+    if (!t) { root.innerHTML = notFound('#queue', 'Queue', id); return; }
+    var r = PEOPLE[t.requester];
+    var others = TICKETS.filter(function (o) { return o.requester === t.requester && o.id !== t.id; })
+      .sort(function (a, b) { return b.id - a.id; });
+    var files = allFiles(t);
+    root.innerHTML =
+      '<a class="back-link" href="#queue/' + queueView + '">' + icon('arrow-left') + 'Queue</a>' +
+      '<header class="detail-head">' +
+        '<p class="eyebrow">#' + t.id + '</p>' +
+        '<h1 class="detail-title" id="ad-title" tabindex="-1">' + esc(t.subject) + '</h1>' +
+        '<div class="detail-badges" id="ad-badges">' + agentBadgesHTML(t) + '</div>' +
+      '</header>' +
+      '<div class="detail-grid">' +
+        '<div class="detail-main">' +
+          '<h2 class="section-title">Timeline</h2>' +
+          '<ol class="timeline" id="ad-timeline"></ol>' +
+          composerHTML(t) +
+          designNote('Internal notes get an amber card, a lock on the author\'s avatar and an "Internal note: not visible to requester" band on every note. Choosing Internal note turns the whole composer amber and changes the button to "Add internal note", so the mode is obvious at the moment of sending. <a href="#request/' + t.id + '">See what ' + esc(firstName(t.requester)) + ' sees</a>.') +
+        '</div>' +
+        '<aside class="side-panel" aria-label="Ticket properties">' +
+          '<section class="panel"><h2 class="panel-title">Properties</h2>' +
+            '<form id="props-form" novalidate>' +
+              '<div class="prop-field"><label for="p-status">Status</label><select id="p-status" name="status" class="select select-sm">' + STATUSES.map(function (s) { return opt(s, t.status); }).join('') + '</select></div>' +
+              '<div class="prop-field"><label for="p-priority">Priority</label><select id="p-priority" name="priority" class="select select-sm">' + PRIORITIES.slice().reverse().map(function (p) { return opt(p, t.priority); }).join('') + '</select></div>' +
+              '<div class="prop-field"><label for="p-assignee">Assignee</label><select id="p-assignee" name="assignee" class="select select-sm">' +
+                opt('', t.assignee || '', 'Unassigned') + AGENTS.map(function (a) { return opt(a, t.assignee || '', PEOPLE[a].name + (a === ME_AGENT ? ' (me)' : '')); }).join('') + '</select>' +
+                '<span class="prop-extra"><button type="button" class="link-btn" id="assign-me"' + (t.assignee === ME_AGENT ? ' hidden' : '') + '>Assign to me</button></span></div>' +
+              '<div class="prop-field"><label for="p-category">Category</label><select id="p-category" name="category" class="select select-sm">' + CATEGORIES.map(function (c) { return opt(c, t.category); }).join('') + '</select></div>' +
+              '<p class="props-hint">Changes save straight away and are logged in the timeline.</p>' +
+            '</form>' +
+          '</section>' +
+          '<section class="panel"><h2 class="panel-title">Requester</h2>' +
+            '<div class="person">' + avatar(t.requester, 'avatar-lg') + '<div><p class="person-name">' + esc(r.name) + '</p><p class="person-title">' + esc(r.title) + ' &middot; ' + esc(r.dept) + '</p></div></div>' +
+            '<dl class="dl"><dt>Email</dt><dd>' + esc(r.email) + '</dd><dt>Phone</dt><dd>' + esc(r.phone) + '</dd><dt>Location</dt><dd>' + esc(r.location) + '</dd></dl>' +
+            '<h3 class="panel-subtitle">Other tickets from ' + esc(firstName(t.requester)) + '</h3>' +
+            (others.length ? '<ul class="mini-list">' + others.map(function (o) {
+              return '<li><a href="#ticket/' + o.id + '"><span class="ticket-num">#' + o.id + '</span>' + esc(o.subject) + '</a>' + statusBadge(o.status) + '</li>';
+            }).join('') + '</ul>' : '<p class="muted" style="font-size:13px">None</p>') +
+          '</section>' +
+          '<section class="panel"><h2 class="panel-title">Details</h2>' +
+            '<dl class="dl">' +
+              '<dt>Ticket</dt><dd>#' + t.id + '</dd>' +
+              '<dt>Source</dt><dd>' + (t.source === 'email' ? icon('mail') + 'Email to ' + MAILBOX : icon('globe') + 'Web form') + '</dd>' +
+              '<dt>Created</dt><dd>' + fmtDateTime(t.created) + '</dd>' +
+              '<dt>Updated</dt><dd id="ad-updated">' + fmtDateTime(lastAt(t)) + '</dd>' +
+              '<dt>Blocking</dt><dd>' + (t.blocking ? 'Yes, flagged by requester' : 'No') + '</dd>' +
+            '</dl>' +
+            '<h3 class="panel-subtitle">Linked tickets</h3>' + linkedHTML(t) +
+            '<h3 class="panel-subtitle">Attachments</h3>' + (files.length ? filesHTML(files) : '<p class="muted" style="font-size:13px">None</p>') +
+          '</section>' +
+        '</aside>' +
+      '</div>';
+
+    renderAgentTimeline(t);
+    setComposerMode(t, 'public');
+
+    // Public / Internal toggle restyles the composer
+    $$('input[name="mode"]', root).forEach(function (radio) {
+      radio.addEventListener('change', function () { if (radio.checked) setComposerMode(t, radio.value); });
+    });
+    var pendingFiles = [];
+    $('#composer-file').addEventListener('change', function (e) {
+      pendingFiles = Array.prototype.map.call(e.target.files, function (f) { return [f.name, fmtSize(f.size)]; });
+      $('#composer-files').textContent = pendingFiles.map(function (f) { return f[0]; }).join(', ');
+    });
+    $('#composer').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var ta = $('#composer-text');
+      var body = ta.value.trim();
+      if (!body) { $('#composer-error').hidden = false; ta.focus(); return; }
+      $('#composer-error').hidden = true;
+      var internal = $('#composer').getAttribute('data-mode') === 'internal';
+      t.timeline.push({ t: internal ? 'note' : 'msg', by: ME_AGENT, at: stamp(), via: 'web', body: body, files: pendingFiles });
+      ta.value = '';
+      pendingFiles = [];
+      $('#composer-files').textContent = '';
+      $('#composer-file').value = '';
+      renderAgentTimeline(t);
+      $('#ad-updated').textContent = fmtDateTime(lastAt(t));
+      toast(internal ? 'Internal note added. ' + r.name + ' cannot see it.' : 'Public reply sent and emailed to ' + r.name + '.');
+    });
+
+    // Side panel: changes update the badges and append a system event
+    $('#props-form').addEventListener('change', function (e) {
+      var el = e.target, v = el.value, msgText = '';
+      if (el.name === 'status' && v !== t.status) {
+        t.timeline.push(evNow('status', { from: t.status, to: v, by: ME_AGENT })); t.status = v; msgText = 'Status changed to ' + v + '.';
+      } else if (el.name === 'priority' && v !== t.priority) {
+        t.timeline.push(evNow('priority', { from: t.priority, to: v, by: ME_AGENT })); t.priority = v; msgText = 'Priority changed to ' + v + '.';
+      } else if (el.name === 'assignee' && (v || null) !== t.assignee) {
+        t.assignee = v || null;
+        t.timeline.push(evNow('assign', { to: t.assignee, by: ME_AGENT }));
+        msgText = t.assignee ? 'Assigned to ' + PEOPLE[t.assignee].name + '.' : 'Ticket unassigned.';
+        $('#assign-me').hidden = t.assignee === ME_AGENT;
+      } else if (el.name === 'category' && v !== t.category) {
+        t.timeline.push(evNow('category', { from: t.category, to: v, by: ME_AGENT })); t.category = v; msgText = 'Category changed to ' + v + '.';
+      }
+      if (!msgText) return;
+      $('#ad-badges').innerHTML = agentBadgesHTML(t);
+      $('#ad-updated').textContent = fmtDateTime(lastAt(t));
+      renderAgentTimeline(t);
+      toast(msgText + ' Logged in the timeline.');
+    });
+    $('#assign-me').addEventListener('click', function () {
+      var sel = $('#p-assignee');
+      sel.value = ME_AGENT;
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+      sel.focus();
+    });
+  }
+  function renderAgentTimeline(t) {
+    $('#ad-timeline').innerHTML = t.timeline.map(function (i) { return i.t === 'event' ? eventHTML(i) : commentHTML(i, 'agent'); }).join('');
+  }
+
+  /* ------------------------------------------------------------------
+     3. Requester: new request form
+     ------------------------------------------------------------------ */
+  function fmtSize(b) {
+    if (b < 1024) return b + ' B';
+    if (b < 1048576) return Math.round(b / 1024) + ' KB';
+    return (b / 1048576).toFixed(1) + ' MB';
+  }
+  var nrFiles = [];
+  function renderNrFiles() {
+    $('#nr-file-list').innerHTML = nrFiles.map(function (f) {
+      return '<li>' + icon('clip') + '<span class="name">' + esc(f[0]) + '</span><span class="size">' + esc(f[1]) + '</span></li>';
+    }).join('');
+  }
+  function bindNewRequest() {
+    var form = $('#nr-form');
+    var drop = $('#nr-drop');
+    var input = $('#nr-files');
+    function takeFiles(list) {
+      nrFiles = Array.prototype.map.call(list, function (f) { return [f.name, fmtSize(f.size)]; });
+      renderNrFiles();
+    }
+    input.addEventListener('change', function () { takeFiles(input.files); });
+    ['dragenter', 'dragover'].forEach(function (n) {
+      drop.addEventListener(n, function (e) { e.preventDefault(); drop.classList.add('is-over'); });
+    });
+    ['dragleave', 'drop'].forEach(function (n) {
+      drop.addEventListener(n, function () { drop.classList.remove('is-over'); });
+    });
+    drop.addEventListener('drop', function (e) { e.preventDefault(); if (e.dataTransfer) takeFiles(e.dataTransfer.files); });
+
+    var fields = [
+      { el: $('#nr-subject'), err: $('#nr-subject-err') },
+      { el: $('#nr-category'), err: $('#nr-category-err') },
+      { el: $('#nr-desc'), err: $('#nr-desc-err') }
+    ];
+    fields.forEach(function (f) {
+      f.el.addEventListener('input', function () {
+        if (f.el.value.trim()) { f.err.hidden = true; f.el.removeAttribute('aria-invalid'); }
+      });
+    });
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var firstBad = null;
+      fields.forEach(function (f) {
+        var bad = !f.el.value.trim();
+        f.err.hidden = !bad;
+        if (bad) { f.el.setAttribute('aria-invalid', 'true'); if (!firstBad) firstBad = f.el; }
+        else f.el.removeAttribute('aria-invalid');
+      });
+      if (firstBad) { firstBad.focus(); return; }
+      var id = Math.max.apply(null, TICKETS.map(function (t) { return t.id; })) + 1;
+      var w = stamp();
+      TICKETS.push({
+        id: id, subject: $('#nr-subject').value.trim(), requester: ME_REQ, assignee: null,
+        category: $('#nr-category').value, status: 'New', priority: 'Normal', source: 'web',
+        blocking: $('#nr-blocking').checked, created: w, linked: [],
+        timeline: [
+          { t: 'msg', by: ME_REQ, at: w, via: 'web', body: $('#nr-desc').value.trim(), files: nrFiles },
+          { t: 'event', kind: 'created', via: 'web', at: w }
+        ]
+      });
+      form.reset();
+      nrFiles = [];
+      renderNrFiles();
+      go('request/' + id);
+      toast('Request #' + id + ' sent. We\'ve emailed you a copy.');
+    });
+  }
+
+  /* ------------------------------------------------------------------
+     Router
+     ------------------------------------------------------------------ */
+  var SCREENS = {
+    'signin':      { role: null,        title: 'Sign in' },
+    'my-tickets':  { role: 'requester', title: 'My tickets' },
+    'new-request': { role: 'requester', title: 'New request' },
+    'request':     { role: 'requester', title: 'Ticket' },
+    'queue':       { role: 'agent',     title: 'Queue' },
+    'ticket':      { role: 'agent',     title: 'Ticket' }
+  };
+  var current = null;
+  var lastHash = null;
+  function hashNow() { return location.hash.replace(/^#\/?/, ''); }
+  /* Navigate inside the mockup. Uses history when the host allows it (file://, http),
+     and still works where it doesn't (sandboxed previews, data: URLs). */
+  function go(h) {
+    try { history.pushState(null, '', '#' + h); } catch (e) { /* no history here; render anyway */ }
+    route(h, true);
+  }
+  function route(h, moveFocus) {
+    var parts = h.split('/');
+    var name = parts[0] || 'signin';
+    var arg = parts[1];
+    if (!SCREENS[name]) return; // unknown hash (e.g. an in-page anchor): stay where we are
+    lastHash = h;
+    current = name;
+    var s = SCREENS[name];
+
+    $$('[data-screen]').forEach(function (el) { el.hidden = el.getAttribute('data-screen') !== name; });
+    $('#header-requester').hidden = s.role !== 'requester';
+    $('#header-agent').hidden = s.role !== 'agent';
+
+    if (name === 'my-tickets') renderMyTickets();
+    if (name === 'request') renderRequesterDetail(parseInt(arg, 10) || 1044);
+    if (name === 'queue') renderQueue(arg || 'open');
+    if (name === 'ticket') renderAgentDetail(parseInt(arg, 10) || 1044);
+    if (name !== 'request') reqReopened = false;
+
+    $$('[data-screen-link]').forEach(function (a) {
+      if (a.getAttribute('data-screen-link') === name) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+    $$('[data-nav]').forEach(function (a) {
+      if (a.getAttribute('data-nav').split(' ').indexOf(name) !== -1) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+    var heading = $('[data-screen="' + name + '"] h1');
+    var label = (name === 'request' || name === 'ticket') && heading ? heading.textContent : (name === 'queue' && heading ? 'Queue: ' + heading.textContent : s.title);
+    document.title = label + ' · InH-Ticketing mockup';
+
+    window.scrollTo(0, 0);
+    if (moveFocus && heading) heading.focus({ preventScroll: true });
+  }
+
+  /* ------------------------------------------------------------------
+     Mockup controls
+     ------------------------------------------------------------------ */
+  function bindMockbar() {
+    var sel = $('#theme-select');
+    var th = document.documentElement.getAttribute('data-theme');
+    sel.value = th === 'light' || th === 'dark' ? th : 'system';
+    sel.addEventListener('change', function () {
+      if (sel.value === 'system') document.documentElement.removeAttribute('data-theme');
+      else document.documentElement.setAttribute('data-theme', sel.value);
+      storeSet('inh-mock-theme', sel.value);
+    });
+    var notesBtn = $('#notes-toggle');
+    function applyNotes(on) {
+      document.body.classList.toggle('notes-off', !on);
+      notesBtn.setAttribute('aria-pressed', String(on));
+    }
+    applyNotes(storeGet('inh-mock-notes') !== 'off');
+    notesBtn.addEventListener('click', function () {
+      var on = notesBtn.getAttribute('aria-pressed') !== 'true';
+      applyNotes(on);
+      storeSet('inh-mock-notes', on ? 'on' : 'off');
+    });
+  }
+
+  /* ------------------------------------------------------------------
+     Init
+     ------------------------------------------------------------------ */
+  bindMockbar();
+  bindQueue();
+  bindNewRequest();
+  $$('[data-mt-filter]').forEach(function (b) {
+    b.addEventListener('click', function () { myFilter = b.getAttribute('data-mt-filter'); renderMyTickets(); });
+  });
+  $('#skip-link').addEventListener('click', function (e) {
+    e.preventDefault();
+    var h = $('[data-screen="' + current + '"] h1') || $('#main');
+    h.focus();
+  });
+  document.addEventListener('click', function (e) {
+    var noop = e.target.closest('[data-noop]');
+    if (noop) { e.preventDefault(); toast(noop.getAttribute('data-noop')); return; }
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    var a = e.target.closest('a[href^="#"]');
+    if (!a) return;
+    var h = a.getAttribute('href').slice(1);
+    if (!SCREENS[h.split('/')[0]]) return;
+    e.preventDefault();
+    go(h);
+  });
+  // Stop a file dropped outside the drop area from replacing the page
+  window.addEventListener('dragover', function (e) { e.preventDefault(); });
+  window.addEventListener('drop', function (e) { e.preventDefault(); });
+
+  // Back/forward and hand-edited URLs
+  function onHistory() { var h = hashNow(); if (h !== lastHash) route(h, true); }
+  window.addEventListener('popstate', onHistory);
+  window.addEventListener('hashchange', onHistory);
+  route(hashNow(), false);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}No access{% endblock %}
+{% block page_class %}page-narrow{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <h1>You don't have access to this page</h1>
+  <p class="page-sub">If you think you should, ask IT to check your role in Microsoft 365.</p>
+</div>
+<p><a href="{% url 'core:home' %}">Back to home</a></p>
+{% endblock %}
