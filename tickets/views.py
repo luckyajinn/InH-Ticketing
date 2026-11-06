@@ -140,6 +140,7 @@ def add_reply(request, number: int):
     form = ReplyForm(request.POST, request.FILES, user=request.user)
     if not form.is_valid():
         return _render_detail(request, ticket, reply_form=form, status=400)
+    then_status = form.cleaned_data.get("then_status") or None
     try:
         services.add_comment(
             ticket=ticket,
@@ -147,6 +148,7 @@ def add_reply(request, number: int):
             body=form.cleaned_data["body"],
             is_internal=form.is_internal,
             files=form.cleaned_data["attachments"],
+            then_status=then_status,
         )
     except PermissionDenied as exc:
         messages.error(request, str(exc) or "You can't reply to this ticket.")
@@ -154,7 +156,8 @@ def add_reply(request, number: int):
     if form.is_internal:
         messages.success(request, "Internal note added. The requester can't see it.")
     elif request.user.is_agent and request.user.pk != ticket.requester_id:
-        messages.success(request, f"Public reply added. {ticket.requester} can see it.")
+        done = f" Status set to {ticket.get_status_display()}." if then_status else ""
+        messages.success(request, f"Public reply sent to {ticket.requester}.{done}")
     else:
         messages.success(request, "Reply sent.")
     return redirect(ticket)

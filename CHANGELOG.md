@@ -3,6 +3,27 @@
 All notable changes to InH-Ticketing. Versions follow [Semantic Versioning](https://semver.org).
 Each version also has illustrated release notes in [docs/releases](docs/releases/README.md).
 
+## [0.3.0] (unreleased)
+
+Milestone 3: outbound email. [Release notes with screenshots](docs/releases/v0.3.0.md).
+
+### Added
+- Email notifications: request received, IT replied, requester replied,
+  ticket assigned, resolved and reopened. Internal notes never send one or
+  appear in one, and nobody is emailed about their own action.
+- An email queue (outbox) in the database, sent by a background worker
+  (`manage.py run_worker`) with automatic retries. A failing mail server
+  never blocks saving a ticket.
+- Microsoft Graph sending from the test shared mailbox (`EMAIL_BACKEND=graph`),
+  limited to that one mailbox by Exchange RBAC for Applications.
+- Local email testing without sending anything (`EMAIL_BACKEND=file`, writes
+  to `tmp/emails/`).
+- Admin: an Outbound emails list showing status and errors, with a "Retry now" action.
+- Composer buttons "Send and set Waiting on User" and "Send and resolve", so
+  IT doesn't have to find the Status dropdown. *(Backlog item from testing.)*
+- Docker Compose: a `worker` container.
+- `docs/email-setup.md` and `docs/backlog.md`.
+
 ## [0.2.0] (unreleased)
 
 Milestone 2: tickets. [Release notes with screenshots](docs/releases/v0.2.0.md).

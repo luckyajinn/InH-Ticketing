@@ -4,6 +4,7 @@ One page per version, each with screenshots of what changed. Newest first.
 
 | Version | What | Notes |
 |---|---|---|
+| v0.3.0 | Outbound email, worker, "Send and resolve" buttons | [v0.3.0.md](v0.3.0.md) |
 | v0.2.0 | Tickets: queue, requests, replies, internal notes, history, attachments | [v0.2.0.md](v0.2.0.md) |
 | v0.1.0 | Skeleton and Microsoft 365 sign-in | [v0.1.0.md](v0.1.0.md) |
 
@@ -26,11 +27,12 @@ Every commit that changes the app gets its notes and screenshots in the same com
 3. In a second terminal, take the screenshots:
 
    ```powershell
-   python manage.py release_screenshots --out docs/releases/vX.Y.Z
+   python manage.py release_screenshots --out docs/releases/vX.Y.Z --only 06,10
    ```
 
-   The command is in `core/management/commands/release_screenshots.py`. When a
-   version adds a new screen, add a `shoot(...)` line for it there.
+   `--only` takes the numbers of the screens that changed (leave it off to take
+   all of them). The command is in `core/management/commands/release_screenshots.py`;
+   when a version adds a new screen, add a `shoot(...)` line for it there.
 4. Write `docs/releases/vX.Y.Z.md`: what changed and why, a screenshot of each
    changed screen, and anything not done yet. Add a row to the table above.
 

@@ -139,23 +139,23 @@ class Command(BaseCommand):
         services.add_comment(
             ticket=outlook, author=sam,
             body="Thanks Dana. Are you free at 2:30 today? I'll need about 15 minutes on your laptop.",
+            then_status=Ticket.Status.WAITING,  # the composer's "Send and set Waiting on User"
         )
-        services.update_ticket(ticket=outlook, actor=sam, status=Ticket.Status.WAITING)
 
         services.update_ticket(ticket=laptop, actor=alex, assignee=alex, status=Ticket.Status.IN_PROGRESS)
         services.add_comment(ticket=laptop, author=alex, is_internal=True,
                              body="Imaging the spare from stock. Monitor arrives Friday.")
 
         services.update_ticket(ticket=finance, actor=sam, assignee=sam)
-        services.update_ticket(ticket=finance, actor=sam, status=Ticket.Status.WAITING)
         services.add_comment(ticket=finance, author=sam,
-                             body="Owen, can you ask your manager to reply here to approve the access?")
+                             body="Owen, can you ask your manager to reply here to approve the access?",
+                             then_status=Ticket.Status.WAITING)
 
         services.update_ticket(ticket=teams, actor=alex, assignee=alex, priority=Ticket.Priority.LOW)
         services.add_comment(ticket=teams, author=alex,
                              body="Teams had camera access turned off in Windows privacy settings. "
-                                  "I've switched it back on.")
-        services.update_ticket(ticket=teams, actor=alex, status=Ticket.Status.RESOLVED)
+                                  "I've switched it back on.",
+                             then_status=Ticket.Status.RESOLVED)  # "Send and resolve"
 
         self.stdout.write(self.style.SUCCESS(
             f"Added {len(PEOPLE)} demo people and {len(created)} demo tickets "

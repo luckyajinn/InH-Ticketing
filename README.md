@@ -3,7 +3,7 @@
 An in-house IT help desk for McKenna Labs. Staff send IT a request; IT works
 it through to resolution. People sign in with their Microsoft 365 work account.
 
-**Status:** v0.2.0, milestone 2 (tickets). This is a test build.
+**Status:** v0.3.0, milestone 3 (outbound email). This is a test build.
 See the [release notes with screenshots](docs/releases/README.md) for how it looks and what changed in each version.
 
 ## What works today
@@ -15,6 +15,9 @@ See the [release notes with screenshots](docs/releases/README.md) for how it loo
 - **IT (Agents and Admins)** work from a queue with views, search and filters.
   On a ticket they see the full timeline, write public replies or **internal
   notes**, and set status, priority, assignee and category.
+- **Email:** people are emailed when something happens on their ticket
+  (received, IT replied, assigned, resolved and so on). Emails are queued and
+  sent by a background worker. See [docs/email-setup.md](docs/email-setup.md).
 - **History:** every change is logged with who made it and when.
 - **Privacy:** requesters are never sent internal notes, files on internal
   notes, or the history log. This is filtered on the server, not hidden in the browser.
@@ -29,6 +32,7 @@ See the [release notes with screenshots](docs/releases/README.md) for how it loo
 | The requester replies to a Waiting on User or Resolved ticket | → Open |
 | The requester clicks "Mark as resolved" | → Resolved |
 | The requester clicks "This is still a problem" | Resolved → Open |
+| IT clicks "Send and set Waiting on User" / "Send and resolve" | → Waiting on User / Resolved |
 | Anything else | Set by IT in the side panel |
 
 Requesters can't reply to Closed tickets; they start a new request instead.
@@ -55,6 +59,16 @@ In `.env`:
   Until they're set, the sign-in page shows a "Setup needed" notice.
 - Leave `DATABASE_URL` blank to use a local SQLite file.
 
+### Run the email worker
+
+Emails are sent by a second process. In another PowerShell window, also in the project folder:
+
+```powershell
+.\.venv\Scripts\python.exe manage.py run_worker
+```
+
+By default nothing is really sent; emails appear as files in `tmp/emails/`.
+
 ### Try it with demo data
 
 ```powershell
@@ -75,7 +89,7 @@ The tests fake Microsoft's responses, so they don't need Entra or the internet.
 
 ## Run it with Docker
 
-The server setup is Docker Compose: the web app plus PostgreSQL.
+The server setup is Docker Compose: the web app, the email worker and PostgreSQL.
 
 ```bash
 docker compose up --build
@@ -98,10 +112,11 @@ tickets/           Tickets, replies, notes, history, attachments
   services.py      The ticket rules; every change goes through here
   selectors.py     Who may see what (requesters never get internal notes)
   views.py         Queue, my tickets, new request, ticket page, actions
-templates/         Server-rendered HTML pages
+notifications/     Email: who gets what (notify.py), the queue, the worker, Graph sending
+templates/         Server-rendered HTML pages (emails in templates/emails/)
 static/css/app.css The one stylesheet; colours and spacing live in :root
 static/js/app.js   Small extras (auto-save side panel, clickable rows); pages work without it
-docs/              Setup guides
+docs/              Setup guides, and backlog.md (the to-do list)
 docs/releases/     Release notes and screenshots for every version
 mockups/           The clickable UI mockup the design is based on
 ```
@@ -114,7 +129,7 @@ Built with Django 6.1, MSAL (Microsoft's auth library), PostgreSQL and WhiteNois
 |---|---|---|
 | 1 | Skeleton, Microsoft 365 sign-in, roles | ✅ v0.1.0 |
 | 2 | Tickets: submit, my tickets, agent queue, public replies vs internal notes, history, attachments | ✅ v0.2.0 |
-| 3 | Outbound email notifications (Mailpit locally, then Microsoft Graph) | Next |
-| 4 | Inbound email-to-ticket from a test shared mailbox | |
+| 3 | Outbound email notifications (files locally, Microsoft Graph for real) | ✅ v0.3.0 |
+| 4 | Inbound email-to-ticket from a test shared mailbox | Next |
 | 5 | Automations: auto-close resolved tickets, reopen rules | |
 | 6 | Deploy to the internal server with HTTPS and backups | |

@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     "accounts",
     "core",
     "tickets",
+    "notifications",
 ]
 
 MIDDLEWARE = [
@@ -176,6 +177,37 @@ ATTACHMENT_EXTENSIONS = {
     # email and archives
     ".eml", ".msg", ".zip",
 }
+
+# --------------------------------------------------------------------------
+# Email notifications. See docs/email-setup.md.
+# --------------------------------------------------------------------------
+# The address people use to reach the app, for links in emails.
+SITE_URL = os.environ.get("SITE_URL", "http://localhost:8000").rstrip("/")
+
+# The shared mailbox emails are sent from, e.g. helpdesk-test@mckennalabs.com.
+HELPDESK_MAILBOX = os.environ.get("HELPDESK_MAILBOX", "").strip()
+DEFAULT_FROM_EMAIL = HELPDESK_MAILBOX or "inh-ticketing@localhost"
+
+# Optional: where "new ticket" and unassigned-reply alerts for IT go
+# (a distribution list, or a Teams channel's email address). Blank = none.
+IT_NOTIFY_EMAIL = os.environ.get("IT_NOTIFY_EMAIL", "").strip()
+
+# How emails leave the app:
+#   file    - written to tmp/emails/ for you to open (default; nothing is sent)
+#   console - printed in the worker's terminal
+#   graph   - sent through Microsoft Graph from HELPDESK_MAILBOX
+EMAIL_BACKENDS = {
+    "file": "django.core.mail.backends.filebased.EmailBackend",
+    "console": "django.core.mail.backends.console.EmailBackend",
+    "graph": "notifications.backends.GraphEmailBackend",
+}
+_email_choice = os.environ.get("EMAIL_BACKEND", "file").strip() or "file"
+EMAIL_BACKEND = EMAIL_BACKENDS.get(_email_choice, _email_choice)
+EMAIL_FILE_PATH = BASE_DIR / "tmp" / "emails"
+
+# The background worker checks for emails to send this often (seconds).
+WORKER_INTERVAL_SECONDS = int(os.environ.get("WORKER_INTERVAL_SECONDS", "15"))
+EMAIL_MAX_ATTEMPTS = 5
 
 # --------------------------------------------------------------------------
 # Security. Hardened automatically whenever DEBUG is off.

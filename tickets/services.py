@@ -16,6 +16,7 @@ from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.utils import timezone
 
+from notifications import notify
 from tickets.models import Attachment, Category, Comment, Ticket, TicketEvent
 
 Status = Ticket.Status
@@ -83,14 +84,24 @@ def create_ticket(
         source=source,
     )
     _save_attachments(ticket, requester, files)
+    notify.request_received(ticket)
     return ticket
+
+
+# Statuses IT can set in the same click as sending a reply.
+REPLY_THEN_STATUSES = (Status.WAITING, Status.RESOLVED)
 
 
 @transaction.atomic
 def add_comment(
     *, ticket: Ticket, author, body: str, is_internal: bool = False, files=(),
-    source: str = Ticket.Source.WEB,
+    source: str = Ticket.Source.WEB, then_status: str | None = None,
 ) -> Comment:
+    """
+    Add a reply or internal note. IT can pass then_status ("waiting" or
+    "resolved") to change the status in the same step, as the composer's
+    "Send and ..." buttons do. The requester then gets one email, not two.
+    """
     if is_internal and not author.is_agent:
         raise PermissionDenied("Only IT can add internal notes.")
     is_requester = author.pk == ticket.requester_id
@@ -98,6 +109,8 @@ def add_comment(
         raise PermissionDenied("You can't reply to this ticket.")
     if is_requester and not author.is_agent and ticket.status == Status.CLOSED:
         raise PermissionDenied("This ticket is closed.")
+    if then_status and (not author.is_agent or then_status not in REPLY_THEN_STATUSES):
+        raise PermissionDenied("Only IT can change the status when replying.")
 
     comment = Comment.objects.create(
         ticket=ticket, author=author, body=body.strip(), is_internal=is_internal, source=source
@@ -112,8 +125,11 @@ def add_comment(
         elif not is_requester and ticket.status == Status.NEW:
             _set_status(ticket, author, Status.OPEN, note="IT replied")
             changed = STATUS_FIELDS
+    if then_status and _set_status(ticket, author, then_status):
+        changed = STATUS_FIELDS
 
     _save(ticket, changed)  # always bumps updated_at
+    notify.comment_added(comment)
     return comment
 
 
@@ -128,6 +144,7 @@ def update_ticket(
     changes: list[str] = []
     fields: set[str] = set()
     status_requested = status is not None and status != ticket.status
+    newly_assigned = False
 
     if priority is not None and int(priority) != ticket.priority:
         old = ticket.get_priority_display()
@@ -149,17 +166,24 @@ def update_ticket(
         _log(ticket, actor, TicketEvent.Kind.ASSIGNEE, old, str(assignee) if assignee else "")
         changes.append(f"assigned to {assignee}" if assignee else "unassigned")
         fields.add("assignee")
+        newly_assigned = assignee is not None
         if assignee and ticket.status == Status.NEW and not status_requested:
             _set_status(ticket, actor, Status.OPEN, note="assigned")
             changes.append("status set to Open")
             fields.update(STATUS_FIELDS)
 
+    resolved_now = False
     if status_requested and _set_status(ticket, actor, status):
         changes.append(f"status set to {ticket.get_status_display()}")
         fields.update(STATUS_FIELDS)
+        resolved_now = ticket.status == Status.RESOLVED
 
     if fields:
         _save(ticket, fields)
+    if newly_assigned:
+        notify.assigned(ticket, actor)
+    if resolved_now:
+        notify.resolved(ticket, actor)
     return changes
 
 
@@ -188,4 +212,5 @@ def reopen_by_requester(*, ticket: Ticket, user) -> bool:
         return False
     _set_status(ticket, user, Status.OPEN, note="reopened by requester")
     _save(ticket, STATUS_FIELDS)
+    notify.reopened(ticket, user)
     return True

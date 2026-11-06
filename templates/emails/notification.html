@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>{{ ticket.subject }}</title>
+</head>
+{# Email clients ignore stylesheets, so everything is inline and table-based. #}
+<body style="margin:0;padding:0;background:#f5f6f8;font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:#1a1d23;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f5f6f8;">
+  <tr><td align="center" style="padding:24px 12px;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;">
+      <tr><td style="padding:0 4px 12px;font-size:15px;font-weight:700;color:#1a1d23;">
+        <span style="display:inline-block;width:22px;height:22px;border-radius:6px;background:#2f5bd3;vertical-align:-5px;margin-right:6px;"></span>{{ app_name }}
+      </td></tr>
+      <tr><td style="background:#ffffff;border:1px solid #e0e4ea;border-radius:10px;padding:24px;">
+        <p style="margin:0 0 4px;font-family:Consolas,'Cascadia Mono',monospace;font-size:12px;color:#5a6371;">#{{ ticket.number }} &middot; {{ ticket.subject }}</p>
+        <h1 style="margin:0 0 8px;font-size:20px;line-height:1.3;color:#1a1d23;">{{ heading }}</h1>
+        <p style="margin:0 0 16px;font-size:14px;line-height:1.5;color:#5a6371;">{{ intro }}</p>
+        {% if message %}
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;">
+          <tr><td style="border-left:3px solid #c5ccd6;padding:4px 0 4px 12px;">
+            <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#5a6371;">{{ message_author }}</p>
+            <div style="font-size:14px;line-height:1.5;color:#1a1d23;">{{ message|linebreaks }}</div>
+          </td></tr>
+        </table>
+        {% endif %}
+        <a href="{{ ticket_url }}" style="display:inline-block;padding:10px 18px;border-radius:6px;background:#2f5bd3;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">{{ action }}</a>
+      </td></tr>
+      <tr><td style="padding:14px 4px;font-size:12px;line-height:1.5;color:#5a6371;">
+        You're getting this email because {{ reason }}.<br>
+        Replies to this email aren't added to the ticket yet. Please use the button above.
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>

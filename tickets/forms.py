@@ -82,6 +82,11 @@ class ReplyForm(forms.Form):
         widget=forms.Textarea(attrs={"rows": 5}),
     )
     visibility = forms.ChoiceField(choices=VISIBILITY_CHOICES, required=False, initial="public")
+    # Set by the composer's "Send and set Waiting on User" / "Send and resolve" buttons.
+    then_status = forms.ChoiceField(
+        choices=[("", "Keep status"), (Ticket.Status.WAITING, "Waiting on User"), (Ticket.Status.RESOLVED, "Resolved")],
+        required=False,
+    )
     attachments = AttachmentsField()
 
     def __init__(self, *args, user, **kwargs):
@@ -94,6 +99,16 @@ class ReplyForm(forms.Form):
         if value == "internal" and not self.user.is_agent:
             raise forms.ValidationError("Only IT can add internal notes.")
         return value
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get("then_status"):
+            if not self.user.is_agent:
+                self.add_error("then_status", "Only IT can change the status when replying.")
+            elif cleaned.get("visibility") == "internal":
+                # The requester wouldn't be told why their ticket changed.
+                self.add_error("then_status", "Change the status with a public reply, or use the side panel.")
+        return cleaned
 
     @property
     def is_internal(self) -> bool:

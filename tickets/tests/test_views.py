@@ -168,6 +168,43 @@ class ReplyViewTests(MediaTestCase):
         response = self.client.post(self.url, {"body": "  ", "visibility": "public"})
         self.assertContains(response, "Write a message first.", status_code=400)
 
+    def test_send_and_set_waiting(self):
+        self.client.force_login(self.agent)
+        response = self.client.post(self.url, {"body": "Which printer?", "visibility": "public",
+                                               "then_status": "waiting"})
+        self.assertRedirects(response, self.ticket.get_absolute_url())
+        self.ticket.refresh_from_db()
+        self.assertEqual(self.ticket.status, Status.WAITING)
+
+    def test_send_and_resolve(self):
+        self.client.force_login(self.agent)
+        self.client.post(self.url, {"body": "Fixed", "visibility": "public", "then_status": "resolved"})
+        self.ticket.refresh_from_db()
+        self.assertEqual(self.ticket.status, Status.RESOLVED)
+        self.assertIsNotNone(self.ticket.resolved_at)
+
+    def test_status_buttons_need_a_public_reply(self):
+        self.client.force_login(self.agent)
+        response = self.client.post(self.url, {"body": "note", "visibility": "internal",
+                                               "then_status": "resolved"})
+        self.assertEqual(response.status_code, 400)
+        self.ticket.refresh_from_db()
+        self.assertEqual(self.ticket.status, Status.NEW)
+        self.assertFalse(Comment.objects.exists())
+
+    def test_requester_cannot_use_status_buttons(self):
+        self.client.force_login(self.requester)
+        response = self.client.post(self.url, {"body": "done", "then_status": "resolved"})
+        self.assertEqual(response.status_code, 400)
+        self.ticket.refresh_from_db()
+        self.assertEqual(self.ticket.status, Status.NEW)
+
+    def test_status_buttons_shown_to_it(self):
+        self.client.force_login(self.agent)
+        response = self.client.get(self.ticket.get_absolute_url())
+        self.assertContains(response, "Send and set Waiting on User")
+        self.assertContains(response, "Send and resolve")
+
     def test_requester_cannot_reply_to_closed(self):
         services.update_ticket(ticket=self.ticket, actor=self.agent, status=Status.CLOSED)
         self.client.force_login(self.requester)

@@ -671,6 +671,7 @@ main { flex: 1 0 auto; }
 .composer .field-error { margin: 0; padding: 0 var(--sp-3) var(--sp-2); }
 .composer-foot { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); border-top: 1px solid var(--border); }
 .composer-files { flex: 1; min-width: 0; color: var(--text-muted); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.composer-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--sp-2); margin-left: auto; }
 .composer .when-internal { display: none; }
 .composer:has(input[value="internal"]:checked) { border-color: var(--note-edge); border-left: 4px solid var(--note-edge); background: var(--note-bg); }
 .composer:has(input[value="internal"]:checked):focus-within { box-shadow: 0 0 0 3px var(--note-ring); }

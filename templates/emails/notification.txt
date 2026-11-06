@@ -1,0 +1,14 @@
+{% autoescape off %}{{ heading }}
+
+{{ intro }}
+{% if message %}
+{{ message_author }}:
+{{ message }}
+{% endif %}
+{{ action }}: {{ ticket_url }}
+
+--
+#{{ ticket.number }} {{ ticket.subject }}
+{{ app_name }}. You're getting this email because {{ reason }}.
+Replies to this email aren't added to the ticket yet. Please use the link above.
+{% endautoescape %}

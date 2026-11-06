@@ -22,3 +22,6 @@ Thumbs.db
 
 # Claude Code local config
 .claude/
+
+# Local email output (EMAIL_BACKEND=file)
+tmp/

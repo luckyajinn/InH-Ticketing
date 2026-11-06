@@ -60,13 +60,22 @@
       {% if reply_form.body.errors %}<p class="field-error" id="composer-error">{% icon "alert" %}{{ reply_form.body.errors.0 }}</p>{% endif %}
       {% if reply_form.attachments.errors %}<p class="field-error">{% icon "alert" %}{{ reply_form.attachments.errors.0 }}</p>{% endif %}
       {% if reply_form.visibility.errors %}<p class="field-error">{% icon "alert" %}{{ reply_form.visibility.errors.0 }}</p>{% endif %}
+      {% if reply_form.then_status.errors %}<p class="field-error">{% icon "alert" %}{{ reply_form.then_status.errors.0 }}</p>{% endif %}
       <div class="composer-foot">
         <label class="btn btn-ghost btn-sm file-btn">{% icon "clip" %}Attach<input type="file" name="attachments" class="file-input" multiple data-file-list="composer-files"></label>
         <span class="composer-files" id="composer-files" aria-live="polite"></span>
-        <button type="submit" class="btn btn-primary composer-send">
-          <span class="when-public">{% icon "send" %} Send public reply</span>
-          <span class="when-internal">{% icon "lock" %} Add internal note</span>
-        </button>
+        <span class="composer-actions">
+          {% if ticket.status != "waiting" %}
+          <button type="submit" name="then_status" value="waiting" class="btn when-public">{% icon "pause" %}Send and set Waiting on User</button>
+          {% endif %}
+          {% if ticket.status != "resolved" and ticket.status != "closed" %}
+          <button type="submit" name="then_status" value="resolved" class="btn when-public">{% icon "check-circle" %}Send and resolve</button>
+          {% endif %}
+          <button type="submit" class="btn btn-primary composer-send">
+            <span class="when-public">{% icon "send" %} Send public reply</span>
+            <span class="when-internal">{% icon "lock" %} Add internal note</span>
+          </button>
+        </span>
       </div>
     </form>
   </div>
