@@ -18,7 +18,8 @@
 #   4. takes a safety backup of the current data (labelled before-restore);
 #   5. database: restores into a separate new database first, and swaps it in
 #      only if that worked, so a failed restore leaves the current one alone;
-#   6. attachments: empties the media volume, then unpacks the archive;
+#   6. attachments: empties the media volume, copies the backup's media/
+#      snapshot in, then checks the volume matches it file by file;
 #   7. leaves web and worker stopped, and says how to start them.
 #
 # To roll back an update, check out the version the backup was made with
@@ -74,9 +75,10 @@ esac
 [ -d "$SRC" ] || die "there's no backup folder $SRC (run $0 on its own to list them)"
 SRC=$(CDPATH='' cd -- "$SRC" && pwd)
 NAME=${SRC##*/}
-for f in db.dump media.tar.gz manifest.txt SHA256SUMS; do
+for f in db.dump manifest.txt SHA256SUMS; do
 	[ -f "$SRC/$f" ] || die "$SRC/$f is missing: this isn't a complete backup"
 done
+[ -d "$SRC/media" ] || die "$SRC/media is missing: this isn't a complete backup"
 
 # Work from the app folder (this script's parent), wherever it was run from.
 APP_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
@@ -160,11 +162,19 @@ if [ "$DB" = yes ]; then
 fi
 
 if [ "$MEDIA" = yes ]; then
-	log "Restoring the attachments (emptying the media volume, then unpacking)"
-	dc run --rm --no-deps -T web sh -c 'find /app/media -mindepth 1 -delete && tar -xzf - -C /app/media' \
-		< "$SRC/media.tar.gz" ||
-		die "restoring the attachments failed (see above); they may be incomplete. Run this again, or restore the before-restore backup."
-	log "Attachments restored"
+	log "Restoring the attachments (emptying the media volume, then copying the snapshot in)"
+	MEDIA_FAILED="restoring the attachments failed (see above); they may be incomplete. Run this again, or restore the before-restore backup."
+	tar -cf - -C "$SRC/media" . |
+		dc run --rm --no-deps -T web sh -c 'find /app/media -mindepth 1 -delete && tar -xf - -C /app/media' ||
+		die "$MEDIA_FAILED"
+	# A failure early in that pipeline could go unnoticed, so compare the volume
+	# with the backup file by file ("size path" lists, as backup.sh makes them).
+	EXPECTED=$(cd "$SRC/media" && find . -type f -printf '%s %p\n' | LC_ALL=C sort)
+	ACTUAL=$(dc run --rm --no-deps -T web sh -c "cd /app/media && find . -type f -printf '%s %p\n'") ||
+		die "$MEDIA_FAILED"
+	ACTUAL=$(printf '%s\n' "$ACTUAL" | LC_ALL=C sort)
+	[ "$EXPECTED" = "$ACTUAL" ] || die "$MEDIA_FAILED (the media volume doesn't match the backup)"
+	log "Attachments restored and checked ($(printf '%s' "$EXPECTED" | grep -c . || true) files)"
 fi
 
 trap - EXIT

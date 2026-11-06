@@ -496,7 +496,7 @@ Each backup is a folder such as `2026-11-06_023000` (or `2026-11-06_141500_first
 | File | What it is |
 |---|---|
 | `db.dump` | The database (`pg_dump` custom format) |
-| `media.tar.gz` | Every uploaded attachment |
+| `media/` | Every uploaded attachment, as an incremental snapshot: unchanged files are shared (hard-linked) with the previous backup, so they take no extra space |
 | `manifest.txt` | When, the app version, the PostgreSQL version, sizes, the latest migrations |
 | `SHA256SUMS` | Checksums, checked by `restore.sh` |
 

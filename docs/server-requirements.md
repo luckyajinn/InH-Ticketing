@@ -47,27 +47,29 @@ nightly backup, and the file cache that keeps PostgreSQL fast.
 | Container logs | Up to 0.4 GB | No: capped at 100 MB per container (`compose.prod.yaml`) |
 | Database | Under 0.1 GB at first | About 0.3 GB a year |
 | Attachments (`media` volume) | 0 | **About 2 GB a year** expected, up to 6 GB if heavy (see below) |
-| Backups | 14 nightly copies | **About 14 × the attachments**, plus the database dumps |
+| Backups | 14 nightly snapshots | **About one more copy of the attachments**, plus 14 small database dumps |
 
 Attachment estimate: about 200 tickets a month from 300 people, 30% of them
 with attachments, averaging 2 files of 1.5 MB (screenshots, phone photos,
 PDFs) is about 180 MB a month, or 2 GB a year. Heavy use (big photos, log
 archives) could triple that.
 
-Every nightly backup holds a full copy of the attachments, so backups are
-the biggest use of disk:
+Attachment backups are **incremental snapshots**: each night's backup shares
+(hard-links) every unchanged file with the night before, so 14 nights of
+backups cost about one extra copy of the attachments, not fourteen. Each
+backup still restores as a complete copy (`scripts/backup.sh` explains how).
 
-| Attachments stored | Backups (14 nights) | Disk used in total |
+| In use for | Attachments (expected / heavy) | Disk used in total (expected / heavy) |
 |---|---|---|
-| 1 GB | ~14 GB | ~30 GB |
-| 2 GB | ~28 GB | ~45 GB |
-| 4 GB | ~56 GB | ~75 GB: nearly full |
+| 1 year | 2 / 6 GB | ~21 / ~29 GB |
+| 3 years | 6 / 18 GB | ~30 / ~55 GB |
+| 5 years | 10 / 30 GB | ~40 / ~80 GB: nearly full if heavy |
 
-So 80 GB lasts about **two years** at the expected rate, or eight months if
-use is heavy. The nightly backup logs a warning once the disk is 80% full.
-Before that happens, grow the virtual disk, or give the backups their own
-disk, or switch the attachment backups to incremental copies (a later
-improvement). Check disk use monthly ([deployment.md](deployment.md#11-routine-checks)).
+So 80 GB lasts **well over five years** at the expected rate, and about five
+if use is heavy. The nightly backup logs a warning once the disk is 80% full;
+before that, grow the virtual disk or give the backups their own disk. Check
+disk use monthly ([deployment.md](deployment.md#11-routine-checks)). Note that
+deleting an old backup frees only the files no newer backup still shares.
 
 ## Operating system
 

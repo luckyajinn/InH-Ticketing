@@ -11,12 +11,20 @@
 #
 #   2026-11-06_023000[_label]/
 #     db.dump        the database (pg_dump custom format)
-#     media.tar.gz   every uploaded attachment (the `media` volume)
+#     media/         a copy of every uploaded attachment (the `media` volume)
 #     manifest.txt   when, app version, database version, sizes
-#     SHA256SUMS     checksums; restore.sh checks them before restoring
+#     SHA256SUMS     checksums of all of the above; restore.sh checks them first
+#
+# Attachments are stored as incremental snapshots. Each backup's media/ starts
+# as hard links to the previous backup's files, which take no extra disk space.
+# Only attachments added since are fetched, and deleted ones are dropped. Every
+# backup still looks like, and restores as, a complete copy. This is exact
+# because the app writes each attachment once, under a random name, and never
+# changes it. So 14 days of backups cost about one copy of the attachments,
+# plus 14 database dumps.
 #
 # The database is dumped first and the attachments second, so every attachment
-# the dump refers to is in the archive. Both are read back to check them.
+# the dump refers to is in the snapshot. Both are read back to check them.
 # A backup is written to "<name>.partial" and renamed only once complete.
 # Then backup folders older than $KEEP_DAYS days are deleted.
 #
@@ -89,24 +97,50 @@ dc exec -T db pg_restore --list < "$WORK/db.dump" > /dev/null ||
 	die "the database dump can't be read back"
 log "Database dumped and checked"
 
-# 2. The attachments, archived by a throwaway container from the web image
-#    (so this works even while web itself is stopped, as during a restore).
-#    tar exits 1 if a file changed while it was read; the archive is still
-#    usable, and is read back below either way.
-set +e
-dc run --rm --no-deps -T web tar -czf - -C /app/media . > "$WORK/media.tar.gz"
-status=$?
-set -e
-case $status in
-	0) ;;
-	1) log "Warning: some attachments changed while being archived (tar exit 1)" ;;
-	*) die "archiving the attachments failed (exit $status)" ;;
-esac
-tar -tzf "$WORK/media.tar.gz" > "$WORK/media.list" ||
-	die "the attachments archive can't be read back"
-FILES=$(grep -c -v '/$' "$WORK/media.list" || true)
-rm -f "$WORK/media.list"
-log "Attachments archived and checked ($FILES files)"
+# 2. The attachments, as an incremental snapshot. A throwaway container from
+#    the web image reads the media volume, so this works even while web itself
+#    is stopped (as during a restore). Lists are "size path", one file per line;
+#    attachment paths never contain spaces or newlines (see tickets/models.py).
+listing() { find . -type f -printf '%s %p\n' | LC_ALL=C sort; }
+
+# The newest complete backup with a media/ folder, if any, to link against.
+PREV=
+for d in "$BACKUP_DIR"/[0-9]*; do
+	case $d in *.partial) continue ;; esac
+	[ -d "$d/media" ] && [ -f "$d/SHA256SUMS" ] && PREV=$d
+done
+
+mkdir "$WORK/media"
+if [ -n "$PREV" ]; then
+	# Hard links: instant, and no extra disk space for unchanged attachments.
+	cp -al "$PREV/media/." "$WORK/media/" || die "couldn't link to the previous backup $PREV"
+fi
+
+# Each docker step writes to a file and is checked on its own. In a pipeline
+# its failure would be hidden, and an empty listing would look like "no attachments".
+dc run --rm --no-deps -T web sh -c "cd /app/media && find . -type f -printf '%s %p\n'" \
+	> "$WORK/media.raw" || die "couldn't list the attachments"
+LC_ALL=C sort "$WORK/media.raw" > "$WORK/media.now"
+(cd "$WORK/media" && listing) > "$WORK/media.have"
+# In the volume but not (identically) in the snapshot: fetch. The reverse: drop.
+LC_ALL=C comm -23 "$WORK/media.now" "$WORK/media.have" | cut -d' ' -f2- > "$WORK/media.fetch"
+LC_ALL=C comm -13 "$WORK/media.now" "$WORK/media.have" | cut -d' ' -f2- > "$WORK/media.drop"
+# rm only removes this snapshot's link; older backups keep their copy.
+while IFS= read -r f; do rm -f "$WORK/media/$f"; done < "$WORK/media.drop"
+NEW=$(wc -l < "$WORK/media.fetch" | tr -d ' ')
+if [ "$NEW" -gt 0 ]; then
+	dc run --rm --no-deps -T web tar -cf - -C /app/media -T - < "$WORK/media.fetch" \
+		> "$WORK/media.new.tar" || die "copying the new attachments out of the volume failed"
+	tar -xf "$WORK/media.new.tar" -C "$WORK/media" || die "unpacking the new attachments failed"
+fi
+# Read back: the snapshot must now match the volume exactly.
+(cd "$WORK/media" && listing) | cmp -s - "$WORK/media.now" ||
+	die "the attachments snapshot doesn't match the media volume"
+FILES=$(wc -l < "$WORK/media.now" | tr -d ' ')
+rm -f "$WORK/media.raw" "$WORK/media.now" "$WORK/media.have" "$WORK/media.fetch" \
+	"$WORK/media.drop" "$WORK/media.new.tar"
+if [ -n "$PREV" ]; then SINCE="since ${PREV##*/}"; else SINCE="(first backup)"; fi
+log "Attachments snapshot checked ($FILES files, $NEW new $SINCE)"
 
 # 3. What this backup is, for whoever restores it.
 size() { wc -c < "$1" | tr -d ' '; }
@@ -125,17 +159,20 @@ MIGRATIONS=$(dc exec -T db psql -U inh -d inh -At -F ' ' \
 	echo "App version:   ${APP_VERSION:-unknown} (git: $GIT_VERSION)"
 	echo "PostgreSQL:    $PG_VERSION"
 	echo "db.dump:       $(size "$WORK/db.dump") bytes"
-	echo "media.tar.gz:  $(size "$WORK/media.tar.gz") bytes, $FILES files"
+	echo "media/:        $FILES files ($NEW new $SINCE)"
 	echo "Latest database migration of each app:"
 	printf '%s\n' "$MIGRATIONS" | sed 's/^/  /'
 } > "$WORK/manifest.txt"
 
-(cd "$WORK" && sha256sum db.dump media.tar.gz manifest.txt > SHA256SUMS) ||
-	die "couldn't write the checksums"
+(cd "$WORK" && {
+	sha256sum db.dump manifest.txt
+	find media -type f | LC_ALL=C sort | xargs -r sha256sum
+} > SHA256SUMS) || die "couldn't write the checksums"
 
 mv "$WORK" "$FINAL" || die "couldn't rename $WORK to $FINAL"
 trap - EXIT HUP INT TERM
-log "Backup OK: $FINAL ($(du -sh "$FINAL" | cut -f1))"
+# du counts hard-linked files once per run, so the total is the real disk use.
+log "Backup OK: $FINAL. All backups together use $(du -sh "$BACKUP_DIR" | cut -f1)."
 
 # 4. Delete backups older than KEEP_DAYS days (find's -mtime +N means "N+1
 #    days old or more"), and anything left over from a failed run. Only
@@ -150,8 +187,8 @@ if [ "$KEEP_DAYS" -gt 0 ]; then
 		-exec sh -c 'for d; do echo "$(date "+%Y-%m-%d %H:%M:%S") Deleting unfinished backup $d"; rm -rf "$d"; done' sh {} +
 fi
 
-# 5. Warn early if the disk is filling up (each backup holds a full copy of
-#    the attachments; see docs/server-requirements.md).
+# 5. Warn early if the disk is filling up (see docs/server-requirements.md).
+#    Deleting an old backup frees only what no newer backup still links to.
 USED=$(df -P "$BACKUP_DIR" | awk 'NR == 2 { sub("%", "", $5); print $5 }')
 case $USED in
 	'' | *[!0-9]*) ;;
