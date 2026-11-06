@@ -35,5 +35,20 @@ Every commit that changes the app gets its notes and screenshots in the same com
    when a version adds a new screen, add a `shoot(...)` line for it there.
 4. Write `docs/releases/vX.Y.Z.md`: what changed and why, a screenshot of each
    changed screen, and anything not done yet. Add a row to the table above.
+5. Once the version is merged into `main` and pushed, tag it and publish it on
+   GitHub's Releases page. The script rewrites the notes' relative links so the
+   screenshots still show there.
+
+   ```powershell
+   git tag -a vX.Y.Z -m "vX.Y.Z: <title>"
+   git push origin vX.Y.Z
+   .\.venv\Scripts\python.exe scripts\release_body.py . tmp\release vX.Y.Z
+   gh release create vX.Y.Z --verify-tag --title "<title>" --notes-file tmp\release\vX.Y.Z.md
+   ```
+
+   Then change the version's heading in `CHANGELOG.md` from *(unreleased)* to
+   its date, and add its link at the bottom of the file.
+
+Published releases: <https://github.com/luckyajinn/InH-Ticketing/releases>
 
 Screenshots only ever use the fictional demo data, never real tickets or people.

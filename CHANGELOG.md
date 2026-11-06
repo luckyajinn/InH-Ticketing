@@ -3,7 +3,7 @@
 All notable changes to InH-Ticketing. Versions follow [Semantic Versioning](https://semver.org).
 Each version also has illustrated release notes in [docs/releases](docs/releases/README.md).
 
-## [0.3.0] (unreleased)
+## [0.3.0] - 2026-11-06
 
 Milestone 3: outbound email. [Release notes with screenshots](docs/releases/v0.3.0.md).
 
@@ -24,7 +24,7 @@ Milestone 3: outbound email. [Release notes with screenshots](docs/releases/v0.3
 - Docker Compose: a `worker` container.
 - `docs/email-setup.md` and `docs/backlog.md`.
 
-## [0.2.0] (unreleased)
+## [0.2.0] - 2026-11-05
 
 Milestone 2: tickets. [Release notes with screenshots](docs/releases/v0.2.0.md).
 
@@ -57,7 +57,7 @@ Milestone 2: tickets. [Release notes with screenshots](docs/releases/v0.2.0.md).
 - Ticket changes save only the fields that changed, so two people editing
   the same ticket don't overwrite each other's changes.
 
-## [0.1.0] (unreleased)
+## [0.1.0] - 2026-11-05
 
 Milestone 1: skeleton and Microsoft 365 sign-in. [Release notes with screenshots](docs/releases/v0.1.0.md).
 
@@ -73,3 +73,7 @@ Milestone 1: skeleton and Microsoft 365 sign-in. [Release notes with screenshots
 - Sign-in, home and error pages styled from the UI mockup, with light and dark mode.
 - `/healthz` endpoint, Dockerfile and Docker Compose with PostgreSQL 17.
 - Entra setup guide (`docs/entra-setup.md`) and the UI mockup (`mockups/`).
+
+[0.3.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.3.0
+[0.2.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.2.0
+[0.1.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.1.0

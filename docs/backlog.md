@@ -23,5 +23,5 @@ it's done and mention it in that version's release notes.
 - [ ] Deploy to the internal server with HTTPS, so testers can use their own
       computers (milestone 6).
 - [ ] Size the server once staff and IT headcounts are known (milestone 6).
-- [ ] Tag released versions in git (`v0.1.0`, `v0.2.0`, ...).
+- [x] Tag released versions in git and publish them as GitHub releases (v0.1.0-v0.3.0, 2026-11-06).
 - [ ] Revisit the app header ("top row") design.
