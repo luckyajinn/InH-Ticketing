@@ -94,14 +94,17 @@ change straight away, sign out of InH-Ticketing and back in.
 
 ---
 
-## Moving to the server (milestone 6)
+## Moving to the server
 
-- Add a second **Web** redirect URI: `https://<server-name>/auth/callback`, and
-  set `ENTRA_REDIRECT_URI` to it in the server's `.env`. Entra only allows
+Step by step in [deployment.md](deployment.md#4-microsoft-entra). In short:
+
+- Add a second **Web** redirect URI: `https://helpdesk.mckennalabs.com/auth/callback`,
+  and set `ENTRA_REDIRECT_URI` to it in the server's `.env`. Entra only allows
   plain `http://` for `localhost`, so the server needs HTTPS.
-- Prefer a certificate over a client secret on the server.
 - Use a separate client secret per environment, so you can revoke one without
   breaking the other.
+- A certificate credential instead of a secret would be better still on the
+  server, but the app doesn't support one yet (a later improvement).
 
 ## Troubleshooting
 

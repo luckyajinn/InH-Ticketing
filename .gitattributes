@@ -1,0 +1,16 @@
+# Line endings. The code is edited on Windows but runs on Linux, in Docker.
+# Git stores text files with LF endings. The files below must also have LF
+# in every checkout, Windows included: the Linux tools that read them break
+# on Windows (CRLF) endings, e.g. sh fails with "set: Illegal option -".
+* text=auto
+
+# Shell scripts, run by sh on the server.
+*.sh            text eol=lf
+# Read by Caddy inside its container.
+Caddyfile       text eol=lf
+# Read by Docker and Docker Compose.
+Dockerfile      text eol=lf
+.dockerignore   text eol=lf
+compose*.yaml   text eol=lf
+# Copied to .env, which Docker Compose and the containers read.
+.env.example    text eol=lf

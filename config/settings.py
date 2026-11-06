@@ -238,9 +238,41 @@ SECURE_REFERRER_POLICY = "same-origin"
 if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    # The server will sit behind a reverse proxy that terminates HTTPS
-    # (milestone 6). This tells Django to trust its "this was HTTPS" header.
+    # On the server, a reverse proxy (Caddy, see compose.prod.yaml) terminates
+    # HTTPS and tells Django "this was HTTPS" with this header. The proxy
+    # always replaces any value the browser sent, so it can't be faked.
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+    # Send plain-HTTP requests to HTTPS. The proxy already does this; this is a
+    # second line of defence. Only an explicit False/0/no/off turns it off.
+    SECURE_SSL_REDIRECT = os.environ.get("DJANGO_SECURE_SSL_REDIRECT", "").strip().lower() not in {
+        "0", "false", "no", "off",
+    }
+    # ...except the health check. Docker's HEALTHCHECK (see Dockerfile) asks
+    # for http://127.0.0.1:8000/healthz inside the container, not through the
+    # proxy. Redirecting it to HTTPS would mark a healthy app as unhealthy.
+    SECURE_REDIRECT_EXEMPT = [r"^healthz$"]
+    # The same check sends "Host: 127.0.0.1:8000"; without this, Django would
+    # answer it with 400 Bad Request. Nothing outside the container can use
+    # it: in production port 8000 isn't published, and the proxy only passes on
+    # requests for the real hostname.
+    if "127.0.0.1" not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append("127.0.0.1")
+
+    # HSTS: once a browser has used the site over HTTPS, for this many seconds
+    # it refuses plain HTTP, and certificate warnings can't be clicked past.
+    # Default: one year. The proxy sends the same value (compose.prod.yaml).
+    SECURE_HSTS_SECONDS = int(os.environ.get("DJANGO_SECURE_HSTS_SECONDS") or 31_536_000)
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    # Preloading is only for public domains submitted to browser makers. This
+    # hostname is internal-only, so it can't be preloaded: don't warn about it.
+    SECURE_HSTS_PRELOAD = False
+    SILENCED_SYSTEM_CHECKS = ["security.W021"]
+
+# Django's test client talks plain HTTP. This runner switches the HTTPS
+# redirect off for `manage.py test`; the tests of the redirect itself turn it
+# back on (core/tests/test_security.py).
+TEST_RUNNER = "config.runner.PlainHttpTestRunner"
 
 # --------------------------------------------------------------------------
 # Logging: everything to the console, which Docker collects.

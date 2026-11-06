@@ -1,0 +1,62 @@
+# InH-Ticketing reverse proxy (Caddy 2), used by compose.prod.yaml.
+#
+#   - Serves https://HELPDESK_HOSTNAME with the certificate from McKenna Labs'
+#     internal CA, mounted read-only at /certs (/srv/inh-ticketing/certs on
+#     the server).
+#   - Never requests certificates itself: no ACME, no Let's Encrypt.
+#   - Plain HTTP on port 80 only redirects to HTTPS.
+#   - Passes everything else to the app (gunicorn, web:8000).
+#
+# HELPDESK_HOSTNAME and HSTS_MAX_AGE are set by compose.prod.yaml from .env.
+# After changing this file, or the certificate files:
+#   docker compose -f compose.yaml -f compose.prod.yaml restart proxy
+# This file must keep LF line endings (see .gitattributes).
+
+{
+	# No automatic HTTPS at all: no certificate requests to any CA (the
+	# certificate comes from the internal CA, below) and no automatic
+	# redirects (the :80 site at the bottom does that, explicitly).
+	auto_https off
+
+	servers {
+		# HTTP/1.1 and HTTP/2 over TCP only. HTTP/3 would need UDP 443 open,
+		# and browsers would otherwise be told to try it.
+		protocols h1 h2
+	}
+}
+
+https://{$HELPDESK_HOSTNAME} {
+	tls /certs/fullchain.pem /certs/privkey.pem
+
+	# Attachments are 10 MB each and up to 5 per request or reply (about
+	# 52 MB), plus the rest of the form. Anything bigger gets 413.
+	request_body {
+		max_size 60MB
+	}
+
+	# HSTS: browsers that have used the site over HTTPS refuse plain HTTP for
+	# HSTS_MAX_AGE seconds. The ">" applies it after the app's own headers, so
+	# it replaces Django's identical header rather than sending two.
+	header >Strict-Transport-Security "max-age={$HSTS_MAX_AGE}; includeSubDomains"
+
+	# Caddy passes the browser's Host header through unchanged and sets
+	# X-Forwarded-For and X-Forwarded-Proto ("https") itself, ignoring any
+	# values the browser sent. Django relies on both: Host for ALLOWED_HOSTS
+	# and sign-in, X-Forwarded-Proto for SECURE_PROXY_SSL_HEADER.
+	reverse_proxy web:8000 {
+		# Receive the whole upload before passing it on, so a slow upload over
+		# the VPN can't tie up one of gunicorn's three workers or run into its
+		# timeout. Uploads are held in memory while they arrive.
+		request_buffers 60MB
+	}
+
+	# Access log, with the real client address, to the container's log:
+	#   docker compose -f compose.yaml -f compose.prod.yaml logs proxy
+	log
+}
+
+# Anything on plain HTTP, whatever name or address it was sent to: redirect to
+# the HTTPS address.
+:80 {
+	redir https://{$HELPDESK_HOSTNAME}{uri} permanent
+}
