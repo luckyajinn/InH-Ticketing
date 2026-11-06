@@ -3,7 +3,7 @@
 An in-house IT help desk for McKenna Labs. Staff send IT a request; IT works
 it through to resolution. People sign in with their Microsoft 365 work account.
 
-**Status:** v0.4.0, milestone 4 (email in). This is a test build.
+**Status:** v0.5.0, milestone 5 (automations). This is a test build, approved for internal setup.
 See the [release notes with screenshots](docs/releases/README.md) for how it looks and what changed in each version.
 
 ## What works today
@@ -133,11 +133,14 @@ Built with Django 6.1, MSAL (Microsoft's auth library), PostgreSQL and WhiteNois
 
 ## Roadmap
 
+Dates, dependencies and alternative paths are in [docs/roadmap.md](docs/roadmap.md);
+item-level detail is in [docs/backlog.md](docs/backlog.md).
+
 | Milestone | Scope | Status |
 |---|---|---|
 | 1 | Skeleton, Microsoft 365 sign-in, roles | ✅ v0.1.0 |
 | 2 | Tickets: submit, my tickets, agent queue, public replies vs internal notes, history, attachments | ✅ v0.2.0 |
 | 3 | Outbound email notifications (files locally, Microsoft Graph for real) | ✅ v0.3.0 |
 | 4 | Inbound email-to-ticket from a test shared mailbox | ✅ v0.4.0 |
-| 5 | Automations: auto-close resolved tickets, reopen rules | Next |
-| 6 | Deploy to the internal server with HTTPS and backups | |
+| 5 | Automations: auto-close resolved tickets, follow-ups, usage controls | ✅ v0.5.0 |
+| 6 | Deploy to the internal server with HTTPS and backups | In progress (waiting on the server) |

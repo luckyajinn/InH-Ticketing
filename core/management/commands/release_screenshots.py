@@ -59,22 +59,42 @@ class Command(BaseCommand):
         noted = Ticket.objects.filter(
             requester__username__startswith="demo-", comments__source="email", comments__is_internal=True
         ).first()
-        if not (requester and agent and sample and open_ticket and noted):
-            raise CommandError("Demo data not found. Run: python manage.py seed_demo")
+        # v0.5.0: a Resolved ticket of Dana's (shows the auto-close date), and a
+        # Closed ticket with a follow-up linked to it (Aisha's).
+        resolved = Ticket.objects.filter(requester=requester, status=Ticket.Status.RESOLVED).first()
+        closed = Ticket.objects.filter(
+            requester__username__startswith="demo-", status=Ticket.Status.CLOSED, follow_ups__isnull=False
+        ).first()
+        if not (requester and agent and sample and open_ticket and noted and resolved and closed):
+            raise CommandError("Demo data not found. Run: python manage.py seed_demo --clear, then seed_demo")
+        follow_up = closed.follow_ups.first()
 
         # Database work happens before and after the browser runs: Playwright's
         # sync API runs an event loop, and Django refuses ORM calls inside one.
+        def latest_email(ticket, kind):
+            return (OutboundEmail.objects.filter(ticket=ticket, kind=kind)
+                    .order_by("created_at").values_list("body_html", flat=True).last())
+
         emails = {
-            kind: OutboundEmail.objects.filter(ticket=sample, kind=kind)
-            .order_by("created_at").values_list("body_html", flat=True).last()
-            for kind in ("received", "it_replied")
+            "received": latest_email(sample, "received"),
+            "it_replied": latest_email(sample, "it_replied"),
+            "resolved_reply": latest_email(resolved, "it_replied"),
         }
-        sessions = {"requester": self._session_for(requester), "agent": self._session_for(agent)}
+        sessions = {
+            "requester": self._session_for(requester),
+            "agent": self._session_for(agent),
+            "closed_requester": self._session_for(closed.requester),
+        }
         out_dir = Path(out)
         out_dir.mkdir(parents=True, exist_ok=True)
         base_url = base_url.rstrip("/")
         sample_url = sample.get_absolute_url()
-        urls = {"sample": sample_url, "open": open_ticket.get_absolute_url(), "noted": noted.get_absolute_url()}
+        urls = {
+            "sample": sample_url, "open": open_ticket.get_absolute_url(), "noted": noted.get_absolute_url(),
+            "resolved": resolved.get_absolute_url(), "closed": closed.get_absolute_url(),
+            "follow_up": follow_up.get_absolute_url(),
+            "new_follow_up": f"/tickets/new/?follow_up={closed.number}",
+        }
         wanted = {p.strip() for p in only.split(",") if p.strip()}
 
         try:
@@ -167,4 +187,9 @@ class Command(BaseCommand):
         shoot_email("11-email-it-replied.png", emails["it_replied"])
         shoot_email("12-email-received.png", emails["received"])
         shoot("13-agent-ticket-email-note.png", "agent", urls["noted"], full_page=True)
+        shoot("14-requester-resolved.png", "requester", urls["resolved"], full_page=True)
+        shoot("15-requester-closed.png", "closed_requester", urls["closed"], full_page=True)
+        shoot("16-new-request-follow-up.png", "closed_requester", urls["new_follow_up"], full_page=True)
+        shoot("17-agent-linked-tickets.png", "agent", urls["follow_up"], full_page=True)
+        shoot_email("18-email-resolved.png", emails["resolved_reply"])
         return saved

@@ -65,6 +65,20 @@ never the live help-desk one, until the pilot is over.
 In the **Exchange admin center → Recipients → Mailboxes → Add a shared
 mailbox**, create `helpdesk-test@…` if it doesn't exist. Shared mailboxes don't need a license.
 
+**Accept internal senders only.** InH-Ticketing is for internal staff (see
+[usage-rules.md](usage-rules.md)), so make the mailbox refuse email from outside
+the company. Outside senders then get a bounce from Exchange, and their email
+never reaches the app. In the Exchange admin center, open the mailbox, go to
+**Mail flow settings → Message delivery restrictions**, and tick **Require
+that all senders are authenticated**. Or in Exchange Online PowerShell:
+
+```powershell
+Set-Mailbox -Identity "helpdesk-test@mckennalabs.com" -RequireSenderAuthenticationEnabled $true
+```
+
+To check, send an email to the mailbox from a personal (non-company) account.
+It should bounce.
+
 ### 3b. Don't add Mail.Send in Entra
 
 > Do **not** add *Mail.Send* under the app registration's **API permissions**.

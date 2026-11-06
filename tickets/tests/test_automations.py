@@ -177,15 +177,16 @@ class FollowUpTests(MediaTestCase):
         self.client.force_login(self.agent)
         original_page = self.client.get(self.closed.get_absolute_url())
         self.assertContains(original_page, "Linked tickets")
-        self.assertContains(original_page, f"Follow-up #{follow_up.number}")
+        self.assertContains(original_page, f'Follow-up <span class="ticket-num">#{follow_up.number}</span>')
         follow_page = self.client.get(follow_up.get_absolute_url())
-        self.assertContains(follow_page, f"Follow-up to #{self.closed.number}")
+        self.assertContains(follow_page, f'Follow-up to <span class="ticket-num">#{self.closed.number}</span>')
 
     def test_requester_sees_their_own_links(self):
         follow_up = make_ticket(self.requester, subject="Badge again", follows_up=self.closed)
         self.client.force_login(self.requester)
-        self.assertContains(self.client.get(self.closed.get_absolute_url()), f"Follow-up #{follow_up.number}")
-        self.assertContains(self.client.get(follow_up.get_absolute_url()), f"Follow-up to #{self.closed.number}")
+        self.assertContains(self.client.get(self.closed.get_absolute_url()), f'Follow-up <span class="ticket-num">#{follow_up.number}</span>')
+        self.assertContains(self.client.get(follow_up.get_absolute_url()),
+                            f'Follow-up to <span class="ticket-num">#{self.closed.number}</span>')
 
     def test_requester_cannot_see_links_to_tickets_they_dont_own(self):
         # IT started a follow-up under their own name, and Dana's ticket points at Tom's.

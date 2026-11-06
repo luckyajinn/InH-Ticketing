@@ -1,9 +1,9 @@
 {# Links between a ticket and the tickets it follows up or that follow it up. The view has already limited them to what this person may see. #}
 <ul class="mini-list">
   {% if follows_up %}
-  <li><a href="{{ follows_up.get_absolute_url }}"><span class="ticket-num">Follow-up to #{{ follows_up.number }}</span>{{ follows_up.subject }}</a>{% include "tickets/partials/status.html" with t=follows_up %}</li>
+  <li><a href="{{ follows_up.get_absolute_url }}">Follow-up to <span class="ticket-num">#{{ follows_up.number }}</span> {{ follows_up.subject }}</a>{% include "tickets/partials/status.html" with t=follows_up %}</li>
   {% endif %}
   {% for f in follow_ups %}
-  <li><a href="{{ f.get_absolute_url }}"><span class="ticket-num">Follow-up #{{ f.number }}</span>{{ f.subject }}</a>{% include "tickets/partials/status.html" with t=f %}</li>
+  <li><a href="{{ f.get_absolute_url }}">Follow-up <span class="ticket-num">#{{ f.number }}</span> {{ f.subject }}</a>{% include "tickets/partials/status.html" with t=f %}</li>
   {% endfor %}
 </ul>
