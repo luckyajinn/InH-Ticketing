@@ -37,6 +37,19 @@ def can_download(user, attachment: Attachment) -> bool:
     return user.is_agent or not attachment.is_internal
 
 
+def linked_tickets(ticket: Ticket, user) -> tuple[Ticket | None, list[Ticket]]:
+    """
+    The ticket this one follows up, and the follow-ups started from it, limited
+    to tickets this person may view. A requester never learns about a ticket
+    that isn't theirs, even if it's linked to theirs.
+    """
+    original = ticket.follows_up
+    if original is not None and not can_view(user, original):
+        original = None
+    follow_ups = Ticket.objects.visible_to(user).filter(follows_up=ticket).order_by("created_at")
+    return original, list(follow_ups)
+
+
 @dataclass
 class TimelineItem:
     kind: str  # "comment" or "event"

@@ -3,6 +3,25 @@
 All notable changes to InH-Ticketing. Versions follow [Semantic Versioning](https://semver.org).
 Each version also has illustrated release notes in [docs/releases](docs/releases/README.md).
 
+## [0.5.0] - 2026-11-06
+
+Milestone 5: automations, follow-ups and FDA usage controls. [Release notes with screenshots](docs/releases/v0.5.0.md).
+
+### Added
+- Resolved tickets close automatically after `AUTO_CLOSE_RESOLVED_DAYS` (default
+  7; 0 = off). Requesters see the close date on the ticket and in the email;
+  the history records it as automatic. It runs in the worker hourly, or on
+  demand with `manage.py close_resolved`.
+- Follow-ups: "Start a follow-up" on closed tickets opens a linked new
+  request. Email replies to closed tickets create the same link. A Linked
+  tickets / Linked requests panel shows the links, limited to tickets the viewer may see.
+- An "IT issues only" notice on the New request page (an FDA risk-assessment control).
+- `docs/usage-rules.md` (staff and IT usage rules) and `docs/roadmap.md`.
+- docs/email-setup.md: making the help-desk mailbox accept internal senders only.
+
+### Fixed
+- The attachment drop area's layout on the New request page (broken since v0.2.0).
+
 ## [0.4.0] - 2026-11-06
 
 Milestone 4: email in. [Release notes with screenshots](docs/releases/v0.4.0.md).
@@ -111,6 +130,7 @@ Milestone 1: skeleton and Microsoft 365 sign-in. [Release notes with screenshots
 - `/healthz` endpoint, Dockerfile and Docker Compose with PostgreSQL 17.
 - Entra setup guide (`docs/entra-setup.md`) and the UI mockup (`mockups/`).
 
+[0.5.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.5.0
 [0.4.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.4.0
 [0.3.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.3.0
 [0.2.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.2.0

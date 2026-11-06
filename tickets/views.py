@@ -75,10 +75,25 @@ def my_tickets(request):
     )
 
 
+def _follow_up_target(request) -> Ticket | None:
+    """
+    The ticket a new request follows up (?follow_up=1001, or the hidden field on
+    the form), but only if this person may view it. Anything else is ignored
+    without a word, so the page never reveals whether a ticket exists.
+    """
+    raw = request.POST.get("follow_up") or request.GET.get("follow_up") or ""
+    if not raw.isdigit():
+        return None
+    ticket = Ticket.objects.filter(pk=Ticket.pk_from_number(int(raw))).first()
+    return ticket if ticket and selectors.can_view(request.user, ticket) else None
+
+
 @login_required
 @require_http_methods(["GET", "POST"])
 def new_ticket(request):
-    form = NewTicketForm(request.POST or None, request.FILES or None)
+    follow_up = _follow_up_target(request)
+    initial = {"subject": follow_up.subject} if follow_up else None
+    form = NewTicketForm(request.POST or None, request.FILES or None, initial=initial)
     if request.method == "POST" and form.is_valid():
         ticket = services.create_ticket(
             requester=request.user,
@@ -87,11 +102,12 @@ def new_ticket(request):
             category=form.cleaned_data["category"],
             is_blocking=form.cleaned_data["is_blocking"],
             files=form.cleaned_data["attachments"],
+            follows_up=follow_up,
         )
         messages.success(request, f"Request #{ticket.number} sent. IT will pick it up soon.")
         return redirect(ticket)
     status = 400 if request.method == "POST" else 200
-    return render(request, "tickets/new.html", {"form": form}, status=status)
+    return render(request, "tickets/new.html", {"form": form, "follow_up": follow_up}, status=status)
 
 
 # ---------------------------------------------------------------------------
@@ -107,6 +123,7 @@ def _render_detail(request, ticket, *, reply_form=None, props_form=None, status=
         ],
         "reply_form": reply_form or ReplyForm(user=user),
     }
+    context["follows_up"], context["follow_ups"] = selectors.linked_tickets(ticket, user)
     if user.is_agent:
         context["props_form"] = props_form or TicketPropertiesForm(ticket=ticket, me=user)
         context["all_attachments"] = selectors.visible_attachments(ticket, user)

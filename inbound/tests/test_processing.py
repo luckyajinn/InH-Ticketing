@@ -143,4 +143,5 @@ class ReplyTests(MediaTestCase):
         self.assertEqual(result.outcome, InboundEmail.Outcome.NEW_TICKET)
         self.assertNotEqual(result.ticket, self.ticket)
         self.assertIn(f"Follow-up to closed ticket #{self.ticket.number}", result.ticket.description)
+        self.assertEqual(result.ticket.follows_up, self.ticket)
         self.assertEqual(Comment.objects.filter(ticket=self.ticket, body__contains="back again").count(), 0)

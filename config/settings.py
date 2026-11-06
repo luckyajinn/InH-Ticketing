@@ -167,6 +167,10 @@ TICKET_NUMBER_OFFSET = 1000
 MEDIA_ROOT = Path(os.environ.get("MEDIA_ROOT", BASE_DIR / "media"))
 MEDIA_URL = "/media/"
 
+# Resolved tickets close by themselves this many days after IT resolved them,
+# unless the requester replies first. 0 turns auto-close off.
+AUTO_CLOSE_RESOLVED_DAYS = int(os.environ.get("AUTO_CLOSE_RESOLVED_DAYS", "7"))
+
 ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024  # 10 MB per file
 ATTACHMENT_MAX_FILES = 5  # per request or reply
 ATTACHMENT_EXTENSIONS = {

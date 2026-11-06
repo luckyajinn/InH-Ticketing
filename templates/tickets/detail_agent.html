@@ -121,6 +121,11 @@
     </section>
 
     <section class="panel">
+      <h2 class="panel-title">Linked tickets</h2>
+      {% if follows_up or follow_ups %}{% include "tickets/partials/linked.html" %}{% else %}<p class="muted small">None</p>{% endif %}
+    </section>
+
+    <section class="panel">
       <h2 class="panel-title">Details</h2>
       <dl class="dl">
         <dt>Ticket</dt><dd>#{{ ticket.number }}</dd>

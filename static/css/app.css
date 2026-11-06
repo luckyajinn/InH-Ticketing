@@ -533,6 +533,8 @@ main { flex: 1 0 auto; }
   text-align: center;
   cursor: pointer;
 }
+/* The drop area is itself a <label>, so undo the generic ".field > label" styling. */
+.field > .dropzone { display: flex; margin-bottom: 0; font-weight: 400; }
 .dropzone:hover, .dropzone.is-over { border-color: var(--accent); background: var(--accent-soft); }
 .dropzone:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
 .dropzone > .icon { width: 24px; height: 24px; margin-bottom: 2px; }
@@ -552,6 +554,7 @@ main { flex: 1 0 auto; }
   background: var(--accent-soft); color: var(--text);
   font-size: var(--fs-sm);
 }
+.follow-up-note { margin: 0 0 var(--sp-3); font-weight: 600; }
 .hint-box > .icon { margin-top: 1px; color: var(--accent-soft-text); }
 .panel-tip { display: flex; gap: 10px; align-items: flex-start; font-size: var(--fs-sm); }
 .panel-tip > .icon { margin-top: 1px; color: var(--text-muted); }
