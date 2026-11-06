@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "core",
     "tickets",
     "notifications",
+    "inbound",
 ]
 
 MIDDLEWARE = [
@@ -208,6 +209,24 @@ EMAIL_FILE_PATH = BASE_DIR / "tmp" / "emails"
 # The background worker checks for emails to send this often (seconds).
 WORKER_INTERVAL_SECONDS = int(os.environ.get("WORKER_INTERVAL_SECONDS", "15"))
 EMAIL_MAX_ATTEMPTS = 5
+
+# --------------------------------------------------------------------------
+# Email in: turning emails to HELPDESK_MAILBOX into tickets and replies.
+# --------------------------------------------------------------------------
+#   off   - don't read the mailbox (default)
+#   graph - the worker reads the inbox through Microsoft Graph
+INBOUND_EMAIL = os.environ.get("INBOUND_EMAIL", "off").strip().lower() or "off"
+INBOUND_POLL_SECONDS = int(os.environ.get("INBOUND_POLL_SECONDS", "60"))
+# Only accept email from these domains. Blank means the domain of
+# HELPDESK_MAILBOX (blank too, as on a PC without one, means any domain).
+INBOUND_ALLOWED_DOMAINS = [d.lower() for d in env_list("INBOUND_ALLOWED_DOMAINS")] or (
+    [HELPDESK_MAILBOX.rsplit("@", 1)[-1].lower()] if "@" in HELPDESK_MAILBOX else []
+)
+# Category for tickets that arrive by email (IT can change it).
+INBOUND_DEFAULT_CATEGORY = os.environ.get("INBOUND_DEFAULT_CATEGORY", "Other")
+# Processed emails are moved to this folder in the mailbox.
+INBOUND_PROCESSED_FOLDER = "Processed by InH-Ticketing"
+INBOUND_MAX_ATTEMPTS = 3
 
 # --------------------------------------------------------------------------
 # Security. Hardened automatically whenever DEBUG is off.

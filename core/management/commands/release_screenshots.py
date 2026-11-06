@@ -55,7 +55,11 @@ class Command(BaseCommand):
         open_ticket = Ticket.objects.filter(
             requester__username__startswith="demo-", status=Ticket.Status.OPEN
         ).first()
-        if not (requester and agent and sample and open_ticket):
+        # A ticket with an emailed approval from someone other than the requester.
+        noted = Ticket.objects.filter(
+            requester__username__startswith="demo-", comments__source="email", comments__is_internal=True
+        ).first()
+        if not (requester and agent and sample and open_ticket and noted):
             raise CommandError("Demo data not found. Run: python manage.py seed_demo")
 
         # Database work happens before and after the browser runs: Playwright's
@@ -70,7 +74,7 @@ class Command(BaseCommand):
         out_dir.mkdir(parents=True, exist_ok=True)
         base_url = base_url.rstrip("/")
         sample_url = sample.get_absolute_url()
-        urls = {"sample": sample_url, "open": open_ticket.get_absolute_url()}
+        urls = {"sample": sample_url, "open": open_ticket.get_absolute_url(), "noted": noted.get_absolute_url()}
         wanted = {p.strip() for p in only.split(",") if p.strip()}
 
         try:
@@ -162,4 +166,5 @@ class Command(BaseCommand):
         shoot("10-composer-status-buttons.png", "agent", urls["open"], element=".composer")
         shoot_email("11-email-it-replied.png", emails["it_replied"])
         shoot_email("12-email-received.png", emails["received"])
+        shoot("13-agent-ticket-email-note.png", "agent", urls["noted"], full_page=True)
         return saved

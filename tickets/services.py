@@ -134,6 +134,23 @@ def add_comment(
 
 
 @transaction.atomic
+def add_email_from_third_party(*, ticket: Ticket, sender, body: str, files=()) -> Comment:
+    """
+    Someone who is neither the requester nor IT emailed about a ticket (a
+    manager approving access, say). Keep it as an internal note so IT decides
+    what to share, and alert the assignee. Only email-in calls this.
+    """
+    comment = Comment.objects.create(
+        ticket=ticket, author=sender, is_internal=True, source=Ticket.Source.EMAIL,
+        body=f"Email from {sender} <{sender.email}>, who isn't the requester:\n\n{body.strip()}",
+    )
+    _save_attachments(ticket, sender, files, comment)
+    _save(ticket, [])
+    notify.third_party_email(comment)
+    return comment
+
+
+@transaction.atomic
 def update_ticket(
     *, ticket: Ticket, actor, status: str | None = None, priority: int | None = None,
     assignee=_UNSET, category: Category | None = None,

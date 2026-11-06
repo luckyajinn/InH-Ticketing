@@ -32,11 +32,22 @@ def _reachable(user) -> bool:
     return bool(user and user.is_active and user.email)
 
 
+def _reply_hint(ticket, audience: str) -> str:
+    """What replying to the email does: tell people before they try it."""
+    if settings.INBOUND_EMAIL != "graph":
+        return "Replies to this email aren't added to the ticket yet. Please use the link instead."
+    if audience == "it":
+        return (f"Replying to this email posts a public reply that {ticket.requester} will see. "
+                "For an internal note, use the ticket page.")
+    return f"Reply to this email to add to your request. Keep [#{ticket.number}] in the subject."
+
+
 def _queue(*, kind, ticket, to, heading, intro, reason, message=None, message_author=None,
-           action="View your request"):
+           action="View your request", audience="requester"):
     if not to:
         return None
     context = {
+        "reply_hint": _reply_hint(ticket, audience),
         "ticket": ticket,
         "ticket_url": _ticket_url(ticket),
         "heading": heading,
@@ -81,7 +92,7 @@ def request_received(ticket) -> None:
             reason="you raised this request",
         )
     _queue(
-        kind="new_ticket", ticket=ticket, to=settings.IT_NOTIFY_EMAIL,
+        kind="new_ticket", ticket=ticket, to=settings.IT_NOTIFY_EMAIL, audience="it",
         heading=f"New request from {requester}",
         intro=f"{ticket.category} · {'blocking their work' if ticket.is_blocking else 'not marked as blocking'}",
         message=ticket.description, message_author=f"{requester} wrote",
@@ -97,7 +108,7 @@ def comment_added(comment) -> None:
     if author.pk == ticket.requester_id:
         to = _it_recipient(ticket, author)
         _queue(
-            kind="requester_replied", ticket=ticket, to=to,
+            kind="requester_replied", ticket=ticket, to=to, audience="it",
             heading=f"{author} replied",
             intro=f"New reply on #{ticket.number}, now {ticket.get_status_display()}.",
             message=comment.body, message_author=f"{author} wrote",
@@ -126,12 +137,25 @@ def comment_added(comment) -> None:
         )
 
 
+def third_party_email(comment) -> None:
+    """An email from someone other than the requester, saved as an internal note."""
+    ticket, sender = comment.ticket, comment.author
+    _queue(
+        kind="third_party_email", ticket=ticket, to=_it_recipient(ticket, sender), audience="it",
+        heading=f"Email from {sender} on #{ticket.number}",
+        intro=f"{sender} isn't the requester, so it was saved as an internal note. {ticket.requester} can't see it.",
+        message=comment.body, message_author=f"{sender} wrote",
+        action="Open the ticket",
+        reason="you're assigned to this ticket" if ticket.assignee_id else "this address gets IT's alerts",
+    )
+
+
 def assigned(ticket, actor) -> None:
     assignee = ticket.assignee
     if not assignee or assignee.pk == actor.pk or not _reachable(assignee):
         return
     _queue(
-        kind="assigned", ticket=ticket, to=assignee.email,
+        kind="assigned", ticket=ticket, to=assignee.email, audience="it",
         heading=f"{actor} assigned #{ticket.number} to you",
         intro=f"From {ticket.requester} · {ticket.category} · {ticket.get_priority_display()} priority",
         message=ticket.description, message_author=f"{ticket.requester} wrote",
@@ -156,7 +180,7 @@ def resolved(ticket, actor) -> None:
 
 def reopened(ticket, actor) -> None:
     _queue(
-        kind="reopened", ticket=ticket, to=_it_recipient(ticket, actor),
+        kind="reopened", ticket=ticket, to=_it_recipient(ticket, actor), audience="it",
         heading=f"{actor} reopened #{ticket.number}",
         intro="They say it's still a problem.",
         action="Open the ticket",

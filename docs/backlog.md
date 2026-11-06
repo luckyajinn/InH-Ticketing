@@ -15,11 +15,20 @@ it's done and mention it in that version's release notes.
       "Send and set Waiting on User" and "Send and resolve" next to the reply
       button. *(Raised in testing, 2026-11-06.)*
 
+## v0.4.0 (milestone 4: email in)
+
+- [x] Inbound email-to-ticket from the test shared mailbox, with replies
+      matched by `[#1001]`. *(Code done; reading the real mailbox needs the
+      Exchange permission in docs/email-setup.md section 4b.)*
+- [x] A reply to a closed ticket by email opens a linked follow-up ticket
+      (brought forward from milestone 5).
+
 ## Later
 
-- [ ] Inbound email-to-ticket from the test shared mailbox (milestone 4).
-- [ ] Auto-close resolved tickets after N days; a reply to a closed ticket
-      opens a linked new ticket (milestone 5).
+- [ ] Auto-close resolved tickets after N days (milestone 5).
+- [ ] The same "reply to a closed ticket" follow-up on the web (milestone 5).
+- [ ] Confirm DMARC is enforced on the company domain before relying on
+      email-in for anything sensitive.
 - [ ] Deploy to the internal server with HTTPS, so testers can use their own
       computers (milestone 6).
 - [ ] Size the server once staff and IT headcounts are known (milestone 6).

@@ -89,6 +89,12 @@
         {% if ticket.is_blocking %}<dt>Blocking</dt><dd>You said this blocks your work</dd>{% endif %}
       </dl>
     </section>
+    {% if INBOUND_ADDRESS and ticket.status != "closed" %}
+    <section class="panel panel-tip" aria-label="Reply by email">
+      {% icon "mail" %}
+      <p>You can reply by email too. Reply to any update we send and keep <strong>[#{{ ticket.number }}]</strong> in the subject.</p>
+    </section>
+    {% endif %}
   </aside>
 </div>
 {% endwith %}

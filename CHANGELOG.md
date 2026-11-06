@@ -3,6 +3,43 @@
 All notable changes to InH-Ticketing. Versions follow [Semantic Versioning](https://semver.org).
 Each version also has illustrated release notes in [docs/releases](docs/releases/README.md).
 
+## [0.4.0] - 2026-11-06
+
+Milestone 4: email in. [Release notes with screenshots](docs/releases/v0.4.0.md).
+
+### Added
+- Email-in: the worker reads the test shared mailbox through Microsoft Graph
+  (`INBOUND_EMAIL=graph`) and turns emails into tickets and replies.
+  - `[#1028]` in the subject adds a reply to that ticket, keeping only the new
+    text (Graph's `uniqueBody`, or quote-stripping for other sources).
+  - Replies from someone other than the requester or IT become internal notes,
+    and the assignee is alerted.
+  - Replies to a closed ticket start a linked follow-up ticket; anything else
+    creates a new ticket.
+  - Processed emails are marked read and moved to "Processed by InH-Ticketing".
+- Colleagues who email before ever signing in get an account, linked to their
+  Microsoft 365 account on first sign-in.
+- Attachments from email follow the web rules. Pictures inside signatures are
+  skipped, and anything not attached is listed in the message.
+- `manage.py ingest_email` puts a `.eml` file, or an email typed with
+  `--from/--subject/--body`, through the same rules for local testing.
+- Admin: an Inbound emails list recording every email and what happened to it.
+- "You can also email …" hints for requesters when email-in is on.
+- Email footers say what replying does. IT emails warn that replying sends a
+  public reply.
+
+### Security
+- Out-of-office replies, bounces and mailing-list email are ignored (headers
+  and subject), and outgoing email asks Exchange to suppress automatic replies.
+- Only accepted domains are processed. Unknown senders get no reply, which
+  avoids sending mail to forged addresses.
+- Only plain text is requested and stored; nothing from outside is rendered as HTML.
+- Each email is processed once (by Message-ID). Failures are retried 3 times,
+  then left for a person.
+
+### Changed
+- Sending and reading share one Microsoft Graph client (`notifications/graph.py`).
+
 ## [0.3.0] - 2026-11-06
 
 Milestone 3: outbound email. [Release notes with screenshots](docs/releases/v0.3.0.md).
@@ -74,6 +111,7 @@ Milestone 1: skeleton and Microsoft 365 sign-in. [Release notes with screenshots
 - `/healthz` endpoint, Dockerfile and Docker Compose with PostgreSQL 17.
 - Entra setup guide (`docs/entra-setup.md`) and the UI mockup (`mockups/`).
 
+[0.4.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.4.0
 [0.3.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.3.0
 [0.2.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.2.0
 [0.1.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.1.0

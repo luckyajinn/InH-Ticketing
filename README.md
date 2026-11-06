@@ -3,7 +3,7 @@
 An in-house IT help desk for McKenna Labs. Staff send IT a request; IT works
 it through to resolution. People sign in with their Microsoft 365 work account.
 
-**Status:** v0.3.0, milestone 3 (outbound email). This is a test build.
+**Status:** v0.4.0, milestone 4 (email in). This is a test build.
 See the [release notes with screenshots](docs/releases/README.md) for how it looks and what changed in each version.
 
 ## What works today
@@ -18,6 +18,8 @@ See the [release notes with screenshots](docs/releases/README.md) for how it loo
 - **Email:** people are emailed when something happens on their ticket
   (received, IT replied, assigned, resolved and so on). Emails are queued and
   sent by a background worker. See [docs/email-setup.md](docs/email-setup.md).
+- **Email in:** emails to the help-desk mailbox become tickets, and replies
+  to our emails (with `[#1001]` in the subject) are added to the right ticket.
 - **History:** every change is logged with who made it and when.
 - **Privacy:** requesters are never sent internal notes, files on internal
   notes, or the history log. This is filtered on the server, not hidden in the browser.
@@ -68,6 +70,11 @@ Emails are sent by a second process. In another PowerShell window, also in the p
 ```
 
 By default nothing is really sent; emails appear as files in `tmp/emails/`.
+To try email-in without Microsoft 365, feed it an email:
+
+```powershell
+.\.venv\Scripts\python.exe manage.py ingest_email --from dana.whitfield@example.invalid --subject "Laptop fan is loud" --body "Sounds like a jet"
+```
 
 ### Try it with demo data
 
@@ -112,7 +119,8 @@ tickets/           Tickets, replies, notes, history, attachments
   services.py      The ticket rules; every change goes through here
   selectors.py     Who may see what (requesters never get internal notes)
   views.py         Queue, my tickets, new request, ticket page, actions
-notifications/     Email: who gets what (notify.py), the queue, the worker, Graph sending
+notifications/     Email out: who gets what (notify.py), the queue, the worker, Graph client
+inbound/           Email in: processing rules (processing.py), Graph inbox reader, ingest_email
 templates/         Server-rendered HTML pages (emails in templates/emails/)
 static/css/app.css The one stylesheet; colours and spacing live in :root
 static/js/app.js   Small extras (auto-save side panel, clickable rows); pages work without it
@@ -130,6 +138,6 @@ Built with Django 6.1, MSAL (Microsoft's auth library), PostgreSQL and WhiteNois
 | 1 | Skeleton, Microsoft 365 sign-in, roles | ✅ v0.1.0 |
 | 2 | Tickets: submit, my tickets, agent queue, public replies vs internal notes, history, attachments | ✅ v0.2.0 |
 | 3 | Outbound email notifications (files locally, Microsoft Graph for real) | ✅ v0.3.0 |
-| 4 | Inbound email-to-ticket from a test shared mailbox | Next |
-| 5 | Automations: auto-close resolved tickets, reopen rules | |
+| 4 | Inbound email-to-ticket from a test shared mailbox | ✅ v0.4.0 |
+| 5 | Automations: auto-close resolved tickets, reopen rules | Next |
 | 6 | Deploy to the internal server with HTTPS and backups | |

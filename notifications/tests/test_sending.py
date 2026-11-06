@@ -8,7 +8,7 @@ from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.utils import timezone
 
-from notifications import backends
+from notifications import backends, graph
 from notifications.models import OutboundEmail
 from notifications.sender import send_pending
 
@@ -68,10 +68,9 @@ class SenderTests(TestCase):
 )
 class GraphBackendTests(TestCase):
     def setUp(self):
-        backends._msal_app = None
         app = mock.Mock()
         app.acquire_token_for_client.return_value = {"access_token": "token-123"}
-        patcher = mock.patch.object(backends, "_app", return_value=app)
+        patcher = mock.patch.object(graph, "_msal", return_value=app)
         patcher.start()
         self.addCleanup(patcher.stop)
 
@@ -82,22 +81,24 @@ class GraphBackendTests(TestCase):
         return message
 
     def test_posts_html_to_the_shared_mailbox(self):
-        with mock.patch.object(backends.requests, "post") as post:
-            post.return_value.status_code = 202
+        with mock.patch.object(graph.requests, "request") as request:
+            request.return_value.status_code = 202
             sent = backends.GraphEmailBackend().send_messages([self._message()])
         self.assertEqual(sent, 1)
-        url = post.call_args.args[0]
+        method, url = request.call_args.args
+        self.assertEqual(method, "POST")
         self.assertEqual(url, "https://graph.microsoft.com/v1.0/users/helpdesk-test@example.invalid/sendMail")
-        payload = post.call_args.kwargs["json"]["message"]
+        payload = request.call_args.kwargs["json"]["message"]
         self.assertEqual(payload["body"], {"contentType": "HTML", "content": "<p>Hello</p>"})
         self.assertEqual(payload["toRecipients"], [{"emailAddress": {"address": "dana@example.invalid"}}])
-        self.assertEqual(post.call_args.kwargs["headers"]["Authorization"], "Bearer token-123")
+        self.assertIn({"name": "X-Auto-Response-Suppress", "value": "All"}, payload["internetMessageHeaders"])
+        self.assertEqual(request.call_args.kwargs["headers"]["Authorization"], "Bearer token-123")
 
     def test_error_response_raises_so_the_worker_retries(self):
-        with mock.patch.object(backends.requests, "post") as post:
-            post.return_value.status_code = 403
-            post.return_value.text = "ErrorAccessDenied"
-            with self.assertRaises(backends.GraphSendError):
+        with mock.patch.object(graph.requests, "request") as request:
+            request.return_value.status_code = 403
+            request.return_value.text = "ErrorAccessDenied"
+            with self.assertRaises(graph.GraphError):
                 backends.GraphEmailBackend().send_messages([self._message()])
 
     @override_settings(HELPDESK_MAILBOX="")

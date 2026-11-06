@@ -1,8 +1,9 @@
 # Email setup
 
-InH-Ticketing emails people when something happens on their ticket. Emails
-are queued in the database and sent by a separate **background worker**, so
-saving a ticket never waits on, or fails because of, the mail system.
+InH-Ticketing emails people when something happens on their ticket
+(sections 1–3), and can turn emails to the help-desk mailbox into tickets and
+replies (section 4, *email-in*). Both are handled by a separate **background
+worker**, so saving a ticket never waits on, or fails because of, the mail system.
 
 ## Who gets what
 
@@ -18,8 +19,13 @@ Internal notes never send an email and never appear in one. Nobody is
 emailed about their own action. All emails about a ticket share the subject
 `[#1001] <subject>`, so mail apps group them into one conversation.
 
-Replies to these emails aren't read by the app yet (that's milestone 4), and
-every email says so.
+An email from someone other than the requester, saved as an internal note
+(see section 4), alerts the assignee too.
+
+Each email's footer says what replying does. With email-in off: "replies
+aren't added to the ticket yet". With it on, requesters are told to keep
+`[#1001]` in the subject, and IT is warned that replying **posts a public reply
+the requester will see**.
 
 ## 1. On your PC: nothing is sent
 
@@ -132,3 +138,104 @@ The error appears in the worker's terminal and on the email in the admin site.
 
 `compose.yaml` runs the worker as its own `worker` container, so it starts and
 restarts with the app. Run exactly one worker.
+
+---
+
+## 4. Email in: emails become tickets and replies
+
+With `INBOUND_EMAIL=graph`, the worker reads the help-desk mailbox's Inbox
+every minute. Each email is handled once, then marked read and moved to a
+**Processed by InH-Ticketing** folder.
+
+### What happens to an email
+
+| The email | What the app does |
+|---|---|
+| An out-of-office reply, bounce, or mailing-list email | Ignores it, so mail can't loop |
+| From an address outside your domain, or from the help-desk mailbox itself | Ignores it and **sends nothing back**. Replying to unknown senders would bounce mail at whoever's address was forged |
+| Subject has `[#1028]`, from the requester or IT | Adds a **public reply** to #1028. Only the new text is kept, not the quoted history. A requester's reply moves *Waiting on User* back to *Open*, as on the web |
+| Subject has `[#1028]`, from anyone else (a manager, say) | Adds an **internal note** that only IT sees, and alerts the assignee |
+| Subject has `[#1028]` but #1028 is Closed | Starts a **new ticket** that says it follows up #1028 |
+| Anything else | Creates a **new ticket**. Category: *Other*; the requester gets the usual receipt |
+
+- **New senders:** colleagues who have never signed in get an account
+  automatically, and it's linked to their Microsoft 365 account the first time
+  they sign in, so their tickets follow them.
+- **Attachments:** the same rules as on the web: allowed file types, 10 MB
+  each, up to 5. Pictures inside signatures are skipped. Anything left out is
+  listed at the end of the message.
+- **Text only:** the app asks Microsoft for plain text and never stores HTML
+  from outside.
+- **Every email is recorded** in the admin site under **Inbound emails**, with
+  what happened and why. An email that fails is retried up to 3 times; then
+  it's marked read and left in the Inbox for a person to deal with.
+
+### 4a. Try it on your PC first
+
+The `ingest_email` command puts an email through exactly the same rules,
+without Microsoft 365:
+
+```powershell
+# A new request
+.\.venv\Scripts\python.exe manage.py ingest_email --from dana.whitfield@example.invalid --subject "Laptop fan is loud" --body "Sounds like a jet"
+
+# A reply to ticket #1045 (use a real number from your queue)
+.\.venv\Scripts\python.exe manage.py ingest_email --from dana.whitfield@example.invalid --subject "RE: [#1045] Outlook" --body "Still happening"
+
+# A saved email: in Outlook, drag a message to the desktop to get a .eml file
+.\.venv\Scripts\python.exe manage.py ingest_email C:\path\to\message.eml
+```
+
+With `HELPDESK_MAILBOX` blank (as on your PC), email from any domain is accepted.
+
+### 4b. Let the app read the test mailbox
+
+Reading, marking read and moving email needs one more Exchange permission,
+scoped to the **same** management scope as sending (section 3c). In the same
+Exchange Online PowerShell session:
+
+```powershell
+New-ManagementRoleAssignment -App $appId -Role "Application Mail.ReadWrite" `
+  -CustomResourceScope "InH-Ticketing test mailbox"
+
+# Check again: InScope True for the test mailbox, False for anyone else
+Test-ServicePrincipalAuthorization -Identity $appId -Resource $mailbox
+Test-ServicePrincipalAuthorization -Identity $appId -Resource "someone.else@mckennalabs.com"
+```
+
+As before, don't add *Mail.ReadWrite* under API permissions in Entra, because
+that would cover every mailbox in the company.
+
+### 4c. Switch it on
+
+In `.env`:
+
+```
+INBOUND_EMAIL=graph
+HELPDESK_MAILBOX=helpdesk-test@mckennalabs.com
+# Optional; defaults to the mailbox's own domain
+INBOUND_ALLOWED_DOMAINS=mckennalabs.com
+```
+
+Restart the worker. It should print `Email-in: reading helpdesk-test@… every 60s`.
+Email the test mailbox from your own account: within a minute it shows up in the
+queue, and you get a receipt.
+
+### Things to know
+
+- **Sender addresses can be forged.** The domain check relies on Exchange's
+  spam and spoofing protection: SPF, DKIM and DMARC on your domain. IT should
+  confirm DMARC is enforced before email-in is used for anything sensitive.
+- **IT replying by email sends a public reply.** The footer of every IT email
+  says so. For an internal note, use the ticket page.
+- **Only the test mailbox.** Pointing this at the live help-desk mailbox turns
+  every email in it into a ticket. Switch over only when the pilot ends.
+
+### Troubleshooting email-in
+
+| Worker prints | Meaning | Fix |
+|---|---|---|
+| `Inbox: couldn't read it (GraphError: Graph GET returned 403 ...)` | The app can't read the mailbox | Step 4b; allow time for the permission to apply |
+| `Email-in: off` | `INBOUND_EMAIL` isn't `graph` | Set it in `.env` and restart the worker |
+| Emails stay unread, admin shows *Error* | Processing failed | Read the error in **Inbound emails**; it retries 3 times |
+| An email was ignored | It was automatic, or from another domain | The reason is in **Inbound emails** |

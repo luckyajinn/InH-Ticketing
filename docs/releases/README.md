@@ -4,6 +4,7 @@ One page per version, each with screenshots of what changed. Newest first.
 
 | Version | What | Notes |
 |---|---|---|
+| v0.4.0 | Email in: emails become tickets and replies | [v0.4.0.md](v0.4.0.md) |
 | v0.3.0 | Outbound email, worker, "Send and resolve" buttons | [v0.3.0.md](v0.3.0.md) |
 | v0.2.0 | Tickets: queue, requests, replies, internal notes, history, attachments | [v0.2.0.md](v0.2.0.md) |
 | v0.1.0 | Skeleton and Microsoft 365 sign-in | [v0.1.0.md](v0.1.0.md) |

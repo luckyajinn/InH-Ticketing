@@ -1,13 +1,14 @@
 """
-The background worker. Sends queued emails; milestone 4 will add reading the
-help-desk inbox here too.
+The background worker: sends queued emails and, if INBOUND_EMAIL=graph,
+reads the help-desk inbox.
 
     python manage.py run_worker          keep running (Ctrl+C to stop)
-    python manage.py run_worker --once   send what's due, then exit
+    python manage.py run_worker --once   one round, then exit
 
 Run exactly one worker.
 """
 
+import logging
 import time
 
 from django.conf import settings
@@ -16,21 +17,44 @@ from django.db import close_old_connections
 
 from notifications.sender import send_pending
 
+logger = logging.getLogger(__name__)
+
 
 class Command(BaseCommand):
-    help = "Send queued emails, then keep checking every WORKER_INTERVAL_SECONDS."
+    help = "Send queued emails and read the help-desk inbox, then keep checking."
 
     def add_arguments(self, parser):
         parser.add_argument("--once", action="store_true", help="Run one round, then exit.")
 
+    def _poll_inbox(self):
+        from inbound.graph_inbox import poll  # only needed when email-in is on
+
+        try:
+            handled, failed = poll()
+        except Exception as exc:  # Graph unreachable or not set up yet: keep sending
+            logger.error("Couldn't read the inbox: %s", exc)
+            self.stdout.write(f"Inbox: couldn't read it ({type(exc).__name__}: {exc})")
+            return
+        if handled or failed:
+            self.stdout.write(f"Inbox: {handled} email(s) processed, {failed} failed (will retry)")
+
     def handle(self, *args, once=False, **options):
         interval = settings.WORKER_INTERVAL_SECONDS
+        inbox_on = settings.INBOUND_EMAIL == "graph"
         self.stdout.write(
             f"Worker started. Email backend: {settings.EMAIL_BACKEND}. Checking every {interval}s."
         )
+        self.stdout.write(
+            f"Email-in: reading {settings.HELPDESK_MAILBOX} every {settings.INBOUND_POLL_SECONDS}s."
+            if inbox_on else "Email-in: off (INBOUND_EMAIL=off)."
+        )
+        last_poll = 0.0
         try:
             while True:
                 close_old_connections()  # don't hold a stale database connection
+                if inbox_on and (once or time.monotonic() - last_poll >= settings.INBOUND_POLL_SECONDS):
+                    self._poll_inbox()
+                    last_poll = time.monotonic()
                 sent, failed = send_pending()
                 if sent or failed:
                     self.stdout.write(f"Emails: {sent} sent, {failed} failed (will retry)")

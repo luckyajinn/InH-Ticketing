@@ -31,6 +31,7 @@ PEOPLE = {
     "marcus": ("Marcus Delaney", "marcus.delaney", User.Role.REQUESTER),
     "owen": ("Owen Castillo", "owen.castillo", User.Role.REQUESTER),
     "aisha": ("Aisha Kamara", "aisha.kamara", User.Role.REQUESTER),
+    "morgan": ("Morgan Lee", "morgan.lee", User.Role.REQUESTER),  # Owen's manager
 }
 
 # (requester, category, subject, description, blocking, hours ago)
@@ -116,7 +117,9 @@ class Command(BaseCommand):
 
         sam, alex = people["sam"], people["alex"]
         # The printer and Power BI tickets are left New and unassigned on purpose.
-        vpn, outlook, mfa, laptop, finance, _printer, teams, _powerbi = created
+        vpn, outlook, mfa, laptop, finance, printer, teams, _powerbi = created
+        # The printer ticket arrived by email to the help-desk mailbox.
+        Ticket.objects.filter(pk=printer.pk).update(source=Ticket.Source.EMAIL)
 
         services.update_ticket(ticket=vpn, actor=sam, priority=Ticket.Priority.URGENT, assignee=sam)
         services.update_ticket(ticket=mfa, actor=alex, priority=Ticket.Priority.HIGH)
@@ -130,6 +133,7 @@ class Command(BaseCommand):
         services.add_comment(
             ticket=outlook, author=people["dana"],
             body="I did that and it was fine all morning, but the box came back at about 4pm.",
+            source=Ticket.Source.EMAIL,  # Dana replied to the notification email
         )
         services.add_comment(
             ticket=outlook, author=sam, is_internal=True,
@@ -150,6 +154,11 @@ class Command(BaseCommand):
         services.add_comment(ticket=finance, author=sam,
                              body="Owen, can you ask your manager to reply here to approve the access?",
                              then_status=Ticket.Status.WAITING)
+        # Owen's manager answered by email. Not the requester, so it's an internal note.
+        services.add_email_from_third_party(
+            ticket=finance, sender=people["morgan"],
+            body="Approved. Owen can have read/write access to the Finance drive.",
+        )
 
         services.update_ticket(ticket=teams, actor=alex, assignee=alex, priority=Ticket.Priority.LOW)
         services.add_comment(ticket=teams, author=alex,

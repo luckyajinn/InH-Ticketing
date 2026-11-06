@@ -65,6 +65,13 @@
     {% if form.attachments.errors %}<p class="field-error">{% icon "alert" %}{{ form.attachments.errors.0 }}</p>{% endif %}
   </div>
 
+  {% if INBOUND_ADDRESS %}
+  <div class="hint-box">
+    {% icon "mail" %}
+    <p><strong>Prefer email?</strong> Send it to <a href="mailto:{{ INBOUND_ADDRESS }}">{{ INBOUND_ADDRESS }}</a> and a ticket is created for you.</p>
+  </div>
+  {% endif %}
+
   <div class="form-actions">
     <a class="btn" href="{% url 'tickets:mine' %}">Cancel</a>
     <button type="submit" class="btn btn-primary">Submit request</button>

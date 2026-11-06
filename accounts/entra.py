@@ -149,6 +149,17 @@ def sync_user(claims: dict) -> User:
     role = role_from_claims(claims.get("roles"))
 
     user = User.objects.select_for_update().filter(entra_oid=oid).first()
+    if user is None and email:
+        # Someone who emailed the help desk before ever signing in already has
+        # an account (username "email:..."). Link it, so their tickets follow them.
+        user = (
+            User.objects.select_for_update()
+            .filter(entra_oid__isnull=True, username__startswith="email:", email__iexact=email)
+            .first()
+        )
+        if user is not None:
+            user.entra_oid = oid
+            user.username = str(oid)
     if user is None:
         user = User(entra_oid=oid, username=str(oid))
         user.set_unusable_password()  # Entra is the only way in.

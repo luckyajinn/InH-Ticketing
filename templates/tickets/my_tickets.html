@@ -50,4 +50,10 @@
   {% endfor %}
 </ul>
 {% include "tickets/partials/pagination.html" %}
+{% if INBOUND_ADDRESS %}
+<div class="hint-box mt-4">
+  {% icon "mail" %}
+  <p>You can also email <a href="mailto:{{ INBOUND_ADDRESS }}">{{ INBOUND_ADDRESS }}</a>. Each new email becomes a ticket here, and replies to our emails are added to the right ticket.</p>
+</div>
+{% endif %}
 {% endblock %}
