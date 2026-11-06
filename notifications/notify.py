@@ -20,6 +20,8 @@ from __future__ import annotations
 
 from django.conf import settings
 from django.template.loader import render_to_string
+from django.utils import timezone
+from django.utils.formats import date_format
 
 from notifications.models import OutboundEmail
 
@@ -40,6 +42,14 @@ def _reply_hint(ticket, audience: str) -> str:
         return (f"Replying to this email posts a public reply that {ticket.requester} will see. "
                 "For an internal note, use the ticket page.")
     return f"Reply to this email to add to your request. Keep [#{ticket.number}] in the subject."
+
+
+def _close_notice(ticket) -> str:
+    """' It closes automatically on Nov 13 if we don't hear back.' Empty if auto-close is off."""
+    closes = ticket.auto_close_at
+    if not closes:
+        return ""
+    return f" It closes automatically on {date_format(timezone.localtime(closes), 'M j')} if we don't hear back."
 
 
 def _queue(*, kind, ticket, to, heading, intro, reason, message=None, message_author=None,
@@ -125,6 +135,7 @@ def comment_added(comment) -> None:
             intro = (
                 f"{author} has marked your request as resolved. If it's still not working, "
                 "open the ticket and choose \"This is still a problem\"."
+                + _close_notice(ticket)
             )
         else:
             intro = f"Your request is {ticket.get_status_display().lower()}."
@@ -173,6 +184,7 @@ def resolved(ticket, actor) -> None:
         intro=(
             f"{actor} marked #{ticket.number} as resolved. If it's still not working, "
             "open the ticket and choose \"This is still a problem\"."
+            + _close_notice(ticket)
         ),
         action="View your request", reason="you raised this request",
     )

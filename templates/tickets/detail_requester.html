@@ -28,10 +28,10 @@
     {% elif ticket.status == "resolved" %}
       <div class="callout callout-resolved">{% icon "check-circle" %}<div>
         <p class="callout-title">{% if resolved_event.actor_id == user.pk %}You{% else %}{{ resolved_event.actor|default:who }}{% endif %} marked this as resolved{% if resolved_event %} on {{ resolved_event.created_at|date:"M j" }}{% endif %}.</p>
-        <p class="callout-text">If everything is working, there's nothing more to do.</p>
+        <p class="callout-text">If everything is working, there's nothing more to do.{% if ticket.auto_close_at %} It closes automatically on {{ ticket.auto_close_at|date:"M j" }} if we don't hear back.{% endif %}</p>
       </div></div>
     {% else %}
-      <div class="callout callout-closed">{% icon "lock" %}<div><p class="callout-title">This request is closed.</p><p class="callout-text">Need more help with this? Start a new request and mention #{{ ticket.number }}.</p></div></div>
+      <div class="callout callout-closed">{% icon "lock" %}<div><p class="callout-title">This request is closed.</p><p class="callout-text">Need more help with this? Start a follow-up and we'll link it to #{{ ticket.number }}.</p></div></div>
     {% endif %}
 
     <h2 class="section-title">Conversation</h2>
@@ -47,7 +47,7 @@
     {% if ticket.status == "closed" %}
       <div class="resolve-row">
         <div><p class="resolve-q">Still having trouble?</p><p class="resolve-sub">Closed requests can't be reopened, but a new one only takes a minute.</p></div>
-        <a class="btn btn-primary" href="{% url 'tickets:new' %}">{% icon "plus" %}Start a new request</a>
+        <a class="btn btn-primary" href="{% url 'tickets:new' %}?follow_up={{ ticket.number }}">{% icon "plus" %}Start a follow-up</a>
       </div>
     {% elif ticket.status == "resolved" %}
       <form class="resolve-row" method="post" action="{% url 'tickets:reopen' ticket.number %}">
@@ -89,6 +89,12 @@
         {% if ticket.is_blocking %}<dt>Blocking</dt><dd>You said this blocks your work</dd>{% endif %}
       </dl>
     </section>
+    {% if follows_up or follow_ups %}
+    <section class="panel">
+      <h2 class="panel-title">Linked requests</h2>
+      {% include "tickets/partials/linked.html" %}
+    </section>
+    {% endif %}
     {% if INBOUND_ADDRESS and ticket.status != "closed" %}
     <section class="panel panel-tip" aria-label="Reply by email">
       {% icon "mail" %}

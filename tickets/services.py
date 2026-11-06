@@ -6,12 +6,15 @@ Automatic status changes:
     New -> Open              when IT replies publicly or assigns the ticket
     Waiting on User -> Open  when the requester replies
     Resolved -> Open         when the requester replies or says it's still a problem
+    Resolved -> Closed       automatically, AUTO_CLOSE_RESOLVED_DAYS after it was resolved
 """
 
 from __future__ import annotations
 
+from datetime import timedelta
 from pathlib import Path
 
+from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.utils import timezone
@@ -74,6 +77,7 @@ def _save_attachments(ticket: Ticket, user, files, comment: Comment | None = Non
 def create_ticket(
     *, requester, subject: str, description: str, category: Category,
     is_blocking: bool = False, files=(), source: str = Ticket.Source.WEB,
+    follows_up: Ticket | None = None,
 ) -> Ticket:
     ticket = Ticket.objects.create(
         requester=requester,
@@ -82,6 +86,7 @@ def create_ticket(
         category=category,
         is_blocking=is_blocking,
         source=source,
+        follows_up=follows_up,
     )
     _save_attachments(ticket, requester, files)
     notify.request_received(ticket)
@@ -231,3 +236,31 @@ def reopen_by_requester(*, ticket: Ticket, user) -> bool:
     _save(ticket, STATUS_FIELDS)
     notify.reopened(ticket, user)
     return True
+
+
+def close_resolved_tickets() -> int:
+    """
+    Close Resolved tickets nobody has replied to for AUTO_CLOSE_RESOLVED_DAYS.
+    Returns how many were closed. Does nothing when the setting is 0.
+
+    A requester reply sets the ticket back to Open (clearing resolved_at), so
+    only tickets that stayed quiet are closed. Each ticket is re-checked inside
+    its own transaction in case the requester replied since the list was read.
+    No email goes out: the requester was already told the close date.
+    """
+    days = settings.AUTO_CLOSE_RESOLVED_DAYS
+    if days <= 0:
+        return 0
+    cutoff = timezone.now() - timedelta(days=days)
+    due = Ticket.objects.filter(status=Status.RESOLVED, resolved_at__lte=cutoff)
+    closed = 0
+    for pk in list(due.values_list("pk", flat=True)):
+        with transaction.atomic():
+            ticket = due.select_for_update().filter(pk=pk).first()
+            if ticket is None:
+                continue  # changed since we looked
+            note = f"no reply for {days} day{'' if days == 1 else 's'}"
+            _set_status(ticket, None, Status.CLOSED, note=note)
+            _save(ticket, STATUS_FIELDS)
+            closed += 1
+    return closed

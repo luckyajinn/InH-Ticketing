@@ -168,6 +168,7 @@ def process(message: IncomingMessage) -> Result:
                     requester=sender, subject=clean_subject(message.subject),
                     description=f"(Follow-up to closed ticket #{ticket.number})\n\n{reply}",
                     category=ticket.category, files=files, source=Ticket.Source.EMAIL,
+                    follows_up=ticket,
                 )
                 return record(Outcome.NEW_TICKET, f"#{ticket.number} was closed, so this is a new ticket.", follow_up)
 

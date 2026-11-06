@@ -89,6 +89,29 @@ class Command(BaseCommand):
         users = demo_users.delete()[1].get("accounts.User", 0)
         self.stdout.write(self.style.SUCCESS(f"Removed {count} demo tickets and {users} demo people."))
 
+    def _closed_with_follow_up(self, people, category, now):
+        """A ticket that was resolved and closed, and the follow-up Aisha started from it."""
+        sam, aisha = people["sam"], people["aisha"]
+        original = services.create_ticket(
+            requester=aisha, subject="Badge reader at the lab door won't open",
+            description="My badge doesn't open the lab door any more. It beeps twice and stays locked.",
+            category=category,
+        )
+        services.update_ticket(ticket=original, actor=sam, assignee=sam)
+        services.update_ticket(ticket=original, actor=sam, status=Ticket.Status.RESOLVED)
+        services.update_ticket(ticket=original, actor=sam, status=Ticket.Status.CLOSED)
+        Ticket.objects.filter(pk=original.pk).update(
+            created_at=now - timedelta(days=12),
+            resolved_at=now - timedelta(days=10), closed_at=now - timedelta(days=3),
+        )
+        follow_up = services.create_ticket(
+            requester=aisha, subject=original.subject,
+            description="The badge worked for a few days, but now it's doing the same thing again.",
+            category=category, follows_up=original,
+        )
+        Ticket.objects.filter(pk=follow_up.pk).update(created_at=now - timedelta(hours=5))
+        return follow_up
+
     @transaction.atomic
     def _seed(self):
         if User.objects.filter(username__startswith=PREFIX).exists():
@@ -166,7 +189,13 @@ class Command(BaseCommand):
                                   "I've switched it back on.",
                              then_status=Ticket.Status.RESOLVED)  # "Send and resolve"
 
+        # Resolved a couple of days ago, so the requester page shows its close date.
+        Ticket.objects.filter(pk=teams.pk).update(resolved_at=now - timedelta(days=2))
+
+        # A closed ticket with a follow-up linked to it.
+        badge = self._closed_with_follow_up(people, categories["Access"], now)
+
         self.stdout.write(self.style.SUCCESS(
-            f"Added {len(PEOPLE)} demo people and {len(created)} demo tickets "
-            f"(#{created[0].number}-#{created[-1].number})."
+            f"Added {len(PEOPLE)} demo people and {len(created) + 2} demo tickets "
+            f"(#{created[0].number}-#{badge.number})."
         ))

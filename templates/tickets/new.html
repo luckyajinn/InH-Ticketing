@@ -15,6 +15,14 @@
 
 <form class="card" method="post" enctype="multipart/form-data" novalidate>
   {% csrf_token %}
+  {% if follow_up %}
+  <input type="hidden" name="follow_up" value="{{ follow_up.number }}">
+  <p class="follow-up-note">Follow-up to #{{ follow_up.number }}: {{ follow_up.subject }}</p>
+  {% endif %}
+  <div class="hint-box">
+    {% icon "alert" %}
+    <p>For IT issues and requests only. Product complaints or reactions go to QA, not here. Please don't include passwords.</p>
+  </div>
   {% for error in form.non_field_errors %}<p class="field-error" role="alert">{% icon "alert" %}{{ error }}</p>{% endfor %}
 
   <div class="field">

@@ -9,6 +9,7 @@ Ticket data model.
 """
 
 import uuid
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from django.conf import settings
@@ -90,6 +91,11 @@ class Ticket(models.Model):
         help_text="The requester said this stops them working. IT uses it to set priority.",
     )
     source = models.CharField(max_length=8, choices=Source.choices, default=Source.WEB)
+    # Set when this ticket was started from a closed one ("Start a follow-up",
+    # or an email reply to a closed ticket).
+    follows_up = models.ForeignKey(
+        "self", on_delete=models.SET_NULL, null=True, blank=True, related_name="follow_ups"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     resolved_at = models.DateTimeField(null=True, blank=True)
@@ -123,6 +129,17 @@ class Ticket(models.Model):
     @property
     def is_open(self) -> bool:
         return self.status in self.OPEN_STATUSES
+
+    @property
+    def auto_close_at(self) -> datetime | None:
+        """
+        When a Resolved ticket will close by itself, or None if it won't
+        (not Resolved, or AUTO_CLOSE_RESOLVED_DAYS is 0). Shown to requesters.
+        """
+        days = settings.AUTO_CLOSE_RESOLVED_DAYS
+        if days <= 0 or self.status != self.Status.RESOLVED or not self.resolved_at:
+            return None
+        return self.resolved_at + timedelta(days=days)
 
     @property
     def status_css(self) -> str:
