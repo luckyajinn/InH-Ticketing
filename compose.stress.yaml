@@ -1,0 +1,60 @@
+# STRESS-TEST BRANCH ONLY (never merge into main). See stress/README.md.
+#
+# Layered on top of the production setup, so what's measured is what will run:
+#   docker compose -f compose.yaml -f compose.prod.yaml -f compose.stress.yaml ...
+# (stress/server-setup.sh and stress/run.sh do this for you.)
+#
+# Differences from production:
+#   * stress-test mode: fake users signed in automatically, no Microsoft 365,
+#     no email sent or read (enforced in config/settings.py);
+#   * a self-signed certificate made by server-setup.sh;
+#   * the app is capped at the PLANNED PRODUCTION SIZE, 2 CPUs and 4 GB of
+#     memory in total, so the results predict the real server, not this one;
+#   * a `loadgen` container (Locust) that generates the load from the same
+#     machine, with its own CPUs, so network delay doesn't distort the results.
+
+name: inh-stress
+
+services:
+  web:
+    environment:
+      STRESS_TEST_MODE: "1"
+    cpus: ${STRESS_WEB_CPUS:-1.0}
+    mem_limit: ${STRESS_WEB_MEM:-1536m}
+
+  worker:
+    environment:
+      STRESS_TEST_MODE: "1"
+    cpus: ${STRESS_WORKER_CPUS:-0.15}
+    mem_limit: ${STRESS_WORKER_MEM:-512m}
+
+  db:
+    cpus: ${STRESS_DB_CPUS:-0.6}
+    mem_limit: ${STRESS_DB_MEM:-1536m}
+
+  proxy:
+    cpus: ${STRESS_PROXY_CPUS:-0.25}
+    mem_limit: ${STRESS_PROXY_MEM:-256m}
+    # Anyone who reaches this site is signed in automatically, so it is
+    # published on ONE address only: the server's Tailscale address (written
+    # to .env by server-setup.sh), else this machine alone. Never the home
+    # network. HTTPS only; loadgen doesn't need this (it uses the alias below).
+    ports: !override
+      - "${STRESS_BIND_ADDRESS:-127.0.0.1}:443:443"
+    volumes:
+      - ./stress/.certs:/certs:ro   # replaces the production certificate folder
+    networks:
+      default:
+        aliases:
+          - ${HELPDESK_HOSTNAME:-inh-stress.test}   # so loadgen reaches it by name
+
+  loadgen:
+    image: locustio/locust:2.47.0
+    profiles: ["loadgen"]   # only started by stress/run.sh
+    cpus: ${STRESS_LOADGEN_CPUS:-2}
+    working_dir: /mnt/stress
+    volumes:
+      - ./stress:/mnt/stress:ro
+      - ./stress/reports:/mnt/reports
+    depends_on:
+      - proxy

@@ -30,3 +30,8 @@ tmp/
 *.pem
 *.key
 *.csr
+
+# Stress-test server only (stress-test branch): certificate, results, version stamp
+stress/.certs/
+stress/reports/
+stress/.deployed-version

@@ -279,6 +279,31 @@ if not DEBUG:
 TEST_RUNNER = "config.runner.PlainHttpTestRunner"
 
 # --------------------------------------------------------------------------
+# STRESS-TEST BRANCH ONLY (never merge into main). See stress/README.md.
+# On a private test server with generated data: everyone is signed in
+# automatically as fake "stress-..." users, and no email is sent or read.
+# --------------------------------------------------------------------------
+STRESS_TEST_MODE = env_bool("STRESS_TEST_MODE", default=False)
+if STRESS_TEST_MODE:
+    from stresstest import guard as _stress_guard
+
+    _stress_guard.check(
+        entra_values=[ENTRA_TENANT_ID, ENTRA_CLIENT_ID, ENTRA_CLIENT_SECRET],
+        inbound_email=INBOUND_EMAIL,
+    )
+    INSTALLED_APPS.append("stresstest")
+    MIDDLEWARE.insert(
+        MIDDLEWARE.index("django.contrib.auth.middleware.AuthenticationMiddleware") + 1,
+        "stresstest.middleware.StressAutoLoginMiddleware",
+    )
+    # Emails are still queued (that's real database work worth measuring),
+    # but the worker discards them instead of sending anything.
+    EMAIL_BACKEND = "django.core.mail.backends.dummy.EmailBackend"
+    INBOUND_EMAIL = "off"
+    HELPDESK_MAILBOX = ""
+    IT_NOTIFY_EMAIL = ""
+
+# --------------------------------------------------------------------------
 # Logging: everything to the console, which Docker collects.
 # --------------------------------------------------------------------------
 LOGGING = {

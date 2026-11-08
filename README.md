@@ -1,5 +1,9 @@
 # InH-Ticketing
 
+> **This is the `stress-test` branch.** It is only for load testing on a private
+> test server with invented data, and must never be merged. See
+> [stress/README.md](stress/README.md).
+
 An in-house IT help desk for McKenna Labs. Staff send IT a request; IT works
 it through to resolution. People sign in with their Microsoft 365 work account.
 

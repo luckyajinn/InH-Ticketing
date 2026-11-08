@@ -862,3 +862,6 @@ main { flex: 1 0 auto; }
   .comment-head, .comment-body { padding-left: var(--sp-3); padding-right: var(--sp-3); }
   .composer-foot .composer-send { margin-left: auto; }
 }
+
+/* Stress-test branch only */
+.stress-banner { padding: 6px var(--sp-4); background: #7c2d12; color: #fff; font-size: var(--fs-sm); font-weight: 700; text-align: center; letter-spacing: .02em; }

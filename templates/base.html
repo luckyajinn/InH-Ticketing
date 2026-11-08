@@ -10,6 +10,7 @@
 <body>
 {% include "partials/icons.html" %}
 <a class="skip-link" href="#main">Skip to content</a>
+{% if STRESS_TEST_MODE %}<div class="stress-banner" role="note">STRESS TEST: fake data only. Not the McKenna Labs help desk.</div>{% endif %}
 
 {% block header %}
 {% if user.is_authenticated %}
