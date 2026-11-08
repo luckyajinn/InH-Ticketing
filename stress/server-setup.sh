@@ -10,16 +10,17 @@
 #   2. writes a stress-test .env (random secrets, NO Microsoft 365 credentials,
 #      no email) unless one exists, and refuses to touch a non-stress .env;
 #   3. makes a self-signed certificate for the hostname;
-#   4. builds and starts the app (capped at 2 CPUs / 4 GB, see compose.stress.yaml);
-#   5. generates fake data: 300 requesters, 5 agents, 12,000 tickets over 5 years.
+#   4. builds and starts the app (sharing 2 CPUs, within 4 GB; see compose.stress.yaml);
+#   5. generates fake data: 300 requesters, 5 agents, 12,000 tickets over 5 years,
+#      about 2 GB of attachments, and saves it as the starting point that
+#      stress/run.sh resets to before every run.
 #      Override with STRESS_DATA_ARGS, e.g. STRESS_DATA_ARGS="--tickets 50000".
 
 set -eu
 cd "$(dirname "$0")/.."
 
-log() { printf '%s %s\n' "$(date '+%H:%M:%S')" "$*"; }
 die() { log "SETUP FAILED: $*" >&2; exit 1; }
-dc() { docker compose -f compose.yaml -f compose.prod.yaml -f compose.stress.yaml "$@"; }
+. stress/lib.sh
 
 if [ "${1:-}" = "--down" ]; then
 	log "Stopping the stress-test copy and deleting its data (database, attachments)"
@@ -81,6 +82,10 @@ fi
 sed -i '/^STRESS_BIND_ADDRESS=/d' .env
 echo "STRESS_BIND_ADDRESS=$BIND" >> .env
 
+# The app shares 2 CPUs and the load generator has 2 more, so the VM needs 4 or more.
+check_cpus
+log "The app shares CPUs $(app_cpus); the load generator uses CPUs $(loadgen_cpus)"
+
 # 3. Self-signed certificate
 mkdir -p stress/.certs stress/reports
 if [ ! -f stress/.certs/fullchain.pem ]; then
@@ -95,20 +100,17 @@ fi
 log "Building and starting the app (this takes a few minutes the first time)"
 dc up -d --build || die "docker compose up failed"
 log "Waiting for the app to be ready"
-i=0
-until dc exec -T web python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3)" 2> /dev/null; do
-	i=$((i + 1))
-	[ "$i" -lt 60 ] || die "the app didn't become ready within 2 minutes: docker compose logs web"
-	sleep 2
-done
+wait_ready
 
-# 5. Fake data
+# 5. Fake data, saved as the starting point every run resets to
 if dc exec -T web python manage.py stress_counts | grep -q '"tickets": 0,'; then
-	log "Generating fake data"
+	log "Generating fake data (about a minute: the attachment files take longest)"
 	# shellcheck disable=SC2086
 	dc exec -T web python manage.py generate_load_data ${STRESS_DATA_ARGS:-} || die "generating data failed"
+	save_baseline
 else
-	log "Fake data already present (to replace it: docker compose ... exec web python manage.py generate_load_data --clear)"
+	log "Fake data already present (to replace it, see 'Changing things' in stress/README.md)"
+	has_baseline || save_baseline
 fi
 log "Data: $(dc exec -T web python manage.py stress_counts)"
 

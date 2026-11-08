@@ -25,9 +25,16 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-TARGET_AVG_MS = 20.0       # average response time
+# What staff would notice. A typical page takes tens of milliseconds; what
+# matters is that hardly anyone waits: 95% of clicks within half a second,
+# 99% within a second, and almost nothing failing.
+TARGET_P95_MS = 500.0      # 95th percentile response time
 TARGET_P99_MS = 1000.0     # 99th percentile response time
 TARGET_FAIL_PCT = 1.0      # share of requests that failed
+# The planned server: 2 CPUs and 4 GB, of which Linux, Docker and SSH take about 0.5 GB.
+PLANNED_CPUS = 2
+SERVER_MEMORY_MB = 4096
+APP_MEMORY_MB = 3584
 
 # scenario: (short name, details)
 SCENARIOS = {
@@ -51,16 +58,27 @@ def memory_mb(value: str) -> float:
     return float(m.group(1)) * {"k": 1 / 1024, "m": 1, "g": 1024, "": 1 / 1024 ** 2}[m.group(2)]
 
 
+def app_cpus(meta: dict) -> float | None:
+    """How many CPUs the app's parts shared (None if the run wasn't size-capped)."""
+    count = (meta.get("cpus") or {}).get("app_count")
+    if count:
+        return float(count)
+    limits = meta.get("limits") or {}  # reports from before the parts shared their CPUs
+    total = sum(number(str(v.get("cpus"))) or 0 for v in limits.values())
+    return total or None
+
+
 def size_limit(meta: dict) -> str:
-    """The app's total CPU and memory allowance, in words."""
-    limits = meta.get("limits") or {}
-    if not limits:
+    """The app's CPU and memory allowance, in words."""
+    cpus = app_cpus(meta)
+    if not cpus:
         return "none recorded (trial run, results not representative)"
-    cpus = sum(number(str(v.get("cpus"))) or 0 for v in limits.values())
-    mem = sum(memory_mb(v.get("memory", "")) for v in limits.values())
-    text = f"{cpus:g} CPUs and {mem / 1024:.3g} GB of memory for the app in total"
-    if round(cpus, 3) <= 2 and mem <= 4096:
-        return text + ", within the planned production server (2 CPUs, 4 GB)"
+    mem = sum(memory_mb(v.get("memory", "")) for v in (meta.get("limits") or {}).values())
+    which = (meta.get("cpus") or {}).get("app")
+    text = (f"web app, worker, database and proxy sharing {cpus:g} CPUs{f' ({which})' if which else ''}, "
+            f"with {mem / 1024:.3g} GB of memory between them")
+    if cpus <= PLANNED_CPUS and mem <= SERVER_MEMORY_MB:
+        return text + ": the planned production server's size (2 CPUs, 4 GB)"
     return text + ": MORE than the planned production server (2 CPUs, 4 GB)"
 
 
@@ -163,11 +181,30 @@ def percentile(values: list[float], p: float) -> float | None:
     return ordered[lo] + (ordered[hi] - ordered[lo]) * (k - lo)
 
 
-def cpu_limit(meta: dict, service: str) -> float | None:
-    try:
-        return float(meta["limits"][service]["cpus"])
-    except (KeyError, TypeError, ValueError):
-        return None
+def app_totals(resources: dict) -> list[tuple[int, float, float]]:
+    """[(seconds, CPU % of one core, memory MiB)] for all the app's parts together, per sample."""
+    totals: dict[int, list[float]] = {}
+    for points in resources.values():
+        for t, cpu, mem in points:
+            total = totals.setdefault(t, [0.0, 0.0])
+            total[0] += cpu
+            total[1] += mem
+    return [(t, cpu, mem) for t, (cpu, mem) in sorted(totals.items())]
+
+
+def describe_data(data: dict) -> str:
+    """The data set in words, e.g. '12,000 tickets, 28 open, ... 2.3 GB of attachment files'."""
+    parts = []
+    for key, label in (("tickets", "tickets"), ("open_tickets", "open"), ("comments", "replies and notes"),
+                       ("emails", "emails"), ("attachments", "attachments"), ("requesters", "staff"),
+                       ("agents", "IT agents")):
+        if isinstance(data.get(key), int):
+            parts.append(f"{data[key]:,} {label}")
+    if isinstance(data.get("attachments_mb"), int):
+        parts.append(f"{data['attachments_mb'] / 1000:,.1f} GB of attachment files")
+    if isinstance(data.get("database_mb"), int):
+        parts.append(f"a {data['database_mb']:,} MB database")
+    return ", ".join(parts) or "unknown"
 
 
 # --------------------------------------------------------------------------- analysis
@@ -183,8 +220,9 @@ def capacity(history: list[dict]) -> int | None:
         if not windows:
             continue
         worst_p99 = max(w["p99"] for w in windows)
+        worst_p95 = max(w["p95"] or 0 for w in windows)
         fail_pct = 100 * sum(w["fps"] for w in windows) / max(sum(w["rps"] for w in windows), 1e-9)
-        if worst_p99 <= TARGET_P99_MS and fail_pct <= TARGET_FAIL_PCT:
+        if worst_p95 <= TARGET_P95_MS and worst_p99 <= TARGET_P99_MS and fail_pct <= TARGET_FAIL_PCT:
             best = level
         else:
             break
@@ -282,11 +320,19 @@ def main(folder: Path) -> int:
     duration_s = history[-1]["t"] if history else 0
     peak_users = int(max((h["users"] for h in history), default=0))
 
+    cpus = app_cpus(meta)
+    totals = app_totals(resources)
+    app_cpu = [c / cpus for _, c, _ in totals] if cpus else []  # % of all the CPUs the app shares
+    app_mem_peak = max((m for _, _, m in totals), default=None)
+
     checks = [
-        ("Average response time", f"under {TARGET_AVG_MS:.0f} ms", fmt_ms(avg), avg is not None and avg <= TARGET_AVG_MS),
+        ("95% of responses within", "half a second", fmt_ms(p95), p95 is not None and p95 <= TARGET_P95_MS),
         ("99% of responses within", f"{TARGET_P99_MS / 1000:.0f} second", fmt_ms(p99), p99 is not None and p99 <= TARGET_P99_MS),
         ("Failed requests", f"under {TARGET_FAIL_PCT:.0f}%", f"{fail_pct:.2f}%", fail_pct <= TARGET_FAIL_PCT),
     ]
+    if app_mem_peak is not None:
+        checks.append(("Memory, all parts together (peak)", f"under {APP_MEMORY_MB / 1024:.1f} GB",
+                       f"{app_mem_peak / 1024:.2f} GB", app_mem_peak <= APP_MEMORY_MB))
     cap = capacity(history) if scenario == "stress" else None
     overall = "INFO" if scenario == "stress" else ("PASS" if all(c[3] for c in checks) else "FAIL")
 
@@ -309,19 +355,34 @@ def main(folder: Path) -> int:
             "Beyond that point responses slow down sharply. That is expected from a deliberately overloaded test, not a fault.",
         ]
     else:
-        verdict_text = "met all three performance targets" if overall == "PASS" else "did not meet every performance target"
+        verdict_text = f"met all {len(checks)} targets" if overall == "PASS" else "did not meet every target"
         headline = (f"In {describe(scenario)}, the help desk <strong>{verdict_text}</strong>: "
-                    f"{requests:,} requests, an average response of <strong>{fmt_ms(avg)}</strong>, and 99% of "
-                    f"responses within <strong>{fmt_ms(p99)}</strong>.")
-        meaning = (["The planned server (2 CPUs, 4 GB of memory) is big enough for this level of use, with room to spare."]
-                   if overall == "PASS" else
+                    f"{requests:,} requests, 95% of responses within <strong>{fmt_ms(p95)}</strong> and 99% within "
+                    f"<strong>{fmt_ms(p99)}</strong>.")
+        meaning = ([] if overall == "PASS" else
                    [f"Targets missed: {', '.join(c[0].lower() for c in checks if not c[3])}. "
                     "The slowest pages below show where to improve before go-live."])
-    meaning.append(f"Simulated on a private test server with invented data: {data.get('tickets', '?'):,} tickets "
-                   f"(about 5 years' worth), {data.get('requesters', '?')} staff accounts and "
-                   f"{data.get('agents', '?')} IT agents. No real data or company systems were involved."
+    if app_cpu:
+        average_cpu, peak_cpu = sum(app_cpu) / len(app_cpu), max(app_cpu)
+        if scenario == "stress":
+            meaning.append(f"At the busiest, the app's {cpus:g} CPUs were {peak_cpu:.0f}% busy and its parts "
+                           f"used {app_mem_peak / 1024:.2f} GB of memory together.")
+        else:
+            room = ("plenty of room to spare" if average_cpu < 50 else
+                    "some room to spare" if average_cpu < 75 else "little room to spare")
+            meaning.append(f"The app's {cpus:g} CPUs were <strong>{average_cpu:.0f}% busy on average</strong> "
+                           f"(peak {peak_cpu:.0f}%), and all its parts together used at most "
+                           f"<strong>{app_mem_peak / 1024:.2f} GB of memory</strong>: {room} on the planned "
+                           f"server (2 CPUs, 4 GB).")
+    years = data.get("years")
+    meaning.append(f"Simulated on a private test server with invented data: {data['tickets']:,} tickets "
+                   f"({f'about {years:g} years of use, ' if years else ''}{data.get('open_tickets', '?')} of them "
+                   f"open), {data.get('requesters', '?')} staff accounts and {data.get('agents', '?')} IT agents. "
+                   "No real data or company systems were involved."
                    if isinstance(data.get("tickets"), int) else
                    "Simulated on a private test server with invented data. No real data or company systems were involved.")
+    if meta.get("fresh_data") is False:
+        meaning.append("This run didn't reset the data first (--keep-data), so it isn't directly comparable with other runs.")
 
     # ---- charts
     rt_series = [(f"{k}", [(h["t"], h[k]) for h in history if h[k] is not None]) for k in ("p50", "p95", "p99")]
@@ -331,16 +392,15 @@ def main(folder: Path) -> int:
         svg_chart("Load during the test", [("people active", [(h["t"], h["users"]) for h in history]),
                                            ("requests per second", [(h["t"], h["rps"]) for h in history])], "count"),
     ]
+    share = cpus or 1  # CPU as % of all the CPUs the app shares (of one CPU if the run wasn't capped)
     if resources:
-        cpu_series = []
-        for svc, pts in sorted(resources.items()):
-            limit = cpu_limit(meta, svc)
-            cpu_series.append((f"{svc} (% of its CPU)",
-                               [(t, c / limit if limit else c) for t, c, _ in pts]))
-        charts.append(svg_chart("Server CPU use (100% = all the CPU it's allowed)", cpu_series, "%",
-                                refs=[(100, "its limit")]))
-        charts.append(svg_chart("Server memory use", [(svc, [(t, m) for t, _, m in pts])
-                                                      for svc, pts in sorted(resources.items())], "MiB"))
+        cpu_series = [("whole app", [(t, c / share) for t, c, _ in totals])]
+        cpu_series += [(svc, [(t, c / share) for t, c, _ in pts]) for svc, pts in sorted(resources.items())]
+        charts.append(svg_chart(f"CPU use (100% = all {share:g} CPUs the app shares)", cpu_series, "%",
+                                refs=[(100, "all CPUs busy")]))
+        mem_series = [("whole app", [(t, m) for t, _, m in totals])]
+        mem_series += [(svc, [(t, m) for t, _, m in pts]) for svc, pts in sorted(resources.items())]
+        charts.append(svg_chart("Memory use", mem_series, "MiB", refs=[(APP_MEMORY_MB, "3.5 GB available")]))
 
     # ---- tables
     def row_checks():
@@ -355,13 +415,16 @@ def main(folder: Path) -> int:
         f"<td class='n'>{fmt_ms(number(r['99%']))}</td><td class='n'>{int(number(r['Failure Count']) or 0):,}</td></tr>"
         for r in slowest)
     resource_rows = ""
-    for svc, pts in sorted(resources.items()):
-        limit = cpu_limit(meta, svc)
-        cpus = [c / limit if limit else c for _, c, _ in pts]
-        mems = [m for _, _, m in pts]
-        mem_limit = meta.get("limits", {}).get(svc, {}).get("memory", "?")
-        resource_rows += (f"<tr><td>{svc}</td><td class='n'>{sum(cpus) / len(cpus):.0f}%</td><td class='n'>{max(cpus):.0f}%</td>"
-                          f"<td class='n'>{max(mems):,.0f} MiB</td><td class='n'>{html.escape(str(mem_limit))}</td></tr>")
+    rows = [("<strong>whole app</strong>", totals, f"{APP_MEMORY_MB / 1024:.1f} GB available")]
+    rows += [(svc, pts, (meta.get("limits") or {}).get(svc, {}).get("memory", "?"))
+             for svc, pts in sorted(resources.items())]
+    for label, pts, ceiling in rows:
+        if not pts:
+            continue
+        cpu = [c / share for _, c, _ in pts]
+        mem = [m for _, _, m in pts]
+        resource_rows += (f"<tr><td>{label}</td><td class='n'>{sum(cpu) / len(cpu):.0f}%</td><td class='n'>{max(cpu):.0f}%</td>"
+                          f"<td class='n'>{max(mem):,.0f} MiB</td><td class='n'>{html.escape(str(ceiling))}</td></tr>")
     failure_rows = "".join(
         f"<tr><td>{html.escape(f.get('Method', ''))} {html.escape(f.get('Name', ''))}</td>"
         f"<td>{html.escape(f.get('Error', ''))[:160]}</td><td class='n'>{f.get('Occurrences', '')}</td></tr>"
@@ -390,7 +453,7 @@ def main(folder: Path) -> int:
 <h2>Against the targets</h2>
 <div class="card"><table><tr><th>Measure</th><th>Target</th><th class="n">Result</th><th>Verdict</th></tr>{row_checks()}</table>
 <p class="small" style="margin:10px 0 0">Measured from the requester's side, over the whole run, including ramp-up.
-Half of all responses took {fmt_ms(p50)} or less; 95% took {fmt_ms(p95)} or less; the slowest single response took {fmt_ms(max_ms)}.
+The average response took {fmt_ms(avg)}; half took {fmt_ms(p50)} or less; the slowest single response took {fmt_ms(max_ms)}.
 {f"Time inside the server alone (as the web proxy measured it): average {fmt_ms(proxy_avg)}, 99% within {fmt_ms(proxy_p99)}." if proxy_ms else ""}</p></div>
 
 <h2>Charts</h2>
@@ -399,7 +462,7 @@ Half of all responses took {fmt_ms(p50)} or less; 95% took {fmt_ms(p95)} or less
 <h2>Pages, slowest first</h2>
 <div class="card"><table><tr><th>Page or action</th><th class="n">Requests</th><th class="n">Average</th><th class="n">95%</th><th class="n">99%</th><th class="n">Failed</th></tr>{page_rows}</table></div>
 
-{f'<h2>Server resources</h2><div class="card"><table><tr><th>Part</th><th class="n">Average CPU</th><th class="n">Peak CPU</th><th class="n">Peak memory</th><th class="n">Memory allowed</th></tr>{resource_rows}</table><p class="small" style="margin:10px 0 0">CPU is shown as a share of what each part is allowed. The app as a whole: {size_text}.</p></div>' if resource_rows else ''}
+{f'<h2>Server resources</h2><div class="card"><table><tr><th>Part</th><th class="n">Average CPU</th><th class="n">Peak CPU</th><th class="n">Peak memory</th><th class="n">Memory ceiling</th></tr>{resource_rows}</table><p class="small" style="margin:10px 0 0">CPU is shown as a share of all the CPUs the app shares, so the parts add up to the whole app. The app: {size_text}.</p></div>' if resource_rows else ''}
 
 {f'<h2>Failures</h2><div class="card"><table><tr><th>Request</th><th>Error</th><th class="n">Times</th></tr>{failure_rows}</table></div>' if failure_rows else ''}
 
@@ -407,7 +470,7 @@ Half of all responses took {fmt_ms(p50)} or less; 95% took {fmt_ms(p95)} or less
 <div class="card"><table>
 <tr><td>Scenario</td><td>{html.escape(describe(scenario))}</td></tr>
 <tr><td>Duration</td><td>{duration_s // 60} min {duration_s % 60} s · up to {peak_users} people at once · {rps:.1f} requests per second on average</td></tr>
-<tr><td>Data</td><td>{html.escape(", ".join(f"{v:,} {k.replace('_', ' ')}" for k, v in data.items() if isinstance(v, int)) or "unknown")}</td></tr>
+<tr><td>Data</td><td>{html.escape(describe_data(data))}</td></tr>
 <tr><td>App size limit</td><td>{size_text}</td></tr>
 <tr><td>Test machine</td><td>{html.escape(machine)}</td></tr>
 <tr><td>Version</td><td>{html.escape(str(meta.get("app_version", "?")))} ({html.escape(str(meta.get("deployed_version", "?")))})</td></tr>
@@ -423,7 +486,12 @@ Half of all responses took {fmt_ms(p50)} or less; 95% took {fmt_ms(p95)} or less
         "proxy_avg_ms": round(proxy_avg, 2) if proxy_avg else None,
         "proxy_p99_ms": round(proxy_p99, 2) if proxy_p99 else None,
         "peak_users": peak_users, "capacity_users": cap,
-        "targets": {"avg_ms": TARGET_AVG_MS, "p99_ms": TARGET_P99_MS, "failed_pct": TARGET_FAIL_PCT},
+        "app_cpus": cpus,
+        "app_cpu_avg_pct": round(sum(app_cpu) / len(app_cpu), 1) if app_cpu else None,
+        "app_cpu_peak_pct": round(max(app_cpu), 1) if app_cpu else None,
+        "app_memory_peak_mb": round(app_mem_peak) if app_mem_peak is not None else None,
+        "targets": {"p95_ms": TARGET_P95_MS, "p99_ms": TARGET_P99_MS, "failed_pct": TARGET_FAIL_PCT,
+                    "app_memory_mb": APP_MEMORY_MB},
         "checks": {name: ok for name, _, _, ok in checks},
         "data": data,
     }
@@ -432,7 +500,10 @@ Half of all responses took {fmt_ms(p50)} or less; 95% took {fmt_ms(p95)} or less
     md += [f"- {n}: {r} (target {t}): {'met' if ok else 'missed'}" for n, t, r, ok in checks]
     if cap is not None:
         md.append(f"- Capacity: within targets up to {cap} people active at once")
-    sizing = "app capped at 2 CPUs / 4 GB" if meta.get("limits") else "app NOT size-capped (trial run)"
+    if app_cpu:
+        md.append(f"- App CPU ({cpus:g} shared CPUs): {sum(app_cpu) / len(app_cpu):.0f}% busy on average, "
+                  f"{max(app_cpu):.0f}% at peak; memory peak {app_mem_peak / 1024:.2f} GB for all parts together")
+    sizing = f"app sharing {cpus:g} CPUs" if cpus else "app NOT size-capped (trial run)"
     md.append(f"- {requests:,} requests, up to {peak_users} people at once, {sizing}")
     (folder / "summary.md").write_text("\n".join(md) + "\n", encoding="utf-8")
 
