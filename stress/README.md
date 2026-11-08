@@ -55,6 +55,9 @@ shifts the results somewhat.
 
 ## 1. Prepare the test server (K12, Proxmox)
 
+> **Step by step, with every command, for a 4-core, 8 GB VM: [SETUP.md](SETUP.md).**
+> The sections below explain the same steps.
+
 Use a **virtual machine**, not a container (LXC). Docker inside LXC needs
 extra settings and doesn't always apply the CPU limits, which would spoil the
 measurements.
