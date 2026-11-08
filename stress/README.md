@@ -66,6 +66,11 @@ measurements.
      load generator gets CPUs 2 and 3, and the rest is for Debian and Docker,
      so they don't steal time from the app. The setup stops with a clear
      message if the VM has fewer than 4 CPUs.
+   * **4 cores and 8 GB also work.** The app still gets its 2 CPUs and the
+     load generator its 2; Debian, Docker and the CPU/memory sampling then
+     share those, which makes the results very slightly pessimistic. Memory
+     peaks around 5–5.5 GB. To also try the app on 4 CPUs
+     (`STRESS_APP_CPUS=0,1,2,3`), the VM needs 6 cores.
    * 40 GB is enough: the fake data takes about 3 GB (most of it attachment
      files), plus a saved copy of the database to reset to before each run.
    * In the installer, choose only "SSH server" and "standard system
