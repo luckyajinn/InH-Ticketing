@@ -37,10 +37,13 @@ Before the pilot (by 2026-11-30):
 - [x] Show a short "IT issues only" notice on the New request page (v0.5.0).
 - [x] Document how to make the help-desk mailbox accept internal senders only
       (docs/email-setup.md, section 3a).
-- [ ] **Actually set it** on the test mailbox (and later the live one). *Owner: IT (Exchange admin)*
+- [x] **Actually set it** on the test mailbox (2026-11-09: `RequireSenderAuthenticationEnabled` is True).
+- [ ] Set it on the live help-desk mailbox before go-live. *Owner: IT (Exchange admin)*
 - [ ] Record Ruben Martinez's review (the date and his decision) in the risk
       assessment, version 0.2.
-- [ ] File the `Test-ServicePrincipalAuthorization` results.
+- [ ] File the `Test-ServicePrincipalAuthorization` results. *(Run 2026-11-09:
+      Mail.Send and Mail.ReadWrite in scope for the test mailbox only. Save
+      the output with the risk assessment.)*
 
 Before go-live (by 2027-01-11):
 - [ ] Admin tool to remove a pasted password or file from a ticket, with the
@@ -80,6 +83,16 @@ Decided 2026-11-06:
       and use a separate client secret (or a certificate) for the server.
 - [x] A deployment guide covering first install, updating to a new version, and restoring.
 - [ ] The first install on the server, following the guide and fixing it as needed.
+
+## v0.7.0 (with the pilot feedback)
+
+- [ ] **Email signatures on email-in tickets.** Staff emails carry the company
+      signature added by CodeTwo: name, address, phone and fax, a logo
+      placeholder, the "consider the environment" line and the
+      confidentiality notice. It shows in full on every ticket and reply that
+      arrives by email. Remove it, or show it collapsed behind a "Show
+      signature" link, so the request itself is what IT sees. *(Raised in
+      testing, 2026-11-09, on ticket #1071.)*
 
 ## Later
 
