@@ -3,12 +3,33 @@
 All notable changes to InH-Ticketing. Versions follow [Semantic Versioning](https://semver.org).
 Each version also has illustrated release notes in [docs/releases](docs/releases/README.md).
 
-## [Unreleased]
+## [0.6.0] - 2026-11-09
+
+Milestone 6: the deployment package for the internal server. [Release notes](docs/releases/v0.6.0.md).
+Released before the server exists. The same Docker setup has run on a test VM
+for a load test; the first install on the real server is the next step.
 
 ### Added
+- HTTPS reverse proxy: Caddy 2.11.9 (`compose.prod.yaml`, `deploy/caddy/Caddyfile`)
+  with the internal-CA certificate, HTTP-to-HTTPS redirect, HSTS, 60 MB uploads
+  buffered at the proxy, and log rotation. The web app's port 8000 is no longer
+  published; only the proxy publishes 80 and 443.
+- Production security settings: HTTPS redirect and HSTS (one year) on whenever
+  `DEBUG` is off, with `/healthz` exempt so Docker's health check works.
+  `manage.py check --deploy` is clean. New tests load the real production settings.
+- Nightly backups (`scripts/backup.sh`, run by host cron): a database dump plus
+  an attachments snapshot that hard-links unchanged files, so 14 days of backups
+  cost about one copy of the attachments. Every backup is read back and checksummed.
+- Restores (`scripts/restore.sh`): checks the checksums, takes a safety backup,
+  restores into a new database and swaps it in only if that worked, then
+  compares the attachments file by file.
+- `docs/server-requirements.md` (for whoever builds the server) and
+  `docs/deployment.md` (install, certificate, Entra, `.env`, first start,
+  backups, restore drill, updating, rolling back, troubleshooting).
+- `.gitattributes`: scripts and Docker files keep Linux line endings on Windows checkouts.
 - `LICENSE`: proprietary, all rights reserved. The software is the sole property
   of Christian Jones (GitHub: luckyajinn), and may be used, deployed or licensed
-  only with the owner's express written permission. Docs only; no app changes.
+  only with the owner's express written permission.
 
 ## [0.5.0] - 2026-11-06
 
@@ -137,6 +158,7 @@ Milestone 1: skeleton and Microsoft 365 sign-in. [Release notes with screenshots
 - `/healthz` endpoint, Dockerfile and Docker Compose with PostgreSQL 17.
 - Entra setup guide (`docs/entra-setup.md`) and the UI mockup (`mockups/`).
 
+[0.6.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.6.0
 [0.5.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.5.0
 [0.4.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.4.0
 [0.3.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.3.0

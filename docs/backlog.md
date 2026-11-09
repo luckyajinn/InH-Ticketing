@@ -71,13 +71,15 @@ Decided 2026-11-06:
 | Backups | Stored locally on the server: nightly database dump plus attachments, kept 14 days |
 | Network | The server needs outbound HTTPS to `login.microsoftonline.com` and `graph.microsoft.com` |
 
-- [ ] Production Compose setup: reverse proxy with the internal-CA
+- [x] Production Compose setup: reverse proxy with the internal-CA
       certificate, HSTS and an HTTP-to-HTTPS redirect (clears the two
       `check --deploy` warnings).
-- [ ] Nightly local backups with 14-day retention, plus a tested restore procedure.
+- [x] Nightly local backups with 14-day retention, and a restore procedure.
+- [ ] The restore drill on the real server, recorded (docs/deployment.md section 9).
 - [ ] Entra: add the redirect URI `https://helpdesk.mckennalabs.com/auth/callback`,
       and use a separate client secret (or a certificate) for the server.
-- [ ] A deployment guide covering first install, updating to a new version, and restoring.
+- [x] A deployment guide covering first install, updating to a new version, and restoring.
+- [ ] The first install on the server, following the guide and fixing it as needed.
 
 ## Later
 

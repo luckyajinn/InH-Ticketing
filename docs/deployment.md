@@ -4,18 +4,20 @@ How to install InH-Ticketing on the server at `https://helpdesk.mckennalabs.com`
 keep it backed up, update it, and get it back if something goes wrong. What
 the server itself needs is in [server-requirements.md](server-requirements.md).
 
-> **Status: written before the server existed, and not yet tested end to
-> end.** Nothing here has been run on a real server yet. Expect to correct
-> details on the first install, and please fix this guide as you go.
+> **Status: released in v0.6.0, not yet installed on the real server.** On
+> 2026-11-09 the same Docker setup ran on a Debian 13 test VM for a load test
+> (the `stress-test` branch: fake data, a self-signed certificate, no
+> Microsoft 365, no email). Expect to correct details on the first real
+> install, and please fix this guide as you go.
 
 What has been checked, and what hasn't:
 
-| Part | Checked on a PC | Not yet tested |
+| Part | Checked | Not yet tested |
 |---|---|---|
-| Django production settings | `manage.py check --deploy` is clean; automated tests for the HTTPS redirect, HSTS and `/healthz` | Behind the real proxy |
-| `compose.prod.yaml` | Parsed as YAML; the merge with `compose.yaml` reviewed | `docker compose` on Linux; the image build |
-| `deploy/caddy/Caddyfile` | Checked against Caddy 2.11's documentation and source | Caddy itself: step 6.2 validates it on the server |
-| `scripts/backup.sh`, `restore.sh` | Syntax-checked with `sh -n` and `dash`; run against a stand-in for `docker` | Real Docker and PostgreSQL; cron |
+| Django production settings | `manage.py check --deploy` is clean; automated tests for the HTTPS redirect, HSTS and `/healthz`; served behind Caddy on the test VM | |
+| `compose.prod.yaml` | The image build and `docker compose` on Linux (test VM): web, worker, database and proxy, under load | Port 80's redirect (the test VM published HTTPS only) |
+| `deploy/caddy/Caddyfile` | Run by Caddy 2.11.9 on the test VM, serving HTTPS | The internal-CA certificate (the test used a self-signed one) |
+| `scripts/backup.sh`, `restore.sh` | Syntax-checked with `sh -n` and `dash`; run against a stand-in for `docker` | Real Docker and PostgreSQL; cron (not run on the test VM) |
 | Certificate commands (section 3) | Run end to end with a throwaway test CA | The internal CA's own process and files |
 | Firewall, chrony, Entra and email from the server | | All of it |
 

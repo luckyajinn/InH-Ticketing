@@ -26,8 +26,9 @@ lives in [backlog.md](backlog.md), and what actually shipped is in
 | ✅ Nov 6 | v0.3.0 | Email notifications, "Send and resolve" buttons | — |
 | ✅ Nov 6 | v0.4.0 | Email in: emails become tickets and replies | — |
 | ✅ Nov 6 | v0.5.0 | Automations: auto-close, follow-ups and linked tickets, "IT issues only" notice and usage rules. Reminders deferred to the backlog | — |
-| Nov 9–20 | v0.5.x | Fixes from testing on your PC with your test user and real email | Your testing (below) |
-| **When the server is ready** (target week of Nov 16) | **v0.6.0** | Deploy: Docker Compose on the Linux server, HTTPS with the internal-CA certificate, nightly local backups, deployment guide. The package is being prepared now; it's released once tested on the server | Server, DNS and certificate |
+| ✅ Nov 9 | v0.6.0 | Deployment package: Docker Compose with an HTTPS proxy for the internal-CA certificate, nightly local backups and restores, server requirements and deployment guide. Released before the server exists, after a load test of the same setup on a test VM | — |
+| Nov 9–20 | v0.6.x | Fixes from testing on your PC with your test user and real email | Your testing (below) |
+| **When the server is ready** (target week of Nov 16) | v0.6.x | First install on the server, fixes from it, and the restore drill | Server, DNS and certificate |
 | Nov 23–27 | — | Thanksgiving week: buffer for deployment fixes, no new features | — |
 | **Nov 30 – Dec 11** | v0.6.x | **Pilot:** IT plus 10–20 staff use it for real, on their own computers, with the test mailbox | v0.6.0 live on the server |
 | **Week of Dec 14** | **v0.7.0** | Pilot feedback: the header redesign and the top pilot requests | Pilot feedback |

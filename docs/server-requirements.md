@@ -6,6 +6,10 @@ Caddy reverse proxy. Installing the app on it is [deployment.md](deployment.md).
 
 > Written before the server existed. The sizes are estimates; check them
 > against the real server after a few months.
+>
+> A load test on 2026-11-09 supports the CPU and memory figures. On a test VM,
+> with the whole app held to 2 CPUs and 4 GB, responses averaged 10–16 ms with
+> up to 400 people at once, none failed, and memory stayed under 0.75 GB.
 
 ## At a glance
 

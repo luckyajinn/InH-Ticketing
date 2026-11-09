@@ -3,7 +3,7 @@
 An in-house IT help desk for McKenna Labs. Staff send IT a request; IT works
 it through to resolution. People sign in with their Microsoft 365 work account.
 
-**Status:** v0.5.0, milestone 5 (automations). This is a test build, approved for internal setup.
+**Status:** v0.6.0, milestone 6 (deployment package). Ready to install on the internal server, which doesn't exist yet. This is a test build, approved for internal setup.
 See the [release notes with screenshots](docs/releases/README.md) for how it looks and what changed in each version.
 
 ## What works today
@@ -106,6 +106,10 @@ This needs `POSTGRES_PASSWORD` set in `.env`. The database and uploaded
 attachments live in Docker volumes (`pgdata` and `media`), so they survive
 restarts. Back up both.
 
+On the server, production adds an HTTPS proxy and nightly backups:
+[docs/server-requirements.md](docs/server-requirements.md) says what the server
+needs, and [docs/deployment.md](docs/deployment.md) is the install guide.
+
 ## How it's put together
 
 ```
@@ -124,7 +128,9 @@ inbound/           Email in: processing rules (processing.py), Graph inbox reade
 templates/         Server-rendered HTML pages (emails in templates/emails/)
 static/css/app.css The one stylesheet; colours and spacing live in :root
 static/js/app.js   Small extras (auto-save side panel, clickable rows); pages work without it
-docs/              Setup guides, and backlog.md (the to-do list)
+deploy/caddy/      The HTTPS proxy's configuration (production, with compose.prod.yaml)
+scripts/           backup.sh and restore.sh for the server; release_body.py
+docs/              Setup and deployment guides, and backlog.md (the to-do list)
 docs/releases/     Release notes and screenshots for every version
 mockups/           The clickable UI mockup the design is based on
 ```
@@ -143,7 +149,7 @@ item-level detail is in [docs/backlog.md](docs/backlog.md).
 | 3 | Outbound email notifications (files locally, Microsoft Graph for real) | ✅ v0.3.0 |
 | 4 | Inbound email-to-ticket from a test shared mailbox | ✅ v0.4.0 |
 | 5 | Automations: auto-close resolved tickets, follow-ups, usage controls | ✅ v0.5.0 |
-| 6 | Deploy to the internal server with HTTPS and backups | In progress (waiting on the server) |
+| 6 | Deployment package: HTTPS proxy, backups, server guides | ✅ v0.6.0 (first install waits on the server) |
 
 ## License
 

@@ -4,6 +4,7 @@ One page per version, each with screenshots of what changed. Newest first.
 
 | Version | What | Notes |
 |---|---|---|
+| v0.6.0 | Deployment package: HTTPS proxy, backups, server guides | [v0.6.0.md](v0.6.0.md) |
 | v0.5.0 | Auto-close, follow-ups, FDA usage controls | [v0.5.0.md](v0.5.0.md) |
 | v0.4.0 | Email in: emails become tickets and replies | [v0.4.0.md](v0.4.0.md) |
 | v0.3.0 | Outbound email, worker, "Send and resolve" buttons | [v0.3.0.md](v0.3.0.md) |
