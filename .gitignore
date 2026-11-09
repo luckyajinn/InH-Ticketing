@@ -25,3 +25,8 @@ Thumbs.db
 
 # Local email output (EMAIL_BACKEND=file)
 tmp/
+
+# Certificates and keys never go into the image (or into git)
+*.pem
+*.key
+*.csr

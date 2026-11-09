@@ -1,0 +1,68 @@
+# InH-Ticketing on the internal server: production additions to compose.yaml.
+# Always use the two files together:
+#
+#   docker compose -f compose.yaml -f compose.prod.yaml up -d --build
+#
+# (The server's .env also sets COMPOSE_FILE, so a `docker compose` command
+# typed without the -f options still uses both.) On top of compose.yaml this:
+#
+#   - adds `proxy` (Caddy): HTTPS on 443 with the internal-CA certificate from
+#     /srv/inh-ticketing/certs, and HTTP on 80 redirected to HTTPS. It is the
+#     only container that publishes ports;
+#   - stops publishing web's port 8000, so the app is reached only via the proxy;
+#   - rotates every container's log, so logs can't fill the disk.
+#
+# Step by step: docs/deployment.md. Backups are a host cron job (scripts/backup.sh).
+# Needs Docker Compose 2.24 or later (for !reset).
+
+# A fixed project name, so the containers and volumes are always called
+# inh-ticketing-* (inh-ticketing_pgdata, inh-ticketing_media), whatever the
+# checkout folder is called.
+name: inh-ticketing
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "5"
+
+services:
+  db:
+    logging: *logging
+
+  web:
+    # Remove compose.yaml's "8000:8000": only the proxy may talk to the app.
+    ports: !reset []
+    environment:
+      # Allow 2 minutes per request (gunicorn's default is 30 s), for large
+      # attachment downloads over a slow VPN link.
+      GUNICORN_CMD_ARGS: "--timeout 120"
+    logging: *logging
+
+  worker:
+    logging: *logging
+
+  proxy:
+    # Pinned. To update: check https://github.com/caddyserver/caddy/releases,
+    # change the tag, then `up -d` as in docs/deployment.md.
+    image: caddy:2.11.9-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      HELPDESK_HOSTNAME: ${HELPDESK_HOSTNAME:-helpdesk.mckennalabs.com}
+      # Same setting and default as Django's SECURE_HSTS_SECONDS.
+      HSTS_MAX_AGE: ${DJANGO_SECURE_HSTS_SECONDS:-31536000}
+    volumes:
+      - ./deploy/caddy:/etc/caddy:ro
+      - /srv/inh-ticketing/certs:/certs:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+    logging: *logging
+
+volumes:
+  caddy_data:
+  caddy_config:
