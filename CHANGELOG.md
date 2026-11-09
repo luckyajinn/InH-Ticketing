@@ -7,8 +7,8 @@ Each version also has illustrated release notes in [docs/releases](docs/releases
 
 ### Added
 - `LICENSE`: proprietary, all rights reserved. The software is the sole property
-  of the owner of the GitHub account luckyajinn, and may be used, deployed or
-  licensed only with their express written permission. Docs only; no app changes.
+  of Christian Jones (GitHub: luckyajinn), and may be used, deployed or licensed
+  only with the owner's express written permission. Docs only; no app changes.
 
 ## [0.5.0] - 2026-11-06
 

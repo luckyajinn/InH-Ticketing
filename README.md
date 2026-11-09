@@ -147,7 +147,7 @@ item-level detail is in [docs/backlog.md](docs/backlog.md).
 
 ## License
 
-Proprietary: all rights reserved. InH-Ticketing is the sole property of the owner
-of the GitHub account [luckyajinn](https://github.com/luckyajinn). It may be used,
-copied, deployed or licensed only with their express written permission. See
+Proprietary: all rights reserved. InH-Ticketing is the sole property of Christian
+Jones ([luckyajinn](https://github.com/luckyajinn) on GitHub). It may be used,
+copied, deployed or licensed only with the owner's express written permission. See
 [LICENSE](LICENSE).
