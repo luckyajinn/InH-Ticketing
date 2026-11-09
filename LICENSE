@@ -1,0 +1,40 @@
+InH-Ticketing: Proprietary License
+
+Copyright (c) 2026 the owner of the GitHub account "luckyajinn"
+(https://github.com/luckyajinn), referred to below as "the Owner".
+All rights reserved.
+
+This software, including its source code, documentation, designs, images and
+all other material in this repository (together, "the Software"), is the sole
+property of the Owner.
+
+1. No license is granted. No one may use, run, copy, modify, merge, publish,
+   distribute, host, deploy, sublicense, sell or create derivative works of
+   the Software, in whole or in part, without the Owner's express prior
+   written permission.
+
+2. Permission comes only from the Owner. Only the Owner can give permission,
+   and only in writing. A permission covers only what it states (who, which
+   use, where, and for how long). It cannot be transferred or sublicensed,
+   and the Owner can withdraw it at any time. When a permission ends, all use
+   it covered must stop.
+
+3. No implied rights. Having access to this repository, receiving a copy of
+   the Software, or using it (for example, as an employee, contractor or user
+   of a deployment) does not grant any license or ownership. Nothing in this
+   file transfers ownership of the Software, or of any copyright, patent,
+   trademark or other right in it.
+
+4. Contributions. Changes to this repository are accepted only with the
+   Owner's permission, and become part of the Software under this license.
+
+5. Third-party software. The Software relies on open-source components, such
+   as Django, MSAL and PostgreSQL, that are not part of the Software and are
+   not covered by the Owner's claim. Each remains under its own license.
+
+6. No warranty. The Software is provided "as is", without warranty of any
+   kind. The Owner is not liable for any claim, damage or other liability
+   arising from the Software or its use.
+
+To ask for permission, contact the Owner through GitHub:
+https://github.com/luckyajinn

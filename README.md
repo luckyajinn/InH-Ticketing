@@ -144,3 +144,10 @@ item-level detail is in [docs/backlog.md](docs/backlog.md).
 | 4 | Inbound email-to-ticket from a test shared mailbox | ✅ v0.4.0 |
 | 5 | Automations: auto-close resolved tickets, follow-ups, usage controls | ✅ v0.5.0 |
 | 6 | Deploy to the internal server with HTTPS and backups | In progress (waiting on the server) |
+
+## License
+
+Proprietary: all rights reserved. InH-Ticketing is the sole property of the owner
+of the GitHub account [luckyajinn](https://github.com/luckyajinn). It may be used,
+copied, deployed or licensed only with their express written permission. See
+[LICENSE](LICENSE).

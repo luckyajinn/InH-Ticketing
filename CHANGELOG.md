@@ -3,6 +3,13 @@
 All notable changes to InH-Ticketing. Versions follow [Semantic Versioning](https://semver.org).
 Each version also has illustrated release notes in [docs/releases](docs/releases/README.md).
 
+## [Unreleased]
+
+### Added
+- `LICENSE`: proprietary, all rights reserved. The software is the sole property
+  of the owner of the GitHub account luckyajinn, and may be used, deployed or
+  licensed only with their express written permission. Docs only; no app changes.
+
 ## [0.5.0] - 2026-11-06
 
 Milestone 5: automations, follow-ups and FDA usage controls. [Release notes with screenshots](docs/releases/v0.5.0.md).
