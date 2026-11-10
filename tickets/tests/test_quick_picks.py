@@ -80,11 +80,37 @@ class QuickPickFormTests(MediaTestCase):
         ticket = Ticket.objects.get()
         self.assertEqual((ticket.subject, ticket.category), (text, self.cleaning))
 
-    def test_typed_subject_wins_over_the_pick(self):
+    def test_the_pick_wins_over_a_typed_subject(self):
+        # The page greys the subject out and says it won't be used; without
+        # JavaScript the typed subject still arrives, and is ignored.
+        self.post(subject_pick=f"{self.mechanics.pk}:0", subject="Monitor flickers", category=self.mechanics.pk)
+        ticket = Ticket.objects.get()
+        self.assertEqual(ticket.subject, self.mechanics.subject_choices[0])
+
+    def test_a_chosen_category_still_wins_with_the_pick_as_subject(self):
         hardware = Category.objects.get(name="Hardware")
         self.post(subject_pick=f"{self.mechanics.pk}:0", subject="Monitor flickers", category=hardware.pk)
         ticket = Ticket.objects.get()
-        self.assertEqual((ticket.subject, ticket.category), ("Monitor flickers", hardware))
+        self.assertEqual((ticket.subject, ticket.category), (self.mechanics.subject_choices[0], hardware))
+
+    def test_the_page_says_the_pick_replaces_the_subject(self):
+        page = self.client.get(self.url)
+        self.assertContains(page, "None, I'll type my own subject")
+        self.assertContains(page, "Picking one makes it the subject, instead of anything typed below")
+        # Nothing chosen yet: the subject is in use and the note is empty (app.js fills it in).
+        self.assertContains(page, 'data-subject-override')
+        self.assertNotContains(page, "is-overridden")
+        self.assertNotContains(page, " disabled placeholder=")
+
+    def test_subject_greyed_out_when_the_form_comes_back_with_a_pick(self):
+        value = f"{self.mechanics.pk}:1"
+        response = self.post(subject_pick=value, subject="Monitor flickers", description="")
+        self.assertEqual(response.status_code, 400)
+        self.assertContains(response, "is-overridden", status_code=400)
+        self.assertContains(
+            response, f' disabled placeholder="{self.mechanics.subject_choices[1]}"'.replace("'", "&#x27;"), status_code=400,
+        )
+        self.assertContains(response, "anything typed here won't be used", status_code=400)
 
     def test_made_up_picks_are_ignored(self):
         for value in ("abc", "999999:0", f"{self.mechanics.pk}:99", f"{self.mechanics.pk}:-1", ":"):

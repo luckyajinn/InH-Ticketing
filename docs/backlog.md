@@ -172,6 +172,13 @@ Still from the review, before v1.0.0:
       `preferred_username`; a length limit on descriptions and replies;
       rolling back 0005 shouldn't delete an admin's own "Mechanics" category.
 
+## v0.8.4 (released 2026-11-10: admin look, common requests)
+
+- [x] The admin site in the app's look: header, cards, buttons, tables, light
+      and dark; no sidebar; plainer section names; the app's own sign-out.
+- [x] A chosen common request is the subject: the typed subject greys out,
+      with a note that it won't be used.
+
 ## v0.9.0 (pilot fixes, by 2026-11-12)
 
 Filled from the pilot, which starts 2026-11-10. Report what you find as a
@@ -194,7 +201,8 @@ ticket, subject starting "Pilot:", so it's tracked in the app itself.
       mailbox becomes a ticket in that department's category (no admin move
       needed), and that ticket's emails are sent from the same mailbox, so
       replies come back to the right team. Set as a list of mailbox and
-      department pairs in `.env`.
+      department pairs in `.env`. *(2026-11-10: no confirmation yet of a
+      shared mailbox for each department; waiting on the CFO meeting.)*
   - **Watch out:** email-in takes over a mailbox's Inbox. It turns every
     unread email into a ticket, sends the sender a receipt, marks it read and
     moves it to "Processed by InH-Ticketing". On a mailbox a department
@@ -238,6 +246,14 @@ ticket, subject starting "Pilot:", so it's tracked in the app itself.
 
   Email-in: each department gets its own mailbox before v1.0.0 (see above),
   so emailed requests land in the right department without an admin move.
+
+  Entra, 2026-11-10: the **Mechanics and C&S groups are live**. In the app
+  registration, create the two app roles (`Agent.Mechanics`, `Agent.Cleaning`)
+  if they aren't there yet, and assign each group its role. That's safe to do
+  before v1.2.0: sign-in only gives agent access for the exact value `Agent`
+  (or `Admin`), so until v1.2.0 those people sign in as requesters. **Don't
+  give these groups the plain `Agent` role**: that's IT's, and would show them
+  every ticket and internal note.
 - [ ] More in-depth common requests for Mechanics and C&S, and a self-fill
       option *(the owner is gathering them)*.
 

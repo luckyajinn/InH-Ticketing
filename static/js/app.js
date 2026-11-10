@@ -113,22 +113,35 @@
       });
     });
 
-    // "Common requests" on the New request form fill in the subject and the
-    // category straight away. Without JS the server does the same on submit.
+    // "Common requests" on the New request form: a chosen one is the subject.
+    // The subject box greys out (a disabled field isn't sent) and a note says
+    // what's typed there won't be used; what was typed stays, in case they
+    // choose "None" again. Choosing one also fills in its category. Without
+    // JS the server uses the chosen one as the subject on submit.
     document.querySelectorAll("select[data-subject-pick]").forEach(function (pick) {
       var form = pick.form;
       var subject = form && form.elements.subject;
       var category = form && form.elements.category;
+      var note = form && form.querySelector("[data-subject-override]");
       if (!subject) return;
-      pick.addEventListener("change", function () {
+      var field = subject.closest(".field");
+
+      function update(chosenNow) {
         var option = pick.options[pick.selectedIndex];
-        if (!option || !option.value) return;
-        subject.value = option.textContent.trim();
-        var group = option.parentElement;
-        if (category && group && group.getAttribute("data-category")) {
+        var picked = !!(option && option.value);
+        subject.disabled = picked;
+        subject.placeholder = picked ? option.textContent.trim() : "";
+        if (field) field.classList.toggle("is-overridden", picked);
+        if (note) note.textContent = picked ? note.getAttribute("data-text") : "";
+        var group = option && option.parentElement;
+        if (picked && chosenNow && category && group && group.getAttribute("data-category")) {
           category.value = group.getAttribute("data-category");
         }
-      });
+      }
+      pick.addEventListener("change", function () { update(true); });
+      // Also when the browser puts back a chosen one (Back button, reload).
+      window.addEventListener("pageshow", function () { update(false); });
+      update(false);
     });
 
     // "This might include a password" (tickets/password_guard.py). Before a
@@ -145,10 +158,11 @@
       var cleared = null; // the text the server last said was fine
       var busy = false;
 
+      // Disabled fields aren't sent (a subject replaced by a common request), so they aren't checked.
       function currentText() {
         return names.map(function (name) {
           var field = form.elements[name];
-          return field ? field.value : "";
+          return field && !field.disabled ? field.value : "";
         }).join("\u0000");
       }
 
@@ -182,7 +196,7 @@
         data.append("csrfmiddlewaretoken", form.elements.csrfmiddlewaretoken.value);
         names.forEach(function (name) {
           var field = form.elements[name];
-          if (field) data.append(name, field.value);
+          if (field && !field.disabled) data.append(name, field.value);
         });
         fetch(form.getAttribute("data-password-check"), { method: "POST", body: data, credentials: "same-origin" })
           .then(function (response) {

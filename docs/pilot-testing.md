@@ -61,7 +61,7 @@ then swap. Use the test shared mailbox for email.
 
 ## 6. New in v0.8
 
-- [ ] **Common requests:** pick one on New request: the subject and category fill in. Change the subject or the category afterwards: your choice wins.
+- [ ] **Common requests:** type a subject, then pick a common request: the subject box greys out, a note says what you typed won't be used, and the category fills in. Send it: the ticket's subject is the common request. Pick "None" again: your typed subject comes back. Change the category after picking: your category wins.
 - [ ] **Mechanics and Cleaning & sanitization:** both are offered on New request, and the queue's category filter shows just their tickets.
 - [ ] **Not found page:** open a made-up address. "Go to my tickets" (or "Go to the queue" for IT) and "New request" work; your own ticket number in the box opens it; someone else's shows Not found.
 - [ ] **Help contact:** the sign-in page and the error pages say who to contact, with the right extension or channel.

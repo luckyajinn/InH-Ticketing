@@ -1,7 +1,7 @@
 # InH-Ticketing: overview
 
 What the system is, where it stands, and how each feature and system works.
-Written 2026-11-10 for v0.8.3. Each section is meant to work as one slide.
+Written 2026-11-10 for v0.8.4. Each section is meant to work as one slide.
 
 ## 1. In one paragraph
 
@@ -16,13 +16,13 @@ It runs on McKenna Labs' own server, inside the company network.
 
 | | |
 |---|---|
-| Version | **v0.8.3**, released 2026-11-10 |
-| Built | v0.1.0 to v0.8.3 between 2026-11-05 and 2026-11-10, each release tested and documented with screenshots |
+| Version | **v0.8.4**, released 2026-11-10 |
+| Built | v0.1.0 to v0.8.4 between 2026-11-05 and 2026-11-10, each release tested and documented with screenshots |
 | Server | Live on the internal server (16 cores, 32 GB RAM) at `helpdesk.mckennalabs.com` |
 | Pilot | Starts 2026-11-10 with one other tester, trying to break it |
 | Compliance | Intended-use and risk assessment passed (Ruben Martinez); internal setup approved (Michael Rocovitz). A risk assessment for the Mechanics and C&S use is on 2026-11-10 |
 | Target | Everything finalized by **Friday 2026-11-20**; go-live date set then (earliest Monday 2026-11-30) |
-| Quality | 283 automated tests, all passing, including an attack test (SQL, shell and template injection in every input) |
+| Quality | 291 automated tests, all passing, including an attack test (SQL, shell and template injection in every input) |
 
 ## 3. Who uses it
 
@@ -68,9 +68,11 @@ Every change is written to the ticket's history: who, what, when.
 ### New request
 - **Categories:** Hardware, Software, Access, Network, Mechanics, Cleaning &
   sanitization, Other.
-- **Common requests:** a picker that fills in the subject and the category,
-  for example "Equipment down: a machine won't start or has stopped". Three
-  each for Mechanics and C&S today; admins edit the lists (one per line).
+- **Common requests:** a picker of everyday requests, for example "Equipment
+  down: a machine won't start or has stopped". A picked one becomes the
+  subject and fills in the category; the subject box greys out, with a note
+  that anything typed there won't be used. Three each for Mechanics and C&S
+  today; admins edit the lists (one per line).
 - **Attachments:** up to 5 files, 10 MB each (screenshots, PDFs, Office files,
   text, zip), dragged in or browsed.
 - **"This is blocking my work"** flag, used when setting priority.
@@ -157,7 +159,9 @@ Every change is written to the ticket's history: who, what, when.
 - "Friendly Soft": warm neutrals, one teal accent, rounded cards, chosen from
   three design options. Works on phones, follows dark mode, and turns its
   gentle motion off for people who prefer reduced motion.
-- Colours and fonts live in one place, ready for another company's brand.
+- The admin site has the same look (since v0.8.4).
+- Colours and fonts live in one place (plus a copy for the admin site),
+  ready for another company's brand.
 
 ## 6. The systems behind it
 

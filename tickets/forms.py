@@ -103,8 +103,8 @@ class CategoryChoiceField(forms.ModelChoiceField):
 class NewTicketForm(PasswordCheckMixin, forms.Form):
     password_fields = ("subject", "description")
 
-    # A quick pick ("common requests") fills in the subject and its category,
-    # so the subject can be empty when one was picked. clean() checks it.
+    # A quick pick ("common requests") is the subject when one is chosen, so
+    # the subject can be empty then. clean() checks it.
     subject = forms.CharField(
         max_length=200, required=False,
         widget=forms.TextInput(attrs={"class": "input", "autocomplete": "off"}),
@@ -137,6 +137,12 @@ class NewTicketForm(PasswordCheckMixin, forms.Form):
                 groups.append((category, [(f"{category.pk}:{i}", text) for i, text in enumerate(choices)]))
         return groups
 
+    @property
+    def picked_subject(self) -> str:
+        """The subject of the common request chosen when the form was sent, or ""."""
+        picked = self._picked(self.data.get("subject_pick")) if self.is_bound else None
+        return picked[1] if picked else ""
+
     def _picked(self, value: str) -> tuple[Category, str] | None:
         """The (category, subject) a quick-pick value stands for, if it's a real, active one."""
         category_id, _, index = (value or "").partition(":")
@@ -150,11 +156,11 @@ class NewTicketForm(PasswordCheckMixin, forms.Form):
     def clean(self):
         cleaned = super().clean()
         picked = self._picked(cleaned.get("subject_pick"))
-        # The pick counts when the subject is empty or still the picked text;
-        # a subject typed over it wins, with whatever category was chosen.
-        # A category the person chose themselves also wins: the pick's
-        # category is used only when none was chosen (as without JavaScript).
-        if picked and cleaned.get("subject") in ("", None, picked[1]):
+        # A chosen common request is the subject, over anything typed (the
+        # page says so, and greys the subject out). A category the person
+        # chose themselves still wins: the pick's category is used only when
+        # none was chosen (as without JavaScript).
+        if picked:
             category, text = picked
             cleaned["subject"] = text
             if not cleaned.get("category"):

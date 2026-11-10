@@ -30,8 +30,8 @@ class Category(models.Model):
     sort_order = models.PositiveSmallIntegerField(default=0)
     subject_options = models.TextField(
         "common requests", blank=True,
-        help_text="One subject per line. Shown as quick picks on the New request form, which fill in "
-                  "the subject and this category; people can still type their own.",
+        help_text="One subject per line. Shown as quick picks on the New request form: a picked one "
+                  "becomes the subject (instead of anything typed) and fills in this category.",
     )
 
     MAX_SUBJECT_OPTIONS = 20

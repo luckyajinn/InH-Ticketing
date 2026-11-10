@@ -3,6 +3,28 @@
 All notable changes to InH-Ticketing. Versions follow [Semantic Versioning](https://semver.org).
 Each version also has illustrated release notes in [docs/releases](docs/releases/README.md).
 
+## [0.8.4] - 2026-11-10
+
+The admin site in the app's look, and a chosen common request is always the
+subject. [Release notes](docs/releases/v0.8.4.md).
+
+### Changed
+- **The admin site looks like the rest of the app:** the app's header (with
+  "Back to InH-Ticketing" and the app's own Sign out), warm background,
+  rounded cards, pill buttons and queue-style tables, in light and dark
+  (`templates/admin/base_site.html`, `static/css/admin.css`). No sidebar, so
+  lists get the full width; sections renamed People, Email in, Email out and
+  Tickets; light or dark follows the device, so no theme switch.
+- **A chosen common request is the subject,** over anything typed. The
+  subject box greys out (keeping what was typed) with a note that it won't
+  be used; "None, I'll type my own subject" brings it back. The category
+  still fills in, and a category chosen afterwards still wins. The password
+  check skips the greyed-out subject, since it isn't sent.
+
+### Upgrading
+- One migration, `tickets` 0006: the admin's help text for common requests.
+  Nothing changes in the database. Rolling back to v0.8.3 needs no restore.
+
 ## [0.8.3] - 2026-11-10
 
 Fixes from the pre-pilot review: three independent reviews of v0.8.2
@@ -317,6 +339,7 @@ Milestone 1: skeleton and Microsoft 365 sign-in. [Release notes with screenshots
 - `/healthz` endpoint, Dockerfile and Docker Compose with PostgreSQL 17.
 - Entra setup guide (`docs/entra-setup.md`) and the UI mockup (`mockups/`).
 
+[0.8.4]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.8.4
 [0.8.3]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.8.3
 [0.8.2]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.8.2
 [0.8.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.8.0

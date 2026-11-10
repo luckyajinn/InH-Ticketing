@@ -30,25 +30,29 @@
   <div class="field">
     <label for="id_subject_pick">Common requests <span class="optional">(optional)</span></label>
     <select class="select" name="subject_pick" id="id_subject_pick" data-subject-pick aria-describedby="pick-hint">
-      <option value="">Choose one, or type your own subject below</option>
+      <option value="">None, I'll type my own subject</option>
       {% for category, choices in picks %}
       <optgroup label="{{ category.name }}" data-category="{{ category.pk }}">
         {% for value, text in choices %}<option value="{{ value }}"{% if form.subject_pick.value == value %} selected{% endif %}>{{ text }}</option>{% endfor %}
       </optgroup>
       {% endfor %}
     </select>
-    <p class="hint" id="pick-hint">Picking one fills in the subject and the category. You can still change the subject.</p>
+    <p class="hint" id="pick-hint">Picking one makes it the subject, instead of anything typed below, and fills in the category.</p>
   </div>
   {% endif %}{% endwith %}
 
-  <div class="field">
+  {% with picked=form.picked_subject %}
+  <div class="field{% if picked %} is-overridden{% endif %}">
     <label for="{{ form.subject.id_for_label }}">Subject</label>
+    {# While a common request is chosen it is the subject: this box greys out (and isn't sent), keeping what was typed in case they change their mind. #}
     <input class="input" type="text" name="subject" id="{{ form.subject.id_for_label }}" maxlength="200" autocomplete="off" required
-           value="{{ form.subject.value|default:'' }}"
+           value="{{ form.subject.value|default:'' }}"{% if picked %} disabled placeholder="{{ picked }}"{% endif %}
            aria-describedby="subject-hint{% if form.subject.errors %} subject-error{% endif %}"{% if form.subject.errors %} aria-invalid="true"{% endif %}>
     <p class="hint" id="subject-hint">One line, like an email subject. For example: "Can't connect to the VPN from home".</p>
+    <p class="override-note" role="status" data-subject-override data-text="The common request above is the subject, so anything typed here won't be used. To use your own, choose &quot;None, I'll type my own subject&quot; above.">{% if picked %}The common request above is the subject, so anything typed here won't be used. To use your own, choose "None, I'll type my own subject" above.{% endif %}</p>
     {% if form.subject.errors %}<p class="field-error" id="subject-error">{% icon "alert" %}{{ form.subject.errors.0 }}</p>{% endif %}
   </div>
+  {% endwith %}
 
   <div class="field">
     <label for="{{ form.category.id_for_label }}">Category</label>

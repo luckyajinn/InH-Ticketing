@@ -633,6 +633,9 @@ Now and then, clear out old images: `docker image prune -f`.
   notes at the end of section 9 about emails. Always finish with `up -d
   --build` as above: plain `up -d` would start the new version's images on
   the restored database, and they would re-apply the new migrations.
+- **From v0.8.4 back to v0.8.3:** v0.8.4's only migration, `tickets` 0006,
+  rewords a help text and changes nothing in the database. Check out
+  `v0.8.3` and rebuild, as for no database changes; no restore needed.
 - **From v0.7.0 or later back to v0.6.0, keeping the tickets made since:**
   v0.7.0 and v0.8.0 add migrations `tickets` 0004 (the password audit trail)
   and 0005 (common requests and the Mechanics and Cleaning & sanitization

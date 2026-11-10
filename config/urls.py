@@ -8,6 +8,9 @@ admin.site.login = admin_login
 admin.site.site_header = "InH-Ticketing admin"
 admin.site.site_title = "InH-Ticketing admin"
 admin.site.index_title = "Administration"
+# Six lists don't need a sidebar: the admin home and breadcrumbs cover it, and
+# the ticket list gets the full width.
+admin.site.enable_nav_sidebar = False
 
 handler500 = "core.views.server_error"
 

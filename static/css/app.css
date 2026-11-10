@@ -692,6 +692,18 @@ form[aria-busy="true"] .btn { pointer-events: none; }
 .field > label, .label { display: block; margin-bottom: 8px; font-weight: 650; }
 .optional { color: var(--text-muted); font-weight: 400; }
 .hint { margin-top: 6px; color: var(--text-muted); font-size: var(--fs-sm); }
+/* The subject while a common request is chosen (new.html): greyed out, with a note. */
+.input:disabled { border-color: var(--border); background-color: var(--surface-2); color: var(--text-muted); cursor: not-allowed; }
+.input:disabled::placeholder { color: var(--text-muted); }
+.is-overridden > label { color: var(--text-muted); }
+.override-note {
+  margin-top: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--accent-soft); color: var(--accent-soft-text);
+  font-size: var(--fs-sm); font-weight: 600;
+}
+.override-note:empty { display: none; }
 .field-error { display: flex; gap: 6px; align-items: center; margin-top: 6px; color: var(--danger); font-size: var(--fs-sm); font-weight: 650; }
 .field-error .icon { width: 14px; height: 14px; }
 .check { display: flex; align-items: flex-start; gap: 12px; }

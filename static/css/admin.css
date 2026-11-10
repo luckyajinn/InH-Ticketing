@@ -1,0 +1,519 @@
+/* =====================================================================
+   The Django admin in the app's "Friendly Soft" look.
+
+   Loaded last on every admin page (templates/admin/base_site.html).
+   Django's admin has its own colour variables (--primary, --body-bg ...),
+   and two of them share a name with the app's (--accent, --header-bg), so
+   app.css can't be loaded here. Instead the app's values are repeated
+   below as --inh-* and Django's variables point at them.
+
+   Keep the --inh-* values the same as the tokens in app.css :root and its
+   dark-mode block: a company theme changes both files.
+   ===================================================================== */
+
+:root {
+  --inh-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --inh-font-display: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --inh-font-mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  --inh-bg: #f6f3ef;
+  --inh-surface: #ffffff;
+  --inh-surface-2: #f3efe9;
+  --inh-surface-hover: #efe9e2;
+  --inh-row-hover: #faf7f3;
+  --inh-header-bg: #ffffff;
+  --inh-input-bg: #ffffff;
+  --inh-border: #e6dfd6;
+  --inh-border-soft: #efe9e2;
+  --inh-border-strong: #9a9086;
+  --inh-text: #2a2521;
+  --inh-text-muted: #685f56;
+  --inh-link: #0c7268;
+  --inh-accent: #0e7c72;
+  --inh-accent-hover: #0a665e;
+  --inh-accent-text: #ffffff;
+  --inh-accent-soft: #def2ee;
+  --inh-accent-soft-hover: #cdebe5;
+  --inh-accent-soft-text: #0a5850;
+  --inh-accent-soft-border: #c6e4dd;
+  --inh-focus: #0e7c72;
+  --inh-focus-ring: rgba(14, 124, 114, .26);
+  --inh-danger: #b3261e;
+  --inh-danger-hover: #951f19;
+  --inh-danger-soft: #fdeeec;
+  --inh-success-soft: #e3f4e7;
+  --inh-success-text: #1c6634;
+  --inh-note-bg: #fff6e3;
+  --inh-note-text: #7f3f08;
+  --inh-shadow-xs: 0 1px 2px rgba(58, 40, 22, .06);
+  --inh-shadow-sm: 0 1px 2px rgba(58, 40, 22, .04), 0 2px 8px rgba(58, 40, 22, .05);
+  --inh-shadow-btn: 0 1px 2px rgba(58, 40, 22, .08);
+  --inh-shadow-header: 0 1px 0 var(--inh-border), 0 6px 20px rgba(58, 40, 22, .035);
+
+  /* Django's admin variables, pointed at the values above */
+  --primary: var(--inh-accent);
+  --secondary: var(--inh-accent);
+  --accent: var(--inh-accent);
+  --primary-fg: var(--inh-accent-text);
+
+  --body-fg: var(--inh-text);
+  --body-bg: var(--inh-surface);
+  --body-quiet-color: var(--inh-text-muted);
+  --body-medium-color: var(--inh-text);
+  --body-loud-color: var(--inh-text);
+
+  --header-color: var(--inh-text-muted);
+  --header-branding-color: var(--inh-text);
+  --header-bg: var(--inh-surface-2);
+  --header-link-color: var(--inh-text);
+
+  --breadcrumbs-fg: var(--inh-text-muted);
+  --breadcrumbs-link-fg: var(--inh-link);
+  --breadcrumbs-bg: transparent;
+
+  --link-fg: var(--inh-link);
+  --link-hover-color: var(--inh-accent-hover);
+  --link-selected-fg: var(--inh-accent-soft-text);
+
+  --hairline-color: var(--inh-border-soft);
+  --border-color: var(--inh-border);
+  --error-fg: var(--inh-danger);
+
+  --message-debug-bg: var(--inh-surface-2);
+  --message-info-bg: var(--inh-accent-soft);
+  --message-success-bg: var(--inh-success-soft);
+  --message-warning-bg: var(--inh-note-bg);
+  --message-error-bg: var(--inh-danger-soft);
+
+  --darkened-bg: var(--inh-surface-2);
+  --selected-bg: var(--inh-surface-hover);
+  --selected-row: var(--inh-accent-soft);
+
+  --button-fg: var(--inh-accent-text);
+  --button-bg: var(--inh-accent);
+  --button-hover-bg: var(--inh-accent-hover);
+  --default-button-bg: var(--inh-accent);
+  --default-button-hover-bg: var(--inh-accent-hover);
+  --close-button-bg: var(--inh-text-muted);
+  --close-button-hover-bg: var(--inh-text);
+  --delete-button-bg: var(--inh-danger);
+  --delete-button-hover-bg: var(--inh-danger-hover);
+
+  --object-tools-fg: var(--inh-accent-soft-text);
+  --object-tools-bg: var(--inh-accent-soft);
+  --object-tools-hover-bg: var(--inh-accent-soft-hover);
+
+  --font-family-primary: var(--inh-font-sans);
+  --font-family-monospace: var(--inh-font-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --inh-bg: #171411;
+    --inh-surface: #221e1a;
+    --inh-surface-2: #2a2520;
+    --inh-surface-hover: #332d27;
+    --inh-row-hover: #28231e;
+    --inh-header-bg: #1d1916;
+    --inh-input-bg: #1b1815;
+    --inh-border: #3a332c;
+    --inh-border-soft: #2f2924;
+    --inh-border-strong: #7a6e62;
+    --inh-text: #f1ebe4;
+    --inh-text-muted: #b9aea2;
+    --inh-link: #74d3c5;
+    --inh-accent: #3db5a5;
+    --inh-accent-hover: #58c5b6;
+    --inh-accent-text: #07201c;
+    --inh-accent-soft: #173431;
+    --inh-accent-soft-hover: #1e423e;
+    --inh-accent-soft-text: #a9e8de;
+    --inh-accent-soft-border: #2a4842;
+    --inh-focus: #74d3c5;
+    --inh-focus-ring: rgba(116, 211, 197, .30);
+    --inh-danger: #f4867b;
+    --inh-danger-hover: #f7a097;
+    --inh-danger-soft: #341814;
+    --inh-success-soft: #142c1b;
+    --inh-success-text: #b6ebc4;
+    --inh-note-bg: #2a2111;
+    --inh-note-text: #ffd98e;
+    --inh-shadow-xs: 0 1px 2px rgba(0, 0, 0, .35);
+    --inh-shadow-sm: 0 1px 2px rgba(0, 0, 0, .30), 0 2px 8px rgba(0, 0, 0, .22);
+    --inh-shadow-btn: 0 1px 2px rgba(0, 0, 0, .35);
+    --inh-shadow-header: 0 1px 0 var(--inh-border), 0 6px 20px rgba(0, 0, 0, .25);
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Page
+   --------------------------------------------------------------------- */
+body {
+  background: var(--inh-bg);
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible { outline: 2px solid var(--inh-focus); outline-offset: 2px; }
+.inh-icon {
+  width: 16px; height: 16px; flex: none;
+  fill: none; stroke: currentColor; stroke-width: 1.8;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* ---------------------------------------------------------------------
+   Header: the same as the app's
+   --------------------------------------------------------------------- */
+#header {
+  position: relative; z-index: 2;
+  min-height: 64px;
+  padding: 0 40px;
+  gap: 24px;
+  background: var(--inh-header-bg);
+  color: var(--inh-text);
+  box-shadow: var(--inh-shadow-header);
+}
+#header a:focus, #header a:hover { text-decoration: none; }
+#branding { align-items: center; }
+.inh-brand {
+  display: inline-flex; align-items: center; gap: 10px;
+  border-radius: 9px;
+  font-family: var(--inh-font-display); font-size: 16px; font-weight: 700; letter-spacing: -.01em;
+  white-space: nowrap;
+}
+#header a.inh-brand:link, #header a.inh-brand:visited { color: var(--inh-text); }
+.inh-brand-mark {
+  display: grid; place-items: center; flex: none;
+  width: 36px; height: 36px;
+  border-radius: 11px;
+  background: var(--inh-accent); color: var(--inh-accent-text);
+  box-shadow: var(--inh-shadow-xs);
+}
+.inh-brand-mark svg {
+  width: 20px; height: 20px;
+  fill: none; stroke: currentColor; stroke-width: 1.8;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.inh-tag {
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--inh-accent-soft); color: var(--inh-accent-soft-text);
+  font-family: var(--inh-font-sans); font-size: 11.5px; font-weight: 700; line-height: 20px; letter-spacing: 0;
+}
+
+#user-tools {
+  display: flex; align-items: center; gap: 4px;
+  margin: 0; padding: 0;
+  color: var(--inh-text-muted);
+  font-size: 13.5px; font-weight: 600; letter-spacing: 0; text-transform: none;
+  white-space: nowrap;
+}
+.inh-user-name { padding: 0 8px; color: var(--inh-text); font-weight: 650; }
+#header a.inh-pill:link, #header a.inh-pill:visited,
+#user-tools #logout-form button.inh-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0; border-radius: 999px;
+  background: none;
+  color: var(--inh-text-muted);
+  font: inherit; font-weight: 600;
+  text-decoration: none; text-transform: none;
+  cursor: pointer;
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+#header a.inh-pill:hover, #user-tools #logout-form button.inh-pill:hover {
+  background: var(--inh-surface-hover); color: var(--inh-text);
+}
+#logout-form { display: inline-flex; margin: 0; }
+
+/* ---------------------------------------------------------------------
+   Breadcrumbs and titles
+   --------------------------------------------------------------------- */
+ol.breadcrumbs {
+  padding: 18px 40px 0;
+  background: none;
+  color: var(--inh-text-muted);
+}
+ol.breadcrumbs li { font-size: 13.5px; }
+ol.breadcrumbs a { font-weight: 600; text-decoration: none; }
+ol.breadcrumbs a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+#content { padding: 20px 40px 48px; }
+#content h1 {
+  margin: 0 0 20px;
+  color: var(--inh-text);
+  font-family: var(--inh-font-display); font-size: 26px; font-weight: 700; letter-spacing: -.015em;
+}
+#content h2 { color: var(--inh-text); }
+#content-main a, #content-related a { text-underline-offset: 3px; }
+
+/* ---------------------------------------------------------------------
+   Cards: every module, the changelist, the filters, form sections
+   --------------------------------------------------------------------- */
+.module,
+#changelist .changelist-form-container > div,
+#changelist-filter,
+.inline-group,
+.submit-row {
+  border: 1px solid var(--inh-border);
+  border-radius: 18px;
+  background: var(--inh-surface);
+  box-shadow: var(--inh-shadow-sm);
+}
+.module { overflow: hidden; margin-bottom: 20px; }
+.module table { width: 100%; }
+#content-related { background: none; }
+#content-related .module { background: var(--inh-surface); }
+#content-related h3 { color: var(--inh-text-muted); }
+
+/* The changelist is two cards side by side: the results, then the filters. */
+#changelist.module {
+  overflow: visible;
+  border: 0; border-radius: 0;
+  background: none; box-shadow: none;
+}
+#changelist .changelist-form-container { gap: 20px; }
+#changelist .changelist-form-container > div { overflow: hidden; }
+#changelist-filter { margin: 0; overflow: hidden; }
+@media (min-width: 768px) {
+  #changelist .changelist-form-container:has(#changelist-filter) > div { max-width: calc(100% - 260px); }
+  #changelist-filter { flex: 0 0 240px; }
+}
+
+/* Card headings, like the app's table headings */
+.module h2,
+.module caption,
+.inline-group h2,
+#changelist-filter h2 {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--inh-border);
+  background: var(--inh-surface-2);
+  color: var(--inh-text);
+  font-size: 13.5px; font-weight: 700; letter-spacing: 0; text-transform: none;
+}
+.module caption a.section:link, .module caption a.section:visited { color: var(--inh-text); }
+.module caption a.section:hover { color: var(--inh-link); }
+
+/* ---------------------------------------------------------------------
+   Tables
+   --------------------------------------------------------------------- */
+thead th, tfoot td, #changelist table thead th {
+  border-bottom: 1px solid var(--inh-border);
+  background: var(--inh-surface-2);
+  color: var(--inh-text-muted);
+  font-size: 12px; font-weight: 700; letter-spacing: 0; text-transform: none;
+}
+td, th { border-bottom-color: var(--inh-border-soft); }
+/* No zebra stripes, like the app's queue; rows light up on hover instead. */
+#container tr:nth-child(odd), #container tr:nth-child(even) { background: var(--inh-surface); }
+.module th, .module td, #result_list th, #result_list td { padding: 11px 12px; vertical-align: middle; }
+#changelist table thead th { padding: 0; }
+#changelist table thead th .text > a, #changelist table thead th .text > span { padding: 11px 12px; }
+#result_list tbody tr { transition: background-color 150ms ease-out; }
+#result_list tbody tr:hover { background: var(--inh-row-hover); }
+#result_list tbody tr.selected { background: var(--selected-row); }
+#result_list th a, .module th[scope="row"] a { font-weight: 650; }
+
+/* Django underlines every link. Like the app, links in tables, lists and
+   navigation go without (they're clear from where they are), and get one on hover. */
+#container ol.breadcrumbs li a,
+#container #changelist a,
+#container .module th a,
+#container .module td a,
+#container .object-tools a {
+  text-decoration: none;
+}
+#container ol.breadcrumbs li a:hover,
+#container #result_list a:hover,
+#container .toplinks a:hover,
+#container .module th a:hover,
+#container .module td a:hover {
+  text-decoration: underline; text-underline-offset: 3px;
+}
+
+/* The search and action bars */
+#changelist #toolbar {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--inh-border-soft);
+  background: var(--inh-surface);
+}
+#changelist .actions {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--inh-border-soft);
+  background: var(--inh-surface);
+}
+.paginator {
+  padding: 12px 16px;
+  border-top: 0;
+  background: var(--inh-surface);
+  color: var(--inh-text-muted);
+}
+
+/* ---------------------------------------------------------------------
+   Filters
+   --------------------------------------------------------------------- */
+#changelist-filter h3, #changelist-filter summary {
+  color: var(--inh-text);
+  font-size: 13.5px; font-weight: 700;
+}
+#changelist-filter details summary { padding: 0 16px; }
+#changelist-filter ul { padding: 0 8px; border-bottom: 1px solid var(--inh-border-soft); }
+#changelist-filter li { padding: 0; }
+#changelist-filter li a {
+  display: block;
+  padding: 5px 10px;
+  border-radius: 999px;
+  color: var(--inh-text-muted);
+  text-decoration: none;
+}
+#changelist-filter li a:hover { background: var(--inh-surface-hover); color: var(--inh-text); }
+#changelist-filter li.selected { border-left: 0; padding-left: 0; margin-left: 0; }
+#changelist-filter li.selected a {
+  background: var(--inh-accent-soft);
+  color: var(--inh-accent-soft-text);
+  font-weight: 650;
+}
+#changelist-filter #changelist-filter-extra-actions { padding: 10px 16px; border-bottom: 1px solid var(--inh-border-soft); }
+#changelist-filter #changelist-filter-extra-actions a { text-decoration: none; font-weight: 600; }
+
+/* ---------------------------------------------------------------------
+   Buttons: pills, the accent for the main action
+   --------------------------------------------------------------------- */
+.button, input[type=submit], input[type=button], .submit-row input, a.button {
+  min-height: 40px;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  box-shadow: var(--inh-shadow-btn);
+  font-family: var(--inh-font-sans); font-size: 14px; font-weight: 650;
+  transition: background-color 150ms ease-out, box-shadow 150ms ease-out;
+}
+a.button { display: inline-flex; align-items: center; }
+.button:focus-visible, input[type=submit]:focus-visible, input[type=button]:focus-visible {
+  outline: 2px solid var(--inh-focus); outline-offset: 2px;
+}
+#changelist-search input[type=submit], .actions button.button {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--inh-border-strong);
+  background: var(--inh-surface);
+  color: var(--inh-text);
+  box-shadow: var(--inh-shadow-btn);
+  cursor: pointer;
+}
+#changelist-search input[type=submit]:hover, .actions button.button:hover { background: var(--inh-surface-hover); }
+#changelist-search input[type=text] { min-height: 36px; width: min(360px, 100%); }
+#changelist .toplinks { padding: 10px 16px; margin: 0; border-bottom: 1px solid var(--inh-border-soft); }
+#changelist .toplinks a { font-weight: 600; }
+
+.submit-row {
+  padding: 14px 16px;
+  margin: 20px 0;
+  gap: 10px;
+}
+.submit-row a.deletelink {
+  min-height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
+  display: inline-flex; align-items: center;
+  font-weight: 650;
+}
+.submit-row a.closelink { border-radius: 999px; }
+.submit-row input, .submit-row input.default { font-weight: 650; text-transform: none; letter-spacing: 0; }
+
+/* "Add category" and the other tools above a list */
+.object-tools { margin: 0; }
+.object-tools a:link, .object-tools a:visited {
+  min-height: 36px;
+  padding: 0 16px;
+  display: inline-flex; align-items: center;
+  border: 1px solid var(--inh-accent-soft-border);
+  border-radius: 999px;
+  font-size: 13.5px; font-weight: 650; letter-spacing: 0; text-transform: none;
+}
+/* Django's white arrow and plus icons would vanish on the soft pill; the words say it. */
+.object-tools a.viewsitelink, .object-tools a.addlink { padding-right: 16px; background-image: none; }
+
+/* ---------------------------------------------------------------------
+   Form fields
+   --------------------------------------------------------------------- */
+input[type=text], input[type=password], input[type=email], input[type=url],
+input[type=number], input[type=tel], input[type=search], textarea, select, .vTextField {
+  padding: 8px 12px;
+  border: 1px solid var(--inh-border-strong);
+  border-radius: 12px;
+  background-color: var(--inh-input-bg);
+  color: var(--inh-text);
+  font-family: var(--inh-font-sans); font-size: 14px;
+  transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
+}
+select { min-height: 38px; }
+textarea { line-height: 1.55; }
+input[type=text]:focus, input[type=password]:focus, input[type=email]:focus, input[type=url]:focus,
+input[type=number]:focus, input[type=tel]:focus, input[type=search]:focus, textarea:focus, select:focus, .vTextField:focus {
+  outline: 2px solid transparent;
+  border-color: var(--inh-focus);
+  box-shadow: 0 0 0 4px var(--inh-focus-ring);
+}
+input[type=checkbox] { accent-color: var(--inh-accent); }
+
+fieldset.module { padding: 0; }
+.form-row { padding: 14px 16px; border-bottom-color: var(--inh-border-soft); }
+.aligned label { color: var(--inh-text); font-weight: 600; }
+.aligned label.required { font-weight: 700; }
+.help, p.help, form .help, div.help { color: var(--inh-text-muted); font-size: 13px; }
+.readonly { color: var(--inh-text); }
+.errornote {
+  border: 1px solid var(--inh-danger);
+  border-radius: 12px;
+  background: var(--inh-danger-soft);
+  color: var(--inh-danger);
+}
+.errorlist li { border-radius: 9px; }
+.module .description, fieldset .description { padding: 10px 16px 0; color: var(--inh-text-muted); }
+
+/* ---------------------------------------------------------------------
+   Messages
+   --------------------------------------------------------------------- */
+ul.messagelist { padding: 0 40px; margin: 20px 0 0; }
+ul.messagelist li {
+  margin: 0 0 8px;
+  border: 1px solid var(--inh-border);
+  border-radius: 12px;
+  color: var(--inh-text);
+  box-shadow: var(--inh-shadow-xs);
+}
+ul.messagelist li.success { border-color: transparent; color: var(--inh-success-text); font-weight: 600; }
+ul.messagelist li.error { border-color: var(--inh-danger); }
+
+/* ---------------------------------------------------------------------
+   Footer
+   --------------------------------------------------------------------- */
+#footer { padding: 0; }
+.inh-footer { padding: 20px; color: var(--inh-text-muted); font-size: 12px; text-align: center; }
+.inh-footer a { color: inherit; text-underline-offset: 2px; }
+.inh-footer a:hover { color: var(--inh-link); }
+
+/* ---------------------------------------------------------------------
+   Phones and small windows
+   --------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  #header { flex-direction: row; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; padding: 10px 20px; }
+  ol.breadcrumbs { padding: 14px 20px 0; }
+  #content { padding: 16px 20px 40px; }
+  ul.messagelist { padding: 0 20px; }
+  #changelist.module { gap: 16px; }
+}
+@media (max-width: 767px) {
+  .inh-user-name { display: none; }
+  .inh-signout-label {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap;
+  }
+  #content h1 { font-size: 22px; }
+  #changelist-filter { width: 100%; margin-top: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
