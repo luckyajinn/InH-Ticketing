@@ -80,6 +80,24 @@
       });
     });
 
+    // "Common requests" on the New request form fill in the subject and the
+    // category straight away. Without JS the server does the same on submit.
+    document.querySelectorAll("select[data-subject-pick]").forEach(function (pick) {
+      var form = pick.form;
+      var subject = form && form.elements.subject;
+      var category = form && form.elements.category;
+      if (!subject) return;
+      pick.addEventListener("change", function () {
+        var option = pick.options[pick.selectedIndex];
+        if (!option || !option.value) return;
+        subject.value = option.textContent.trim();
+        var group = option.parentElement;
+        if (category && group && group.getAttribute("data-category")) {
+          category.value = group.getAttribute("data-category");
+        }
+      });
+    });
+
     // "This might include a password" (tickets/password_guard.py). Before a
     // form is sent, ask the server whether its text looks like it holds a
     // password, so chosen files stay attached if it does. If the check can't

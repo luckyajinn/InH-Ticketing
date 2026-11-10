@@ -62,7 +62,7 @@
             <th scope="col" role="columnheader">#</th>
             <th scope="col" role="columnheader">Subject</th>
             <th scope="col" role="columnheader">Requester</th>
-            <th scope="col" role="columnheader">Category</th>
+            <th scope="col" class="col-category" role="columnheader">Category</th>
             <th scope="col" role="columnheader">Priority</th>
             <th scope="col" role="columnheader">Status</th>
             <th scope="col" role="columnheader">Assignee</th>
@@ -79,7 +79,7 @@
               {% if t.is_blocking %}<span class="row-flag row-flag-block" title="Requester says this is blocking their work">{% icon "flag" %}<span class="visually-hidden">(blocking work)</span></span>{% endif %}
             </span></td>
             <td role="cell">{{ t.requester }}</td>
-            <td role="cell">{{ t.category }}</td>
+            <td class="col-category" role="cell">{{ t.category }}</td>
             <td role="cell">{% include "tickets/partials/priority.html" with t=t %}</td>
             <td role="cell">{% include "tickets/partials/status.html" with t=t %}</td>
             <td role="cell">{% if t.assignee %}<span class="assignee">{% include "tickets/partials/avatar.html" with u=t.assignee size="avatar-xs" %}{{ t.assignee }}</span>{% else %}<span class="unassigned">Unassigned</span>{% endif %}</td>

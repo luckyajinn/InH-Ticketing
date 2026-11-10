@@ -4,6 +4,7 @@ One page per version, each with screenshots of what changed. Newest first.
 
 | Version | What | Notes |
 |---|---|---|
+| v0.8.0 | Mechanics and Cleaning & sanitization requests, with common requests | [v0.8.0.md](v0.8.0.md) |
 | v0.7.0 | The new look, the password check with its audit trail, folded email signatures | [v0.7.0.md](v0.7.0.md) |
 | v0.6.0 | Deployment package: HTTPS proxy, backups, server guides | [v0.6.0.md](v0.6.0.md) |
 | v0.5.0 | Auto-close, follow-ups, FDA usage controls | [v0.5.0.md](v0.5.0.md) |

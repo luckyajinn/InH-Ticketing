@@ -9,7 +9,7 @@
 <div class="page-head">
   <div>
     <h1>New request</h1>
-    <p class="page-sub">Tell IT what's wrong or what you need.</p>
+    <p class="page-sub">Tell IT, mechanics or cleaning what's wrong or what you need.</p>
   </div>
 </div>
 
@@ -22,9 +22,24 @@
   {% endif %}
   <div class="hint-box">
     {% icon "alert" %}
-    <p>For IT issues and requests only. Product complaints or reactions go to QA, not here. Please don't include passwords.</p>
+    <p>For IT, mechanics, and cleaning and sanitization requests only. Product complaints or reactions go to QA, not here. Please don't include passwords.</p>
   </div>
   {% for error in form.other_errors %}<p class="field-error" role="alert">{% icon "alert" %}{{ error }}</p>{% endfor %}
+
+  {% with picks=form.quick_picks %}{% if picks %}
+  <div class="field">
+    <label for="id_subject_pick">Common requests <span class="optional">(optional)</span></label>
+    <select class="select" name="subject_pick" id="id_subject_pick" data-subject-pick aria-describedby="pick-hint">
+      <option value="">Choose one, or type your own subject below</option>
+      {% for category, choices in picks %}
+      <optgroup label="{{ category.name }}" data-category="{{ category.pk }}">
+        {% for value, text in choices %}<option value="{{ value }}"{% if form.subject_pick.value == value %} selected{% endif %}>{{ text }}</option>{% endfor %}
+      </optgroup>
+      {% endfor %}
+    </select>
+    <p class="hint" id="pick-hint">Picking one fills in the subject and the category. You can still change the subject.</p>
+  </div>
+  {% endif %}{% endwith %}
 
   <div class="field">
     <label for="{{ form.subject.id_for_label }}">Subject</label>
@@ -59,7 +74,7 @@
       <input type="checkbox" name="is_blocking" id="id_is_blocking" aria-describedby="blocking-hint"{% if form.is_blocking.value %} checked{% endif %}>
       <label for="id_is_blocking">This is blocking my work</label>
     </div>
-    <p class="hint check-hint" id="blocking-hint">Tick this if you can't do your job until it's fixed. IT uses it when setting the priority.</p>
+    <p class="hint check-hint" id="blocking-hint">Tick this if you can't do your job until it's fixed. It's used when setting the priority.</p>
   </div>
 
   <div class="field">

@@ -3,6 +3,30 @@
 All notable changes to InH-Ticketing. Versions follow [Semantic Versioning](https://semver.org).
 Each version also has illustrated release notes in [docs/releases](docs/releases/README.md).
 
+## [0.8.0] - 2026-11-09
+
+Requests for two more teams, Mechanics and Cleaning & sanitization, with
+common requests that fill in the subject. [Release notes](docs/releases/v0.8.0.md).
+
+### Added
+- Mechanics and Cleaning & sanitization categories, each with three common
+  requests.
+- **Common requests** on the New request form: picking one fills in the
+  subject and its category, and people can still type their own. Admins set
+  them per category in Admin, Categories (one per line). It works without
+  JavaScript too, and only subjects an admin set up can be picked.
+
+### Changed
+- The New request page's notice and intro now name IT, mechanics, and
+  cleaning and sanitization.
+- The queue's Category column wraps long names ("Cleaning & sanitization")
+  instead of widening the table.
+- The demo data has a Mechanics ticket and a Cleaning & sanitization ticket.
+
+### Upgrading
+- Run `python manage.py migrate` (tickets 0005 adds the common requests and
+  the two categories). The `web` container does this when it starts.
+
 ## [0.7.0] - 2026-11-09
 
 The new look, the password check with its audit trail, and folded email
@@ -198,6 +222,7 @@ Milestone 1: skeleton and Microsoft 365 sign-in. [Release notes with screenshots
 - `/healthz` endpoint, Dockerfile and Docker Compose with PostgreSQL 17.
 - Entra setup guide (`docs/entra-setup.md`) and the UI mockup (`mockups/`).
 
+[0.8.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.8.0
 [0.7.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.7.0
 [0.6.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.6.0
 [0.5.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.5.0

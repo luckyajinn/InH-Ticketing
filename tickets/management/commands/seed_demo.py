@@ -56,6 +56,13 @@ TICKETS = [
      "Teams says no camera found. The camera works in the Windows Camera app.", False, 170),
     ("tom", "Software", "Software install request: Power BI Desktop",
      "Please install Power BI Desktop on my laptop for the quarterly reports.", False, 0.25),
+    # v0.8.0: the other teams, using their common requests as subjects.
+    ("marcus", "Mechanics", "Leak, unusual noise or vibration on equipment",
+     "The filler on Line 2 drips oil under the nozzle head and knocks at full speed. "
+     "It's still running, but we've slowed it down.", False, 3),
+    ("aisha", "Cleaning & sanitization", "Spill or mess that needs cleaning up",
+     "A box of cleaning solution split in warehouse aisle 4, by the loading door. "
+     "It's slippery, so I've put a cone out.", True, 0.6),
 ]
 
 
@@ -139,8 +146,8 @@ class Command(BaseCommand):
             created.append(ticket)
 
         sam, alex = people["sam"], people["alex"]
-        # The printer and Power BI tickets are left New and unassigned on purpose.
-        vpn, outlook, mfa, laptop, finance, printer, teams, _powerbi = created
+        # The printer, Power BI, Mechanics and C&S tickets are left New and unassigned on purpose.
+        vpn, outlook, mfa, laptop, finance, printer, teams, _powerbi, _mechanics, _cleaning = created
         # The printer ticket arrived by email to the help-desk mailbox.
         Ticket.objects.filter(pk=printer.pk).update(source=Ticket.Source.EMAIL)
 

@@ -28,6 +28,13 @@ class Category(models.Model):
         default=True, help_text="Untick to stop offering this category on new requests."
     )
     sort_order = models.PositiveSmallIntegerField(default=0)
+    subject_options = models.TextField(
+        "common requests", blank=True,
+        help_text="One subject per line. Shown as quick picks on the New request form, which fill in "
+                  "the subject and this category; people can still type their own.",
+    )
+
+    MAX_SUBJECT_OPTIONS = 20
 
     class Meta:
         ordering = ["sort_order", "name"]
@@ -40,6 +47,12 @@ class Category(models.Model):
     def label(self) -> str:
         """What requesters see in the dropdown."""
         return f"{self.name}: {self.hint}" if self.hint else self.name
+
+    @property
+    def subject_choices(self) -> list[str]:
+        """The quick-pick subjects, without blank lines."""
+        lines = (line.strip()[:200] for line in (self.subject_options or "").splitlines())
+        return [line for line in lines if line][: self.MAX_SUBJECT_OPTIONS]
 
 
 class TicketQuerySet(models.QuerySet):

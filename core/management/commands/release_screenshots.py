@@ -25,7 +25,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 from accounts.models import User
 from notifications.models import OutboundEmail
-from tickets.models import Ticket
+from tickets.models import Category, Ticket
 
 DESKTOP = {"width": 1280, "height": 800}
 PHONE = {"width": 390, "height": 844}
@@ -95,6 +95,9 @@ class Command(BaseCommand):
             "follow_up": follow_up.get_absolute_url(),
             "new_follow_up": f"/tickets/new/?follow_up={closed.number}",
         }
+        # v0.8.0: the queue filtered to one of the new teams.
+        mechanics = Category.objects.filter(name="Mechanics").values_list("pk", flat=True).first()
+        urls["team_queue"] = f"/queue/?category={mechanics}" if mechanics else "/queue/"
         wanted = {p.strip() for p in only.split(",") if p.strip()}
 
         try:
@@ -195,6 +198,10 @@ class Command(BaseCommand):
         def open_signature(page):
             page.click("details.email-signature summary")
 
+        # v0.8.0: pick a common request, which fills in the subject and category.
+        def pick_common_request(page):
+            page.select_option("select[data-subject-pick]", index=1)
+
         shoot("01-sign-in.png", None, "/signin/", prepare=as_configured)
         shoot("02-my-tickets.png", "requester", "/tickets/")
         shoot("03-new-request.png", "requester", "/tickets/new/", full_page=True)
@@ -218,4 +225,7 @@ class Command(BaseCommand):
         shoot("20-password-warning-composer.png", "agent", sample_url, prepare=password_in_composer, element=".composer")
         shoot("21-email-signature-open.png", "agent", sample_url, prepare=open_signature,
               element=".tl-comment:has(details.email-signature)")
+        shoot("22-common-requests.png", "requester", "/tickets/new/", prepare=pick_common_request,
+              element="form[data-password-check]")
+        shoot("23-queue-mechanics.png", "agent", urls["team_queue"])
         return saved

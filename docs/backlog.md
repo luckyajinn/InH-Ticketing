@@ -111,20 +111,53 @@ Decided 2026-11-06:
 - [x] **The new look** ("Friendly Soft"), chosen from three renditions, with
       queue subjects on one line.
 
-## v0.8.0 (pilot fixes, by 2026-11-18)
+## v0.8.0 (released 2026-11-09, for the CFO demo)
 
-Filled from the pilot (2026-11-10 to 2026-11-17). Report what you find as a
+- [x] **Mechanics and Cleaning & sanitization requests.** Two new categories,
+      each with three **common requests** that fill in the subject and the
+      category when picked; people can still type their own. Admins edit the
+      lists in Admin, Categories (one per line, up to 20). *(Ruben Martinez
+      said it needn't go through the FDA rules, as no customer data is
+      involved; a risk assessment to confirm that is planned for 2026-11-10.)*
+- [ ] Update `usage-rules.md` and the risk assessment for Mechanics and C&S,
+      after the 2026-11-10 review. The New request page's notice already
+      names them.
+
+## v0.9.0 (pilot fixes, by 2026-11-12)
+
+Filled from the pilot, which starts 2026-11-10. Report what you find as a
 ticket, subject starting "Pilot:", so it's tracked in the app itself.
 
 - [ ] Fixes for everything the pilot breaks (see [pilot-testing.md](pilot-testing.md)).
 - [ ] **Remove a pasted password or file from a ticket.** An admin tool to take
       out a password someone pasted into a message, or a file they attached.
       The removal itself is recorded in the ticket's history (who, when, and
-      what kind of thing was removed, never the removed content). *(On the
-      backlog for now. A compliance item, needed before go-live: schedule it
-      here or move go-live. The audit trail already links each warning to its
-      message, so it can start there.)*
+      what kind of thing was removed, never the removed content). *(A
+      compliance item, needed before go-live. The audit trail already links
+      each warning to its message, so it can start there.)*
 - [ ] *(To decide)* What happens to closed tickets (see Compliance above).
+
+## v1.0.0 (everything for IT finalized, by 2026-11-13 or 11-16)
+
+- [ ] Everything in v0.9.0, plus the server and Microsoft 365 tasks in the
+      roadmap's "Your side" list (restore drill, the server's own Entra
+      secret, the permission-check record, DMARC, an off-server backup).
+
+## v1.1.0 (stretch: IT improvements, by 2026-11-17)
+
+- [ ] **Reply templates:** saved answers for common requests (password resets, new starters).
+- [ ] **Response targets:** how long tickets wait, by priority, with overdue highlighting.
+- [ ] **Reporting:** tickets per week, time to resolve, busiest categories.
+- [ ] **Teams alerts** for IT, alongside email. *(Needs a Teams webhook or permission.)*
+
+## v1.2.0 (stretch: the other teams, by 2026-11-19)
+
+- [ ] **Own queue and role for Mechanics and for Cleaning & sanitization.**
+      Today their tickets land in the IT queue (filter by category) and only
+      IT can reply. Each team gets its own queue and an Entra app role, and
+      doesn't see IT's tickets or internal notes.
+- [ ] More in-depth common requests for Mechanics and C&S, and a self-fill
+      option *(the owner is gathering them)*.
 
 ## Licensing to other companies (after v1.0.0)
 

@@ -1149,6 +1149,8 @@ form.is-saving .props-hint { color: var(--accent-soft-text); font-weight: 650; }
 .subject-line .subject-link { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .subject-line .row-flag { flex: none; }
 .queue-table .col-age { text-align: right; font-variant-numeric: tabular-nums; color: var(--text-muted); }
+/* Long category names ("Cleaning & sanitization") wrap instead of widening the table. */
+.queue-table td.col-category { white-space: normal; min-width: 84px; max-width: 120px; }
 .queue-table tr.is-urgent td:first-child { box-shadow: inset 4px 0 0 var(--pr-urgent-bg); }
 .queue-table tr.is-high td:first-child { box-shadow: inset 4px 0 0 var(--pr-high-edge); }
 .queue-table tr.is-urgent .subject-link { font-weight: 750; }

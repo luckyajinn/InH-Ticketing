@@ -103,11 +103,15 @@ class CategoryChoiceField(forms.ModelChoiceField):
 class NewTicketForm(PasswordCheckMixin, forms.Form):
     password_fields = ("subject", "description")
 
+    # A quick pick ("common requests") fills in the subject and its category,
+    # so the subject can be empty when one was picked. clean() checks it.
     subject = forms.CharField(
-        max_length=200,
-        error_messages={"required": "Enter a subject."},
+        max_length=200, required=False,
         widget=forms.TextInput(attrs={"class": "input", "autocomplete": "off"}),
     )
+    # "<category id>:<number>" of a common request, never the text itself, so
+    # only subjects an admin set up can be picked.
+    subject_pick = forms.CharField(required=False)
     category = CategoryChoiceField(
         queryset=Category.objects.filter(is_active=True),
         empty_label="Choose a category",
@@ -123,8 +127,38 @@ class NewTicketForm(PasswordCheckMixin, forms.Form):
     password_ack = forms.BooleanField(required=False)
     password_warned = forms.BooleanField(required=False)
 
+    @property
+    def quick_picks(self) -> list[tuple[Category, list[tuple[str, str]]]]:
+        """Common requests of the active categories that have any: [(category, [(value, subject)])]."""
+        groups = []
+        for category in self.fields["category"].queryset:
+            choices = category.subject_choices
+            if choices:
+                groups.append((category, [(f"{category.pk}:{i}", text) for i, text in enumerate(choices)]))
+        return groups
+
+    def _picked(self, value: str) -> tuple[Category, str] | None:
+        """The (category, subject) a quick-pick value stands for, if it's a real, active one."""
+        category_id, _, index = (value or "").partition(":")
+        if not (category_id.isdigit() and index.isdigit()):
+            return None
+        category = self.fields["category"].queryset.filter(pk=int(category_id)).first()
+        if category is None or int(index) >= len(category.subject_choices):
+            return None
+        return category, category.subject_choices[int(index)]
+
     def clean(self):
         cleaned = super().clean()
+        picked = self._picked(cleaned.get("subject_pick"))
+        # The pick counts when the subject is empty or still the picked text;
+        # a subject typed over it wins, with whatever category was chosen.
+        if picked and cleaned.get("subject") in ("", None, picked[1]):
+            category, text = picked
+            cleaned["subject"] = text
+            cleaned["category"] = category
+            self.errors.pop("category", None)
+        if not cleaned.get("subject"):
+            self.add_error("subject", "Enter a subject.")
         self.check_for_passwords(cleaned)
         return cleaned
 
