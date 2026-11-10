@@ -1,23 +1,53 @@
 {% extends "base.html" %}
+{% load ticket_tags %}
 
-{% block title %}Not found{% endblock %}
+{% block title %}Page not found{% endblock %}
 {% block page_class %}page-narrow{% endblock %}
 
 {% block content %}
-<div class="card error-card">
-  <div class="empty-state">
-    <svg class="empty-art" viewBox="0 0 120 96" aria-hidden="true" focusable="false">
-      <circle class="ea-blob" cx="60" cy="48" r="42"/>
-      <circle class="ea-paper" cx="55" cy="44" r="17"/>
-      <path class="ea-line" d="m67.5 56.5 11 11"/>
-      <path class="ea-line" d="M50.5 39.5a6 6 0 1 1 7.5 5.8V48"/>
-      <circle class="ea-dot" cx="58" cy="53" r="1.8"/>
-      <circle class="ea-dot" cx="97" cy="24" r="3"/>
-      <circle class="ea-dot" cx="22" cy="66" r="2.2"/>
-    </svg>
-    <h1 class="empty-title">Page not found</h1>
-    <p class="empty-text">The link may be old, or the page may have moved.</p>
-    <a class="btn btn-primary" href="{% url 'core:home' %}">Back to home</a>
+{# Also shown for a ticket that isn't yours, so the wording never says whether a ticket exists. #}
+<div class="card notfound">
+  <div class="notfound-body">
+    <p class="notfound-code"><span class="notfound-icon" aria-hidden="true">{% icon "search" %}</span>Error 404</p>
+    <h1 class="notfound-title">We couldn't find that page</h1>
+    <p class="notfound-text">The link may be old or mistyped, or the ticket may not be one you can open.</p>
+
+    {% if user.is_authenticated %}
+    <div class="notfound-actions">
+      {% if user.is_agent %}
+      <a class="btn btn-primary" href="{% url 'tickets:queue' %}">Go to the queue</a>
+      {% else %}
+      <a class="btn btn-primary" href="{% url 'tickets:mine' %}">Go to my tickets</a>
+      {% endif %}
+      <a class="btn" href="{% url 'tickets:new' %}">{% icon "plus" %}New request</a>
+    </div>
+
+    <form class="notfound-lookup" method="get" action="{% url 'tickets:go' %}" role="search" aria-label="Open a ticket by its number">
+      <label for="ticket-number">Have a ticket number?</label>
+      <div class="notfound-lookup-row">
+        <input class="input" type="text" inputmode="numeric" id="ticket-number" name="number"
+               placeholder="1042" autocomplete="off" maxlength="12" aria-describedby="ticket-number-hint">
+        <button class="btn" type="submit">Open</button>
+      </div>
+      <p class="hint" id="ticket-number-hint">The number from your emails, like #1042.</p>
+    </form>
+
+    {% if INBOUND_ADDRESS %}<p class="notfound-help">Still stuck? Email <a href="mailto:{{ INBOUND_ADDRESS }}">{{ INBOUND_ADDRESS }}</a>.</p>{% endif %}
+    {% else %}
+    <div class="notfound-actions">
+      <a class="btn btn-primary" href="{% url 'accounts:signin' %}">{% icon "signin" %}Sign in</a>
+    </div>
+    {% endif %}
   </div>
+
+  <svg class="empty-art notfound-art" viewBox="0 0 120 96" aria-hidden="true" focusable="false">
+    <circle class="ea-blob" cx="60" cy="48" r="42"/>
+    <circle class="ea-paper" cx="55" cy="44" r="17"/>
+    <path class="ea-line" d="m67.5 56.5 11 11"/>
+    <path class="ea-line" d="M50.5 39.5a6 6 0 1 1 7.5 5.8V48"/>
+    <circle class="ea-dot" cx="58" cy="53" r="1.8"/>
+    <circle class="ea-dot" cx="97" cy="24" r="3"/>
+    <circle class="ea-dot" cx="22" cy="66" r="2.2"/>
+  </svg>
 </div>
 {% endblock %}

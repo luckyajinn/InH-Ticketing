@@ -113,6 +113,22 @@ def new_ticket(request):
     return render(request, "tickets/new.html", {"form": form, "follow_up": follow_up}, status=status)
 
 
+@login_required
+@require_GET
+def go_to_ticket(request):
+    """
+    "Have a ticket number?" on the Not found page. Sends #1042 to its page,
+    which shows Not found itself if the ticket doesn't exist or isn't yours,
+    so this never reveals whether a ticket exists.
+    """
+    raw = request.GET.get("number", "").strip().lstrip("#").strip()
+    # Ticket numbers are short; a huge number would only ever be not found.
+    if raw.isdigit() and len(raw) <= 9:
+        return redirect("tickets:detail", number=int(raw))
+    messages.error(request, "Enter a ticket number, like 1042.")
+    return redirect("tickets:mine")
+
+
 # ---------------------------------------------------------------------------
 # Ticket detail (one URL, two views: IT sees everything, requesters see public)
 # ---------------------------------------------------------------------------

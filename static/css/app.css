@@ -253,10 +253,10 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
   padding: var(--sp-2) var(--sp-4);
   border-radius: var(--radius-pill);
   background: var(--surface); color: var(--link);
-  box-shadow: var(--shadow-md);
   font-weight: 650;
 }
-.skip-link:focus { top: var(--sp-3); }
+/* The shadow only while it's showing, so it doesn't peek in at the top of signed-out pages. */
+.skip-link:focus { top: var(--sp-3); box-shadow: var(--shadow-md); }
 .muted { color: var(--text-muted); }
 .small { font-size: var(--fs-sm); }
 .mt-3 { margin-top: var(--sp-3); }
@@ -1171,6 +1171,38 @@ form.is-saving .props-hint { color: var(--accent-soft-text); font-weight: 650; }
 .error-card { max-width: 520px; margin: var(--sp-8) auto 0; text-align: center; }
 .error-card .empty-state { padding: var(--sp-4) 0 0; }
 .error-card h1 { font-size: var(--fs-xl); }
+
+/* Not found (404): the next steps first, the illustration beside them
+   (hidden on phones, where a small icon by "Error 404" stands in). */
+.notfound {
+  display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: var(--sp-6); align-items: center;
+  max-width: 720px; margin: var(--sp-8) auto 0;
+}
+.notfound-code { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; color: var(--text-muted); font-size: var(--fs-sm); font-weight: 650; }
+.notfound-icon { display: none; }
+.notfound-title { margin: 0; font-family: var(--font-display); font-size: var(--fs-2xl); line-height: 1.2; }
+.notfound-text { margin: 10px 0 0; max-width: 46ch; color: var(--text-muted); }
+.notfound-actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-5); }
+.notfound-lookup { margin-top: var(--sp-6); padding-top: var(--sp-5); border-top: 1px solid var(--border); }
+.notfound-lookup label { display: block; font-weight: 650; }
+.notfound-lookup-row { display: flex; gap: var(--sp-2); max-width: 340px; margin-top: 8px; }
+.notfound-lookup-row .input { flex: 1; min-width: 0; }
+.notfound-help { margin: var(--sp-4) 0 0; color: var(--text-muted); font-size: var(--fs-sm); }
+.notfound-art { width: 100%; max-width: 190px; justify-self: center; }
+@media (max-width: 640px) {
+  .notfound { grid-template-columns: minmax(0, 1fr); margin-top: var(--sp-2); padding: var(--sp-5); }
+  .notfound-art { display: none; }
+  .notfound-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent-soft); color: var(--accent);
+  }
+  .notfound-icon .icon { width: 15px; height: 15px; }
+  .notfound-title { font-size: var(--fs-xl); }
+  .notfound-actions .btn { flex: 1 1 100%; justify-content: center; }
+  .notfound-lookup-row { max-width: none; }
+}
 
 /* ---------------------------------------------------------------------
    Motion. Everything below is gated behind .js (added by app.js), so

@@ -3,6 +3,19 @@
 All notable changes to InH-Ticketing. Versions follow [Semantic Versioning](https://semver.org).
 Each version also has illustrated release notes in [docs/releases](docs/releases/README.md).
 
+## [Unreleased]
+
+### Changed
+- New **Not found** page: next steps first. Staff get "Go to my tickets", IT
+  gets "Go to the queue", both get "New request", and a "Have a ticket
+  number?" box opens a ticket by its number (`/tickets/go/`). Signed out, it
+  offers "Sign in". The wording never says whether a ticket exists, as the
+  page also shows for tickets that aren't yours.
+
+### Fixed
+- The hidden "Skip to content" link's shadow no longer peeks in at the top of
+  signed-out pages.
+
 ## [0.8.0] - 2026-11-09
 
 Requests for two more teams, Mechanics and Cleaning & sanitization, with

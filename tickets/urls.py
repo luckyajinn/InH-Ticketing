@@ -9,6 +9,7 @@ urlpatterns = [
     path("tickets/", views.my_tickets, name="mine"),
     path("tickets/new/", views.new_ticket, name="new"),
     path("tickets/check-text/", views.check_text, name="check_text"),
+    path("tickets/go/", views.go_to_ticket, name="go"),
     # Everyone, filtered by what they may see
     path("tickets/<int:number>/", views.ticket_detail, name="detail"),
     path("tickets/<int:number>/reply/", views.add_reply, name="reply"),
