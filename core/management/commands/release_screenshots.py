@@ -127,7 +127,11 @@ class Command(BaseCommand):
             return bool(wanted) and name.split("-", 1)[0] not in wanted
 
         def page_for(who, viewport):
-            context = browser.new_context(viewport=viewport, color_scheme="light", device_scale_factor=1)
+            context = browser.new_context(
+                viewport=viewport, color_scheme="light", device_scale_factor=1,
+                # Animations play their end state at once, so shots never catch a fade halfway.
+                reduced_motion="reduce",
+            )
             if who:
                 context.add_cookies([{
                     "name": settings.SESSION_COOKIE_NAME, "value": sessions[who], "url": base_url,
