@@ -11,6 +11,10 @@ IncomingMessage and call process(), so they follow exactly the same rules:
        from the requester or IT  -> public reply (Closed? -> a new follow-up ticket)
        from anyone else          -> internal note for IT
   5. Otherwise                   -> a new ticket from the sender
+
+Anything that looks like a password is logged in the password audit trail and
+flagged in the ticket's history for IT (tickets/password_guard.py): an email
+can't be warned about before it's sent, the way the web forms are.
 """
 
 from __future__ import annotations
@@ -29,7 +33,7 @@ from django.template.defaultfilters import filesizeformat
 from accounts.models import User
 from inbound.models import InboundEmail
 from inbound.text import clean_subject, find_ticket_number, is_automatic, strip_quoted
-from tickets import services
+from tickets import password_guard, services
 from tickets.models import Category, Ticket
 
 logger = logging.getLogger(__name__)
@@ -160,21 +164,27 @@ def process(message: IncomingMessage) -> Result:
             is_party = sender.pk == ticket.requester_id or sender.is_agent
 
             if not is_party:
-                services.add_email_from_third_party(ticket=ticket, sender=sender, body=reply, files=files)
+                note = services.add_email_from_third_party(ticket=ticket, sender=sender, body=reply, files=files)
+                password_guard.record_email(sender=sender, ticket=ticket, comment=note, texts={"body": reply})
                 return record(Outcome.NOTE, f"{sender} isn't the requester or IT.", ticket)
 
             if ticket.status == Ticket.Status.CLOSED and not sender.is_agent:
+                subject = clean_subject(message.subject)
                 follow_up = services.create_ticket(
-                    requester=sender, subject=clean_subject(message.subject),
+                    requester=sender, subject=subject,
                     description=f"(Follow-up to closed ticket #{ticket.number})\n\n{reply}",
                     category=ticket.category, files=files, source=Ticket.Source.EMAIL,
                     follows_up=ticket,
                 )
+                password_guard.record_email(
+                    sender=sender, ticket=follow_up, texts={"subject": subject, "description": reply}
+                )
                 return record(Outcome.NEW_TICKET, f"#{ticket.number} was closed, so this is a new ticket.", follow_up)
 
-            services.add_comment(
+            comment = services.add_comment(
                 ticket=ticket, author=sender, body=reply, files=files, source=Ticket.Source.EMAIL
             )
+            password_guard.record_email(sender=sender, ticket=ticket, comment=comment, texts={"body": reply})
             return record(Outcome.REPLY, "", ticket)
 
         # Rule 5: a new ticket.
@@ -183,10 +193,12 @@ def process(message: IncomingMessage) -> Result:
             Category.objects.filter(name__iexact=settings.INBOUND_DEFAULT_CATEGORY).first()
             or Category.objects.filter(is_active=True).last()
         )
+        subject = clean_subject(message.subject)
         new = services.create_ticket(
-            requester=sender, subject=clean_subject(message.subject), description=description,
+            requester=sender, subject=subject, description=description,
             category=category, files=files, source=Ticket.Source.EMAIL,
         )
+        password_guard.record_email(sender=sender, ticket=new, texts={"subject": subject, "description": description})
         detail = f"Subject mentioned #{number}, which doesn't exist." if number else ""
         return record(Outcome.NEW_TICKET, detail, new)
 

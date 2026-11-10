@@ -731,6 +731,32 @@ main { flex: 1 0 auto; }
   font-weight: 650;
 }
 .hint-box > .icon { margin-top: 2px; color: var(--accent-soft-text); }
+
+/* "This might include a password" (tickets/password_guard.py) */
+.password-warning {
+  display: flex; gap: 12px; align-items: flex-start;
+  margin: var(--sp-4) 0;
+  padding: 14px 16px;
+  border: 1px solid var(--note-border);
+  border-left: 4px solid var(--note-edge);
+  border-radius: var(--radius);
+  background: var(--note-bg); color: var(--text);
+  font-size: var(--fs-sm);
+}
+.password-warning[hidden] { display: none; }
+.composer .password-warning { margin: var(--sp-3) var(--sp-4); }
+.js .password-warning:not([hidden]) { animation: fade-in var(--dur-base) var(--ease-out); }
+.password-warning > .icon { flex: none; width: 20px; height: 20px; margin-top: 1px; color: var(--note-edge); }
+.password-warning-body { min-width: 0; }
+.password-warning-title { margin: 0; font-size: var(--fs-md); font-weight: 750; color: var(--note-band-text); }
+.password-warning-text, .password-warning-foot { margin: 4px 0 0; }
+.password-warning-foot { color: var(--text-muted); font-size: var(--fs-xs); }
+.password-warning-hints { margin: 8px 0 0; padding-left: 18px; }
+.password-warning-hints:empty { display: none; }
+.password-warning-hints li { font-family: var(--font-mono); font-size: var(--fs-xs); overflow-wrap: anywhere; }
+.password-warning-check { margin-top: 12px; }
+.tl-event-password { color: var(--note-band-text); }
+.tl-event-password .tl-event-icon { color: var(--note-edge); }
 .panel-tip { display: flex; gap: 12px; align-items: flex-start; font-size: var(--fs-sm); }
 .panel-tip > .icon { margin-top: 2px; color: var(--accent); }
 

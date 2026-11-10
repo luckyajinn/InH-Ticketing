@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from tickets.models import Attachment, Category, Comment, Ticket, TicketEvent
+from tickets.models import Attachment, Category, Comment, PasswordWarning, Ticket, TicketEvent
 
 
 @admin.register(Category)
@@ -67,3 +67,32 @@ class TicketAdmin(admin.ModelAdmin):
     @admin.display(description="#", ordering="pk")
     def number(self, obj):
         return f"#{obj.number}"
+
+
+@admin.register(PasswordWarning)
+class PasswordWarningAdmin(admin.ModelAdmin):
+    """
+    The audit trail of the "this might include a password" check. Read-only,
+    and rows can't be deleted here, so the record stays complete.
+    """
+
+    list_display = ["created_at", "outcome", "place", "ticket_number", "user", "fields", "rules"]
+    list_filter = ["outcome", "place", "created_at"]
+    search_fields = ["user__display_name", "user__email"]
+    list_select_related = ["user", "ticket"]
+    date_hierarchy = "created_at"
+    fields = ["created_at", "outcome", "place", "ticket", "comment", "user", "fields", "rules"]
+    readonly_fields = fields
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    @admin.display(description="Ticket", ordering="ticket")
+    def ticket_number(self, obj):
+        return f"#{obj.ticket.number}" if obj.ticket_id else "-"

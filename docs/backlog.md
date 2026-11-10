@@ -99,11 +99,22 @@ Decided 2026-11-06:
       arrives by email. Remove it, or show it collapsed behind a "Show
       signature" link, so the request itself is what IT sees. *(Raised in
       testing, 2026-11-09, on ticket #1071.)*
+- [x] **Warn before a password is sent.** The New request form, replies and
+      internal notes check the text before it's sent and warn if it might
+      include a password, leaning towards false alarms rather than misses.
+      People take it out, or tick "send anyway". *(Built 2026-11-09, not
+      released yet.)*
+- [x] **Audit trail for the password warning.** Every "sent anyway", every
+      password taken out after a warning, and every email that looks like it
+      has one is recorded: who, where and which check, never the text.
+      Read-only in Admin, under *Password warnings*. IT also sees a *Possible
+      password* line in the ticket's history. *(Built 2026-11-09.)*
 - [ ] **Remove a pasted password or file from a ticket.** An admin tool to take
       out a password someone pasted into a message, or a file they attached.
       The removal itself is recorded in the ticket's history (who, when, and
-      what kind of thing was removed, never the removed content). *(A
-      compliance item, needed before go-live.)*
+      what kind of thing was removed, never the removed content). *(On the
+      backlog for now. A compliance item, needed before go-live. The audit
+      trail already links each warning to its message, so it can start there.)*
 
 ## Licensing to other companies (after v1.0.0)
 

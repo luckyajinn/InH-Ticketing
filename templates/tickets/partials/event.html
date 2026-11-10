@@ -1,12 +1,14 @@
 {% load ticket_tags %}
 {# One line of history. Only IT ever sees these. #}
-<li class="tl-item tl-event">
-  <span class="tl-event-icon" aria-hidden="true">{% if e.kind == "status" %}{% icon "status" %}{% elif e.kind == "priority" %}{% icon "signal" %}{% elif e.kind == "assignee" %}{% icon "user" %}{% else %}{% icon "tag" %}{% endif %}</span>
+<li class="tl-item tl-event{% if e.kind == 'password' %} tl-event-password{% endif %}">
+  <span class="tl-event-icon" aria-hidden="true">{% if e.kind == "status" %}{% icon "status" %}{% elif e.kind == "priority" %}{% icon "signal" %}{% elif e.kind == "assignee" %}{% icon "user" %}{% elif e.kind == "password" %}{% icon "lock" %}{% else %}{% icon "tag" %}{% endif %}</span>
   <span class="visually-hidden">History: </span>
   {% if e.kind == "assignee" %}
     {% if not e.new_value %}Unassigned{% if e.actor %} by {{ e.actor }}{% endif %}
     {% elif e.actor and e.new_value == e.actor|stringformat:"s" %}<strong>{{ e.new_value }}</strong> assigned this to themselves
     {% else %}Assigned to <strong>{{ e.new_value }}</strong>{% if e.actor %} by {{ e.actor }}{% endif %}{% endif %}
+  {% elif e.kind == "password" %}
+    <strong>Possible password</strong> in {{ e.new_value }}{% if e.actor %} from {{ e.actor }}{% endif %}
   {% else %}
     {{ e.get_kind_display }} {% if e.old_value %}changed <strong>{{ e.old_value }}</strong> &rarr; {% else %}set to {% endif %}<strong>{{ e.new_value }}</strong>{% if e.actor %} by {{ e.actor }}{% else %} automatically{% endif %}
   {% endif %}

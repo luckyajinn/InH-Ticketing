@@ -84,13 +84,15 @@
         <button type="submit" class="btn btn-primary">{% icon "status" %}This is still a problem</button>
       </form>
     {% else %}
-      <form class="reply-card" id="reply" method="post" action="{% url 'tickets:reply' ticket.number %}" enctype="multipart/form-data" novalidate>
+      <form class="reply-card" id="reply" method="post" action="{% url 'tickets:reply' ticket.number %}" enctype="multipart/form-data" novalidate
+            data-password-check="{% url 'tickets:check_text' %}" data-password-fields="body">
         {% csrf_token %}
         <label for="reply-text" class="reply-label">{% if reopened %}Tell IT what's still not working{% elif ticket.status == "waiting" %}Reply to {{ who }}{% else %}Add a reply{% endif %}</label>
         <textarea id="reply-text" name="body" class="textarea" rows="4"{% if reopened or reply_form.errors %} autofocus{% endif %}
                   aria-describedby="reply-hint{% if reply_form.body.errors %} reply-error{% endif %}"{% if reply_form.body.errors %} aria-invalid="true"{% endif %}>{{ reply_form.body.value|default:'' }}</textarea>
         {% if reply_form.body.errors %}<p class="field-error" id="reply-error">{% icon "alert" %}{{ reply_form.body.errors.0 }}</p>{% endif %}
         {% if reply_form.attachments.errors %}<p class="field-error">{% icon "alert" %}{{ reply_form.attachments.errors.0 }}</p>{% endif %}
+        {% include "tickets/partials/password_warning.html" with form=reply_form %}
         <div class="reply-foot">
           <label class="btn btn-ghost btn-sm file-btn">{% icon "clip" %}Attach file<input type="file" name="attachments" class="file-input" multiple data-file-list="reply-files"></label>
           <span class="reply-hint" id="reply-hint"><span id="reply-files" aria-live="polite"></span></span>

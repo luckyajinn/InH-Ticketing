@@ -6,6 +6,7 @@ Ticket data model.
     Comment        A public reply or an internal note (is_internal) on a ticket
     TicketEvent    History: who changed status/priority/assignee/category, and when
     Attachment     A file on a ticket, or on a specific comment
+    PasswordWarning  Audit trail of the "this might include a password" check
 """
 
 import uuid
@@ -180,6 +181,8 @@ class TicketEvent(models.Model):
         PRIORITY = "priority", "Priority"
         ASSIGNEE = "assignee", "Assignee"
         CATEGORY = "category", "Category"
+        # A possible password was sent anyway, or arrived by email.
+        PASSWORD = "password", "Possible password"
 
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name="events")
     actor = models.ForeignKey(
@@ -234,3 +237,59 @@ class Attachment(models.Model):
 
     def get_absolute_url(self) -> str:
         return reverse("tickets:attachment", args=[self.pk, self.original_name])
+
+
+class PasswordWarning(models.Model):
+    """
+    Audit trail of the "this might include a password" check
+    (tickets/password_guard.py). One row each time someone:
+      - was warned and took the password out before sending  (removed)
+      - was warned and sent it anyway                         (sent anyway)
+      - emailed the help desk something that looks like one   (emailed)
+    The text that matched is never stored, only where and which checks matched.
+    """
+
+    class Place(models.TextChoices):
+        NEW_REQUEST = "new_request", "New request"
+        REPLY = "reply", "Reply"
+        INTERNAL_NOTE = "internal_note", "Internal note"
+        EMAIL = "email", "Email"
+
+    class Outcome(models.TextChoices):
+        REMOVED = "removed", "Removed before sending"
+        SENT_ANYWAY = "sent_anyway", "Sent anyway"
+        EMAILED = "emailed", "Arrived by email"
+
+    # How the ticket's history line names the place.
+    PLACE_PHRASES = {
+        Place.NEW_REQUEST: "the request",
+        Place.REPLY: "a reply",
+        Place.INTERNAL_NOTE: "an internal note",
+        Place.EMAIL: "an email",
+    }
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    ticket = models.ForeignKey(
+        Ticket, on_delete=models.SET_NULL, null=True, blank=True, related_name="password_warnings"
+    )
+    comment = models.ForeignKey(
+        Comment, on_delete=models.SET_NULL, null=True, blank=True, related_name="+",
+        help_text="The reply or note it was in. Empty for a new request.",
+    )
+    place = models.CharField(max_length=16, choices=Place.choices)
+    outcome = models.CharField(max_length=16, choices=Outcome.choices)
+    fields = models.CharField(max_length=100, blank=True, help_text='Where it matched, e.g. "subject, description".')
+    rules = models.CharField(
+        max_length=100, blank=True, help_text='Which checks matched, e.g. "labelled, token". Never the text.'
+    )
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+        verbose_name = "password warning"
+
+    def __str__(self) -> str:
+        where = f" on #{self.ticket.number}" if self.ticket_id else ""
+        return f"{self.get_outcome_display()}: {self.get_place_display()}{where}"

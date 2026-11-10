@@ -3,6 +3,29 @@
 All notable changes to InH-Ticketing. Versions follow [Semantic Versioning](https://semver.org).
 Each version also has illustrated release notes in [docs/releases](docs/releases/README.md).
 
+## [Unreleased]
+
+Towards v0.7.0.
+
+### Added
+- Password check: the New request form, replies and internal notes warn before
+  sending when the text might include a password, code or PIN
+  (`tickets/password_guard.py`). It leans towards false alarms; people take it
+  out or tick "send anyway". The page checks before sending, so attached files
+  stay attached, and the server checks again when the form arrives.
+- Password audit trail (`PasswordWarning`, read-only in Admin): who, where,
+  which check, and whether it was sent anyway, taken out, or arrived by email.
+  The text itself is never stored. A *Possible password* line in the ticket's
+  history tells IT (requesters never see history).
+- Emails that look like they contain a password are logged the same way.
+
+### Changed
+- New look ("Friendly Soft"): warm neutrals, one teal accent, rounded cards,
+  chat-style conversations, and a progress tracker on the requester's ticket
+  page. Gentle motion that switches off with "reduce motion". Queue subjects
+  stay on one line on wider screens.
+- Release screenshots are taken with reduced motion, so animations never show halfway.
+
 ## [0.6.0] - 2026-11-09
 
 Milestone 6: the deployment package for the internal server. [Release notes](docs/releases/v0.6.0.md).

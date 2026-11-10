@@ -6,14 +6,14 @@ from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db.models import Max, Q
 from django.db.models.functions import Coalesce
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
-from tickets import selectors, services
+from tickets import password_guard, selectors, services
 from tickets.forms import NewTicketForm, ReplyForm, TicketPropertiesForm
-from tickets.models import Attachment, Category, Ticket
+from tickets.models import Attachment, Category, PasswordWarning, Ticket
 
 Status = Ticket.Status
 
@@ -104,6 +104,9 @@ def new_ticket(request):
             files=form.cleaned_data["attachments"],
             follows_up=follow_up,
         )
+        password_guard.record_form(
+            form, user=request.user, place=PasswordWarning.Place.NEW_REQUEST, ticket=ticket
+        )
         messages.success(request, f"Request #{ticket.number} sent. IT will pick it up soon.")
         return redirect(ticket)
     status = 400 if request.method == "POST" else 200
@@ -159,7 +162,7 @@ def add_reply(request, number: int):
         return _render_detail(request, ticket, reply_form=form, status=400)
     then_status = form.cleaned_data.get("then_status") or None
     try:
-        services.add_comment(
+        comment = services.add_comment(
             ticket=ticket,
             author=request.user,
             body=form.cleaned_data["body"],
@@ -170,6 +173,8 @@ def add_reply(request, number: int):
     except PermissionDenied as exc:
         messages.error(request, str(exc) or "You can't reply to this ticket.")
         return redirect(ticket)
+    place = PasswordWarning.Place.INTERNAL_NOTE if form.is_internal else PasswordWarning.Place.REPLY
+    password_guard.record_form(form, user=request.user, place=place, ticket=ticket, comment=comment)
     if form.is_internal:
         messages.success(request, "Internal note added. The requester can't see it.")
     elif request.user.is_agent and request.user.pk != ticket.requester_id:
@@ -178,6 +183,22 @@ def add_reply(request, number: int):
     else:
         messages.success(request, "Reply sent.")
     return redirect(ticket)
+
+
+@login_required
+@require_POST
+def check_text(request):
+    """
+    The "this might include a password" check, for app.js to ask before a form
+    is sent, so chosen files stay attached. It only answers about the text it
+    was sent, and stores nothing; the form is checked again when it arrives.
+    """
+    found = {}
+    for name in ("subject", "description", "body"):
+        findings = password_guard.find(request.POST.get(name, "")[:50_000])
+        if findings:
+            found[name] = findings
+    return JsonResponse({"found": bool(found), "hints": password_guard.hints(found)})
 
 
 @agent_required

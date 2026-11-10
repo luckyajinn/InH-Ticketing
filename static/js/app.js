@@ -79,5 +79,70 @@
         });
       });
     });
+
+    // "This might include a password" (tickets/password_guard.py). Before a
+    // form is sent, ask the server whether its text looks like it holds a
+    // password, so chosen files stay attached if it does. If the check can't
+    // run, the form is sent as usual and the server checks it on arrival.
+    document.querySelectorAll("form[data-password-check]").forEach(function (form) {
+      var panel = form.querySelector("[data-password-warning]");
+      var hintList = form.querySelector("[data-password-hints]");
+      var ack = form.querySelector("input[name=password_ack]");
+      var warned = form.querySelector("input[name=password_warned]");
+      var names = (form.getAttribute("data-password-fields") || "").split(" ");
+      if (!panel || !window.fetch || !window.FormData) return;
+      var cleared = null; // the text the server last said was fine
+      var busy = false;
+
+      function currentText() {
+        return names.map(function (name) {
+          var field = form.elements[name];
+          return field ? field.value : "";
+        }).join("\u0000");
+      }
+
+      function send(submitter) {
+        busy = false;
+        cleared = currentText();
+        if (form.requestSubmit) form.requestSubmit(submitter || undefined); else form.submit();
+      }
+
+      function warn(hints) {
+        busy = false;
+        hintList.textContent = "";
+        hints.forEach(function (hint) {
+          var item = document.createElement("li");
+          item.textContent = hint;
+          hintList.appendChild(item);
+        });
+        if (warned) warned.value = "on";
+        panel.hidden = false;
+        panel.focus();
+      }
+
+      form.addEventListener("submit", function (event) {
+        if ((ack && ack.checked) || cleared === currentText()) return;
+        event.preventDefault();
+        if (busy) return;
+        busy = true;
+        // The button that was clicked, so "Send and resolve" still resolves.
+        var submitter = event.submitter || null;
+        var data = new FormData();
+        data.append("csrfmiddlewaretoken", form.elements.csrfmiddlewaretoken.value);
+        names.forEach(function (name) {
+          var field = form.elements[name];
+          if (field) data.append(name, field.value);
+        });
+        fetch(form.getAttribute("data-password-check"), { method: "POST", body: data, credentials: "same-origin" })
+          .then(function (response) {
+            if (!response.ok) throw new Error("check failed");
+            return response.json();
+          })
+          .then(function (result) {
+            if (result.found) warn(result.hints || []); else send(submitter);
+          })
+          .catch(function () { send(submitter); });
+      });
+    });
   });
 })();

@@ -6,7 +6,55 @@ from django.db.models import Q
 from django.template.defaultfilters import filesizeformat
 
 from accounts.models import User
+from tickets import password_guard
 from tickets.models import Category, Ticket
+
+POSSIBLE_PASSWORD = "possible_password"
+
+
+class PasswordCheckMixin:
+    """
+    The "this might include a password" check (tickets/password_guard.py).
+
+    If a text field looks like it holds a password, the form isn't valid until
+    the person either takes it out or ticks "send anyway" (password_ack).
+    password_warned is set once a warning has been shown, so the audit trail
+    can tell "took it out" from "never had one".
+    """
+
+    password_fields: tuple[str, ...] = ()
+    password_findings: dict = {}
+
+    def check_for_passwords(self, cleaned: dict) -> None:
+        found = {}
+        for name in self.password_fields:
+            findings = password_guard.find(cleaned.get(name) or "")
+            if findings:
+                found[name] = findings
+        self.password_findings = found
+        if found and not cleaned.get("password_ack"):
+            self.add_error(None, forms.ValidationError(
+                "This might include a password. Take it out, or tick the box to send it anyway.",
+                code=POSSIBLE_PASSWORD,
+            ))
+
+    @property
+    def needs_password_confirm(self) -> bool:
+        return any(e.code == POSSIBLE_PASSWORD for e in self.non_field_errors().as_data())
+
+    @property
+    def password_hints(self) -> list[str]:
+        return password_guard.hints(self.password_findings) if self.needs_password_confirm else []
+
+    @property
+    def other_errors(self) -> list[str]:
+        """Form-wide errors except the password warning, which has its own panel."""
+        return [e.messages[0] for e in self.non_field_errors().as_data() if e.code != POSSIBLE_PASSWORD]
+
+    @property
+    def files_need_reattaching(self) -> bool:
+        """The browser drops chosen files when the server sends the form back."""
+        return self.needs_password_confirm and bool(self.files)
 
 
 class MultipleFileInput(forms.ClearableFileInput):
@@ -52,7 +100,9 @@ class CategoryChoiceField(forms.ModelChoiceField):
         return obj.label
 
 
-class NewTicketForm(forms.Form):
+class NewTicketForm(PasswordCheckMixin, forms.Form):
+    password_fields = ("subject", "description")
+
     subject = forms.CharField(
         max_length=200,
         error_messages={"required": "Enter a subject."},
@@ -70,11 +120,19 @@ class NewTicketForm(forms.Form):
     )
     is_blocking = forms.BooleanField(required=False)
     attachments = AttachmentsField()
+    password_ack = forms.BooleanField(required=False)
+    password_warned = forms.BooleanField(required=False)
+
+    def clean(self):
+        cleaned = super().clean()
+        self.check_for_passwords(cleaned)
+        return cleaned
 
 
-class ReplyForm(forms.Form):
+class ReplyForm(PasswordCheckMixin, forms.Form):
     """A requester's reply, or IT's public reply / internal note."""
 
+    password_fields = ("body",)
     VISIBILITY_CHOICES = [("public", "Public reply"), ("internal", "Internal note")]
 
     body = forms.CharField(
@@ -88,6 +146,8 @@ class ReplyForm(forms.Form):
         required=False,
     )
     attachments = AttachmentsField()
+    password_ack = forms.BooleanField(required=False)
+    password_warned = forms.BooleanField(required=False)
 
     def __init__(self, *args, user, **kwargs):
         super().__init__(*args, **kwargs)
@@ -108,6 +168,7 @@ class ReplyForm(forms.Form):
             elif cleaned.get("visibility") == "internal":
                 # The requester wouldn't be told why their ticket changed.
                 self.add_error("then_status", "Change the status with a public reply, or use the side panel.")
+        self.check_for_passwords(cleaned)
         return cleaned
 
     @property

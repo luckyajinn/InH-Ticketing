@@ -35,7 +35,7 @@ will never ask for one.
 | A product complaint or reaction report | **Forward it to QA the same day.** Reply to the person saying QA has it, then close the ticket with an internal note "Redirected to QA on <date>". **Never delete it.** |
 | A request to change a regulated system | Ask for a change-control number; do the IT work only once it exists, and quote it in the ticket |
 | A request for access to a regulated system | Check the approval exists in the formal access process; quote it in the ticket |
-| A ticket containing a password | Reset that password straight away, and tell the person |
+| A ticket containing a password | Reset that password straight away, and tell the person. The ticket's history shows **Possible password** when someone sent one anyway after the warning, or emailed one |
 | Anything else that isn't IT | Point the person to the right team and close the ticket |
 
 Internal notes are visible to IT only, but write them as you would any company

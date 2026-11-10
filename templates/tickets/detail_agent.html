@@ -33,7 +33,8 @@
       {% endfor %}
     </ol>
 
-    <form class="composer" id="reply" method="post" action="{% url 'tickets:reply' ticket.number %}" enctype="multipart/form-data" novalidate aria-labelledby="composer-heading">
+    <form class="composer" id="reply" method="post" action="{% url 'tickets:reply' ticket.number %}" enctype="multipart/form-data" novalidate aria-labelledby="composer-heading"
+          data-password-check="{% url 'tickets:check_text' %}" data-password-fields="body">
       {% csrf_token %}
       <h2 class="visually-hidden" id="composer-heading">Reply or add a note</h2>
       <div class="composer-head">
@@ -61,6 +62,7 @@
       {% if reply_form.attachments.errors %}<p class="field-error">{% icon "alert" %}{{ reply_form.attachments.errors.0 }}</p>{% endif %}
       {% if reply_form.visibility.errors %}<p class="field-error">{% icon "alert" %}{{ reply_form.visibility.errors.0 }}</p>{% endif %}
       {% if reply_form.then_status.errors %}<p class="field-error">{% icon "alert" %}{{ reply_form.then_status.errors.0 }}</p>{% endif %}
+      {% include "tickets/partials/password_warning.html" with form=reply_form %}
       <div class="composer-foot">
         <label class="btn btn-ghost btn-sm file-btn">{% icon "clip" %}Attach<input type="file" name="attachments" class="file-input" multiple data-file-list="composer-files"></label>
         <span class="composer-files" id="composer-files" aria-live="polite"></span>
