@@ -17,7 +17,15 @@
       {% if source == "email" %}<span class="chip">{% icon "mail" %}via email</span>{% endif %}
       <time class="comment-time" datetime="{{ at|date:'c' }}">{{ at|date:"M j, g:i A" }}</time>
     </header>
+    {% if source == "email" %}{% with parts=body|email_parts %}
+    <div class="comment-body">{{ parts.0|linebreaks }}</div>
+    {% if parts.1 %}<details class="email-signature">
+      <summary>Show email signature</summary>
+      <div class="email-signature-body">{{ parts.1|linebreaks }}</div>
+    </details>{% endif %}
+    {% endwith %}{% else %}
     <div class="comment-body">{{ body|linebreaks }}</div>
+    {% endif %}
     {% include "tickets/partials/attachments.html" with files=files %}
   </article>
 </li>

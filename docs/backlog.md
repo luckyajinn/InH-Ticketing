@@ -90,31 +90,41 @@ Decided 2026-11-06:
 - [x] The first install on the server, following the guide and fixing it as needed.
       *(Live on the internal server and tested, 2026-11-09.)*
 
-## v0.7.0 (with the pilot feedback)
+## v0.7.0 (released 2026-11-09, for the pilot)
 
-- [ ] **Email signatures on email-in tickets.** Staff emails carry the company
+- [x] **Email signatures on email-in tickets.** Staff emails carry the company
       signature added by CodeTwo: name, address, phone and fax, a logo
       placeholder, the "consider the environment" line and the
-      confidentiality notice. It shows in full on every ticket and reply that
-      arrives by email. Remove it, or show it collapsed behind a "Show
-      signature" link, so the request itself is what IT sees. *(Raised in
-      testing, 2026-11-09, on ticket #1071.)*
+      confidentiality notice. It now folds under **Show email signature** on
+      tickets and replies that arrive by email; the full email is still
+      stored. *(Raised in testing, 2026-11-09, on ticket #1071. Check #1071
+      on the server once v0.7.0 is installed.)*
 - [x] **Warn before a password is sent.** The New request form, replies and
       internal notes check the text before it's sent and warn if it might
       include a password, leaning towards false alarms rather than misses.
-      People take it out, or tick "send anyway". *(Built 2026-11-09, not
-      released yet.)*
+      People take it out, or tick "send anyway".
 - [x] **Audit trail for the password warning.** Every "sent anyway", every
       password taken out after a warning, and every email that looks like it
       has one is recorded: who, where and which check, never the text.
       Read-only in Admin, under *Password warnings*. IT also sees a *Possible
-      password* line in the ticket's history. *(Built 2026-11-09.)*
+      password* line in the ticket's history.
+- [x] **The new look** ("Friendly Soft"), chosen from three renditions, with
+      queue subjects on one line.
+
+## v0.8.0 (pilot fixes, by 2026-11-18)
+
+Filled from the pilot (2026-11-10 to 2026-11-17). Report what you find as a
+ticket, subject starting "Pilot:", so it's tracked in the app itself.
+
+- [ ] Fixes for everything the pilot breaks (see [pilot-testing.md](pilot-testing.md)).
 - [ ] **Remove a pasted password or file from a ticket.** An admin tool to take
       out a password someone pasted into a message, or a file they attached.
       The removal itself is recorded in the ticket's history (who, when, and
       what kind of thing was removed, never the removed content). *(On the
-      backlog for now. A compliance item, needed before go-live. The audit
-      trail already links each warning to its message, so it can start there.)*
+      backlog for now. A compliance item, needed before go-live: schedule it
+      here or move go-live. The audit trail already links each warning to its
+      message, so it can start there.)*
+- [ ] *(To decide)* What happens to closed tickets (see Compliance above).
 
 ## Licensing to other companies (after v1.0.0)
 

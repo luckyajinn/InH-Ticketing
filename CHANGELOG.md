@@ -3,11 +3,19 @@
 All notable changes to InH-Ticketing. Versions follow [Semantic Versioning](https://semver.org).
 Each version also has illustrated release notes in [docs/releases](docs/releases/README.md).
 
-## [Unreleased]
+## [0.7.0] - 2026-11-09
 
-Towards v0.7.0.
+The new look, the password check with its audit trail, and folded email
+signatures. Released for the pilot, which starts 2026-11-10.
+[Release notes](docs/releases/v0.7.0.md).
 
 ### Added
+- Email signatures (the CodeTwo block: name, address, phone and fax, logo
+  placeholder, "consider the environment", confidentiality notice) are folded
+  under **Show email signature** on tickets and replies that arrive by email
+  (`inbound/text.py`). The full email is still stored; it only folds when it
+  finds at least two signs of a signature, and never on web requests. Works on
+  tickets that arrived before this version too.
 - Password check: the New request form, replies and internal notes warn before
   sending when the text might include a password, code or PIN
   (`tickets/password_guard.py`). It leans towards false alarms; people take it
@@ -25,6 +33,15 @@ Towards v0.7.0.
   page. Gentle motion that switches off with "reduce motion". Queue subjects
   stay on one line on wider screens.
 - Release screenshots are taken with reduced motion, so animations never show halfway.
+- The demo data's emailed reply now carries a fictional signature, to show the fold.
+
+### Fixed
+- The password check no longer flags file names (`Report_Q3-2024v2.xlsx`) or
+  the logo placeholders mail apps leave in signatures (`[cid:image001.png@...]`),
+  which would have flagged nearly every emailed ticket.
+
+### Upgrading
+- Run `python manage.py migrate` (adds the password audit trail, tickets 0004).
 
 ## [0.6.0] - 2026-11-09
 
@@ -181,6 +198,7 @@ Milestone 1: skeleton and Microsoft 365 sign-in. [Release notes with screenshots
 - `/healthz` endpoint, Dockerfile and Docker Compose with PostgreSQL 17.
 - Entra setup guide (`docs/entra-setup.md`) and the UI mockup (`mockups/`).
 
+[0.7.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.7.0
 [0.6.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.6.0
 [0.5.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.5.0
 [0.4.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.4.0

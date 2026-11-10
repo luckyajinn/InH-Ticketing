@@ -178,6 +178,23 @@ class Command(BaseCommand):
             page.click("label[for=mode-internal]")
             page.fill("#composer-text", "Re-enrolment fixed the other two laptops. Booking 2:30 with Dana.")
 
+        # v0.7.0: the "this might include a password" warning. The page asks the
+        # server before sending, so nothing is saved; only the warning appears.
+        def password_in_request(page):
+            page.fill("input[name=subject]", "VPN won't connect from home")
+            page.select_option("select[name=category]", index=1)
+            page.fill("textarea[name=description]", "It fails every morning. My password is Summer24 if you need it.")
+            page.click("form[data-password-check] button[type=submit]")
+            page.wait_for_selector("[data-password-warning]:not([hidden])")
+
+        def password_in_composer(page):
+            page.fill("#composer-text", "Your temporary password is ChangeMe! Please change it when you sign in.")
+            page.click(".composer-send")
+            page.wait_for_selector(".composer [data-password-warning]:not([hidden])")
+
+        def open_signature(page):
+            page.click("details.email-signature summary")
+
         shoot("01-sign-in.png", None, "/signin/", prepare=as_configured)
         shoot("02-my-tickets.png", "requester", "/tickets/")
         shoot("03-new-request.png", "requester", "/tickets/new/", full_page=True)
@@ -196,4 +213,9 @@ class Command(BaseCommand):
         shoot("16-new-request-follow-up.png", "closed_requester", urls["new_follow_up"], full_page=True)
         shoot("17-agent-linked-tickets.png", "agent", urls["follow_up"], full_page=True)
         shoot_email("18-email-resolved.png", emails["resolved_reply"])
+        shoot("19-password-warning-request.png", "requester", "/tickets/new/",
+              prepare=password_in_request, element="form[data-password-check]")
+        shoot("20-password-warning-composer.png", "agent", sample_url, prepare=password_in_composer, element=".composer")
+        shoot("21-email-signature-open.png", "agent", sample_url, prepare=open_signature,
+              element=".tl-comment:has(details.email-signature)")
         return saved

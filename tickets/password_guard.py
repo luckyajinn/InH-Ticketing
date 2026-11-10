@@ -100,6 +100,13 @@ _COMMON_STEMS = re.compile(
 _GUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I)
 _HEX_RE = re.compile(r"^(?:0x)?[0-9a-f]+$", re.I)
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[a-z]{2,}$", re.I)
+# File names ("Report_Q3-2024v2.xlsx"), including the logo placeholders mail
+# apps leave in signatures ("[cid:image001.png@01DB2A3B.4C5D6E70]").
+_FILE_RE = re.compile(
+    r"\.(?:png|jpe?g|gif|bmp|svg|webp|heic|tiff?|pdf|docx?|xlsx?|xlsm|pptx?|csv|txt|log|zip|7z|rar"
+    r"|msg|eml|ics|ps1|bat|cmd|exe|msi|iso|json|xml|html?)$",
+    re.I,
+)
 _PLAIN_PUNCT = set("-_.'")
 
 
@@ -200,6 +207,8 @@ def _token_is_password(token: str) -> bool:
     lowered = token.lower()
     if "://" in token or lowered.startswith("www.") or "/" in token or "\\" in token:
         return False  # links and file paths
+    if lowered.startswith("cid:") or _FILE_RE.search(token.split("@", 1)[0]):
+        return False  # file names and signature logo placeholders
     if _EMAIL_RE.match(token) or _GUID_RE.match(token) or _HEX_RE.match(token):
         return False  # email addresses, IDs from error messages, hex codes
     if token.isdigit() or (token.startswith("#") and token[1:].isdigit()):

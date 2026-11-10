@@ -155,8 +155,12 @@ class Command(BaseCommand):
         )
         services.add_comment(
             ticket=outlook, author=people["dana"],
-            body="I did that and it was fine all morning, but the box came back at about 4pm.",
-            source=Ticket.Source.EMAIL,  # Dana replied to the notification email
+            body="I did that and it was fine all morning, but the box came back at about 4pm.\n\n"
+                 "Thanks,\nDana Whitfield\nFinance Analyst | Example Company\n"
+                 "T: +1 (555) 010-0100 | F: +1 (555) 010-0101\nwww.example.com\n\n"
+                 "Please consider the environment before printing this email.",
+            # Dana replied to the notification email; the signature shows folded.
+            source=Ticket.Source.EMAIL,
         )
         services.add_comment(
             ticket=outlook, author=sam, is_internal=True,

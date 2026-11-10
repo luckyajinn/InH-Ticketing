@@ -75,6 +75,9 @@ NOT_CAUGHT = [
     "My password is expired and I'm locked out",
     "I changed my password yesterday and now Teams asks again",
     "the code stopped working",
+    "[cid:image001.png@01DB2A3B.4C5D6E70]",
+    "See the attached Report_Q3-2024v2.xlsx",
+    "Screenshot 2026-11-09 InvoiceV2.png",
 ]
 
 

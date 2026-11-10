@@ -757,6 +757,25 @@ main { flex: 1 0 auto; }
 .password-warning-check { margin-top: 12px; }
 .tl-event-password { color: var(--note-band-text); }
 .tl-event-password .tl-event-icon { color: var(--note-edge); }
+
+/* Email signatures, folded under "Show email signature" (inbound/text.py) */
+/* Sits under .comment-body inside the bubble, so it uses the same side padding. */
+.email-signature { margin: -6px 18px 0; padding-bottom: 14px; font-size: var(--fs-sm); color: var(--text-muted); }
+.email-signature > summary {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 2px 0; border-radius: var(--radius-sm);
+  color: var(--link); font-weight: 650; cursor: pointer; list-style: none;
+}
+.email-signature > summary::-webkit-details-marker { display: none; }
+.email-signature > summary::before {
+  content: ""; width: 0; height: 0;
+  border-top: 4px solid transparent; border-bottom: 4px solid transparent; border-left: 6px solid currentColor;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.email-signature[open] > summary::before { transform: rotate(90deg); }
+.email-signature > summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.email-signature-body { margin-top: 6px; padding-left: 12px; border-left: 2px solid var(--border); overflow-wrap: anywhere; }
+.email-signature-body p { margin: 0 0 6px; }
 .panel-tip { display: flex; gap: 12px; align-items: flex-start; font-size: var(--fs-sm); }
 .panel-tip > .icon { margin-top: 2px; color: var(--accent); }
 
@@ -1275,6 +1294,7 @@ form.is-saving .props-hint { color: var(--accent-soft-text); font-weight: 650; }
   .comment-head { padding: 10px 14px 0; }
   .comment-body { padding: 4px 14px 12px; }
   .attachments { padding: 0 14px 12px; }
+  .email-signature { margin: -4px 14px 0; padding-bottom: 12px; }
   .note-band { padding: 6px 14px; }
   .tl-event { max-width: 100%; }
   .composer-foot .composer-send { margin-left: auto; }

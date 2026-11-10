@@ -2,7 +2,15 @@ from django import template
 from django.utils import timezone
 from django.utils.html import format_html
 
+from inbound.text import split_signature
+
 register = template.Library()
+
+
+@register.filter
+def email_parts(body: str):
+    """(message, signature) for an emailed message; signature is "" if none was found."""
+    return split_signature(body or "")
 
 
 @register.simple_tag
