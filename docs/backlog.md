@@ -28,7 +28,8 @@ each version are in [roadmap.md](roadmap.md).
 
 McKenna Labs is FDA-regulated (cosmetics). The draft assessment proposes
 InH-Ticketing as **non-GxP**: internal IT support only, holding no
-FDA-required records. It is awaiting review by Ruben Martinez.
+FDA-required records. Ruben Martinez reviewed it, and the risk assessment
+passed (reported 2026-11-09).
 
 Before the pilot (by 2026-11-30):
 - [x] One page of usage rules: [usage-rules.md](usage-rules.md) (intended
@@ -38,18 +39,22 @@ Before the pilot (by 2026-11-30):
 - [x] Document how to make the help-desk mailbox accept internal senders only
       (docs/email-setup.md, section 3a).
 - [x] **Actually set it** on the test mailbox (2026-11-09: `RequireSenderAuthenticationEnabled` is True).
-- [ ] Set it on the live help-desk mailbox before go-live. *Owner: IT (Exchange admin)*
-- [ ] Record Ruben Martinez's review (the date and his decision) in the risk
-      assessment, version 0.2.
+- [x] Set it on the live help-desk mailbox before go-live. *(Live, reported 2026-11-09.)*
+- [x] Record Ruben Martinez's review (the date and his decision) in the risk
+      assessment, version 0.2. *(The risk assessment passed, reported 2026-11-09.)*
 - [ ] File the `Test-ServicePrincipalAuthorization` results. *(Run 2026-11-09:
       Mail.Send and Mail.ReadWrite in scope for the test mailbox only. Save
       the output with the risk assessment.)*
 
 Before go-live (by 2027-01-11):
 - [ ] Admin tool to remove a pasted password or file from a ticket, with the
-      removal itself logged (v0.7.0).
-- [ ] Decide how long tickets are kept; add automatic clean-up if needed.
-- [ ] Quarterly review of who holds the Agent and Admin roles.
+      removal itself logged. *Planned for v0.7.0 (see below).*
+- [x] Decide how long tickets are kept. *Decided 2026-11-09: a resolved ticket
+      closes automatically after 7 days (already built in v0.5.0,
+      `AUTO_CLOSE_RESOLVED_DAYS=7`).*
+- [ ] *(To decide)* What happens to closed tickets after that: move them to a
+      backup, or an alternative still to be chosen.
+- [x] ~~Quarterly review of who holds the Agent and Admin roles.~~ *Not needed (decided 2026-11-09).*
 - [ ] Monthly check of dependencies for security updates.
 - [ ] Off-server backup copy and one tested restore (also under v0.6.0).
 
@@ -67,7 +72,7 @@ Decided 2026-11-06:
 
 | | |
 |---|---|
-| Server | Linux VM with Docker. 2 vCPU, 4 GB RAM, ~80 GB disk is plenty for the scale below |
+| Server | Linux VM with Docker. 2 vCPU, 4 GB RAM, ~80 GB disk is plenty for the scale below. **Actual server (2026-11-09): 16 cores, 32 GB RAM**, so there is plenty of room for more features |
 | Scale | Fewer than 5 IT agents; up to ~300 requesters |
 | Address | `https://helpdesk.mckennalabs.com` (internal DNS record pointing at the server) |
 | HTTPS | Certificate from the McKenna Labs **private internal CA**, served by a reverse proxy in Docker Compose. Staff PCs must trust that CA (usually already done through Group Policy) |
@@ -82,7 +87,8 @@ Decided 2026-11-06:
 - [ ] Entra: add the redirect URI `https://helpdesk.mckennalabs.com/auth/callback`,
       and use a separate client secret (or a certificate) for the server.
 - [x] A deployment guide covering first install, updating to a new version, and restoring.
-- [ ] The first install on the server, following the guide and fixing it as needed.
+- [x] The first install on the server, following the guide and fixing it as needed.
+      *(Live on the internal server and tested, 2026-11-09.)*
 
 ## v0.7.0 (with the pilot feedback)
 
@@ -93,6 +99,11 @@ Decided 2026-11-06:
       arrives by email. Remove it, or show it collapsed behind a "Show
       signature" link, so the request itself is what IT sees. *(Raised in
       testing, 2026-11-09, on ticket #1071.)*
+- [ ] **Remove a pasted password or file from a ticket.** An admin tool to take
+      out a password someone pasted into a message, or a file they attached.
+      The removal itself is recorded in the ticket's history (who, when, and
+      what kind of thing was removed, never the removed content). *(A
+      compliance item, needed before go-live.)*
 
 ## Licensing to other companies (after v1.0.0)
 
