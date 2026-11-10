@@ -123,7 +123,7 @@ def _paragraphs_with_boilerplate(lines: list[str]) -> set[int]:
 
 
 def _looks_like_name_line(line: str) -> bool:
-    """'Dana Whitfield', 'Quality Analyst | McKenna Labs': short, title case, no sentence."""
+    """'Dana Whitfield', 'Quality Analyst | Example Labs': short, title case, no sentence."""
     if len(line) > 60 or line[-1] in ".?!:":
         return False
     words = [w for w in re.split(r"[\s|,/–—-]+", line) if any(c.isalpha() for c in w)]

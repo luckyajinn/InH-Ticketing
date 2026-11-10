@@ -5,12 +5,12 @@ Written 2026-11-10 for v0.9.1. Each section is meant to work as one slide.
 
 ## 1. In one paragraph
 
-InH-Ticketing is McKenna Labs' in-house help desk. Staff sign in with their
+InH-Ticketing is the company's in-house help desk. Staff sign in with their
 Microsoft 365 work account and send a request to IT, Mechanics, or Cleaning
 and sanitization; the team works it through to resolution, and the person is
 kept up to date by email. It replaces ad-hoc emails and hallway requests with
 one tracked record per request: who asked, what was done, by whom and when.
-It runs on McKenna Labs' own server, inside the company network.
+It runs on the company's own server, inside the company network.
 
 ## 2. Where it stands
 
@@ -18,9 +18,9 @@ It runs on McKenna Labs' own server, inside the company network.
 |---|---|
 | Version | **v0.9.1**, released 2026-11-10 |
 | Built | v0.1.0 to v0.9.1 between 2026-11-05 and 2026-11-10, each release tested and documented with screenshots |
-| Server | Live on the internal server (16 cores, 32 GB RAM) at `helpdesk.mckennalabs.com` |
+| Server | Live on the internal server (16 cores, 32 GB RAM) at `helpdesk.example.com` |
 | Pilot | Starts 2026-11-10 with one other tester, trying to break it |
-| Compliance | Intended-use and risk assessment passed (Ruben Martinez); internal setup approved (Michael Rocovitz). A risk assessment for the Mechanics and C&S use is on 2026-11-10 |
+| Compliance | Intended-use and risk assessment passed (the compliance lead); internal setup approved (management). A risk assessment for the Mechanics and C&S use is on 2026-11-10 |
 | Target | Everything finalized by **Friday 2026-11-20**; go-live date set then (earliest Monday 2026-11-30) |
 | Quality | 356 automated tests, all passing, including an attack test (SQL, shell and template injection in every input) |
 
@@ -184,7 +184,7 @@ Every change is written to the ticket's history: who, what, when.
 | **Web app** (Django 6.1, Python) | The pages, the rules, the privacy filtering. Every rule runs on the server, not in the browser |
 | **Worker** | Sends queued emails, reads the mailbox, closes resolved tickets |
 | **Database** (PostgreSQL) | Tickets, replies, notes, history, the password audit trail |
-| **HTTPS proxy** (Caddy) | Serves `https://helpdesk.mckennalabs.com` with the company's internal certificate; redirects plain HTTP; strict HTTPS for a year |
+| **HTTPS proxy** (Caddy) | Serves `https://helpdesk.example.com` with the company's internal certificate; redirects plain HTTP; strict HTTPS for a year |
 | **Docker Compose** | Runs the four parts (proxy, web, worker, database) together on the server; one command to update |
 | **Microsoft Entra ID** | Sign-in and roles |
 | **Microsoft Graph** | Sends and reads email, limited by Exchange to the help-desk mailbox only |

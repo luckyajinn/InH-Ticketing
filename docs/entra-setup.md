@@ -1,6 +1,6 @@
 # Microsoft 365 (Entra ID) setup
 
-This connects InH-Ticketing to McKenna Labs' Microsoft 365 sign-in. It takes
+This connects InH-Ticketing to the company's Microsoft 365 sign-in. It takes
 about 15 minutes in the [Microsoft Entra admin center](https://entra.microsoft.com).
 You need rights to create app registrations and assign enterprise apps.
 
@@ -66,7 +66,7 @@ at the person's next sign-in.
 ## 4. Grant consent (optional, avoids a prompt)
 
 **API permissions** already lists *Microsoft Graph → User.Read*. Select
-**Grant admin consent for McKenna Labs** so testers aren't asked to approve the
+**Grant admin consent for <your organisation>** so testers aren't asked to approve the
 app on first sign-in.
 
 ## 5. Limit who can sign in
@@ -108,7 +108,7 @@ change straight away, sign out of InH-Ticketing and back in.
 
 Step by step in [deployment.md](deployment.md#4-microsoft-entra). In short:
 
-- Add a second **Web** redirect URI: `https://helpdesk.mckennalabs.com/auth/callback`,
+- Add a second **Web** redirect URI: `https://helpdesk.example.com/auth/callback`,
   and set `ENTRA_REDIRECT_URI` to it in the server's `.env`. Entra only allows
   plain `http://` for `localhost`, so the server needs HTTPS.
 - Use a separate client secret per environment, so you can revoke one without

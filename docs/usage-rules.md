@@ -1,8 +1,8 @@
 # InH-Ticketing usage rules
 
 **InH-Ticketing is for IT issues and requests only.** These rules come from
-the system's intended-use and risk assessment, reviewed with Ruben Martinez.
-McKenna Labs is FDA-regulated, and keeping the help desk to IT work is what
+the system's intended-use and risk assessment, reviewed with the compliance lead.
+The company is FDA-regulated, and keeping the help desk to IT work is what
 keeps it outside FDA record-keeping rules.
 
 ## Use it for
@@ -43,7 +43,7 @@ record: factual and professional.
 
 ## Changes to these rules
 
-Any new use of InH-Ticketing must be reviewed with Ruben Martinez **before**
+Any new use of InH-Ticketing must be reviewed with the compliance lead **before**
 it starts, for example the planned extension to maintenance, and cleaning and
 sanitization requests. Those are usually manufacturing-quality (GMP) records,
 so they are likely to need extra controls. Review these rules once a year,

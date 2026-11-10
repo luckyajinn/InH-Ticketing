@@ -87,6 +87,6 @@ then swap. Use the test shared mailbox for email.
 
 ## 9. Server and recovery (IT)
 
-- [ ] `https://helpdesk.mckennalabs.com/healthz` answers.
+- [ ] `https://helpdesk.example.com/healthz` answers.
 - [ ] Restart the app mid-use (`docker compose -f compose.yaml -f compose.prod.yaml restart`): nothing is lost, and queued emails still go out.
 - [ ] Last night's backup exists, and the restore drill works ([deployment.md](deployment.md) section 9).

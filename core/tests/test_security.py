@@ -15,7 +15,7 @@ from django.conf import settings
 from django.test import TestCase, override_settings
 
 SETTINGS_FILE = Path(settings.BASE_DIR) / "config" / "settings.py"
-HOST = "helpdesk.mckennalabs.com"
+HOST = "helpdesk.example.com"
 
 PRODUCTION_ENV = {
     "DJANGO_SECRET_KEY": "test-only-not-a-real-secret",

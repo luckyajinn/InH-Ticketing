@@ -50,8 +50,8 @@ action queues it again.
 | Setting | Example | Meaning |
 |---|---|---|
 | `SITE_URL` | `http://localhost:8000` | Address used for links in emails |
-| `HELPDESK_MAILBOX` | `helpdesk-test@mckennalabs.com` | The shared mailbox emails come from |
-| `IT_NOTIFY_EMAIL` | `it-team@mckennalabs.com` | Optional: where IT's alerts go (a distribution list or Teams channel address) |
+| `HELPDESK_MAILBOX` | `helpdesk-test@example.com` | The shared mailbox emails come from |
+| `IT_NOTIFY_EMAIL` | `it-team@example.com` | Optional: where IT's alerts go (a distribution list or Teams channel address) |
 | `EMAIL_BACKEND` | `file`, `console` or `graph` | How emails leave the app |
 
 ## 3. Sending for real through Microsoft 365
@@ -73,7 +73,7 @@ never reaches the app. In the Exchange admin center, open the mailbox, go to
 that all senders are authenticated**. Or in Exchange Online PowerShell:
 
 ```powershell
-Set-Mailbox -Identity "helpdesk-test@mckennalabs.com" -RequireSenderAuthenticationEnabled $true
+Set-Mailbox -Identity "helpdesk-test@example.com" -RequireSenderAuthenticationEnabled $true
 ```
 
 To check, send an email to the mailbox from a personal (non-company) account.
@@ -104,7 +104,7 @@ You need two IDs, both from **Entra → Enterprise applications → InH-Ticketin
 ```powershell
 $appId    = "<Application ID>"
 $objectId = "<Enterprise application Object ID>"
-$mailbox  = "helpdesk-test@mckennalabs.com"
+$mailbox  = "helpdesk-test@example.com"
 
 # 1. Introduce the app to Exchange
 New-ServicePrincipal -AppId $appId -ObjectId $objectId -DisplayName "InH-Ticketing (Test)"
@@ -119,7 +119,7 @@ New-ManagementRoleAssignment -App $appId -Role "Application Mail.Send" `
 
 # 4. Check: InScope should be True for the test mailbox, False for anyone else
 Test-ServicePrincipalAuthorization -Identity $appId -Resource $mailbox
-Test-ServicePrincipalAuthorization -Identity $appId -Resource "someone.else@mckennalabs.com"
+Test-ServicePrincipalAuthorization -Identity $appId -Resource "someone.else@example.com"
 ```
 
 New permissions can take **up to a couple of hours** to start working.
@@ -130,7 +130,7 @@ In `.env`:
 
 ```
 EMAIL_BACKEND=graph
-HELPDESK_MAILBOX=helpdesk-test@mckennalabs.com
+HELPDESK_MAILBOX=helpdesk-test@example.com
 ```
 
 Restart the server and the worker. Create a test ticket for yourself: the
@@ -214,7 +214,7 @@ New-ManagementRoleAssignment -App $appId -Role "Application Mail.ReadWrite" `
 
 # Check again: InScope True for the test mailbox, False for anyone else
 Test-ServicePrincipalAuthorization -Identity $appId -Resource $mailbox
-Test-ServicePrincipalAuthorization -Identity $appId -Resource "someone.else@mckennalabs.com"
+Test-ServicePrincipalAuthorization -Identity $appId -Resource "someone.else@example.com"
 ```
 
 As before, don't add *Mail.ReadWrite* under API permissions in Entra, because
@@ -226,9 +226,9 @@ In `.env`:
 
 ```
 INBOUND_EMAIL=graph
-HELPDESK_MAILBOX=helpdesk-test@mckennalabs.com
+HELPDESK_MAILBOX=helpdesk-test@example.com
 # Optional; defaults to the mailbox's own domain
-INBOUND_ALLOWED_DOMAINS=mckennalabs.com
+INBOUND_ALLOWED_DOMAINS=example.com
 ```
 
 Restart the worker. It should print `Email-in: reading helpdesk-test@… every 60s`.
@@ -254,7 +254,7 @@ marked read and moves to "Processed by InH-Ticketing". So either:
 In `.env` (a `/` and a folder name for the second option):
 
 ```
-DEPARTMENT_MAILBOXES=mechanics=mechanics-requests@mckennalabs.com, cleaning=cs@mckennalabs.com/Requests
+DEPARTMENT_MAILBOXES=mechanics=mechanics-requests@example.com, cleaning=cs@example.com/Requests
 ```
 
 In Exchange, add each mailbox to the app's scope. That's the same management
@@ -262,11 +262,11 @@ scope as in sections 3c and 4b, with every address in the filter:
 
 ```powershell
 Set-ManagementScope -Identity "InH-Ticketing test mailbox" `
-  -RecipientRestrictionFilter "PrimarySmtpAddress -eq 'helpdesk-test@mckennalabs.com' -or PrimarySmtpAddress -eq 'mechanics-requests@mckennalabs.com' -or PrimarySmtpAddress -eq 'cs@mckennalabs.com'"
+  -RecipientRestrictionFilter "PrimarySmtpAddress -eq 'helpdesk-test@example.com' -or PrimarySmtpAddress -eq 'mechanics-requests@example.com' -or PrimarySmtpAddress -eq 'cs@example.com'"
 
 # InScope True for each department mailbox, False for anyone else
-Test-ServicePrincipalAuthorization -Identity $appId -Resource "mechanics-requests@mckennalabs.com"
-Test-ServicePrincipalAuthorization -Identity $appId -Resource "someone.else@mckennalabs.com"
+Test-ServicePrincipalAuthorization -Identity $appId -Resource "mechanics-requests@example.com"
+Test-ServicePrincipalAuthorization -Identity $appId -Resource "someone.else@example.com"
 ```
 
 Also set each mailbox to accept internal senders only, as for the help-desk

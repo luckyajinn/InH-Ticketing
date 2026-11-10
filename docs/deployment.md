@@ -1,6 +1,6 @@
 # Deploying to the internal server
 
-How to install InH-Ticketing on the server at `https://helpdesk.mckennalabs.com`,
+How to install InH-Ticketing on the server at `https://helpdesk.example.com`,
 keep it backed up, update it, and get it back if something goes wrong. What
 the server itself needs is in [server-requirements.md](server-requirements.md).
 
@@ -85,7 +85,7 @@ Microsoft sign-in fails if the clock is more than two minutes out.
 ```bash
 sudo apt install -y chrony
 # Use the company's time servers (ask IT which: often the domain controllers).
-echo "server <time server> iburst" | sudo tee /etc/chrony/sources.d/mckennalabs.sources
+echo "server <time server> iburst" | sudo tee /etc/chrony/sources.d/company.sources
 sudo systemctl restart chrony
 chronyc sources     # the company server, marked ^*
 timedatectl         # "System clock synchronized: yes"
@@ -216,10 +216,10 @@ cd ~
 umask 077
 openssl req -new -newkey rsa:2048 -noenc \
   -keyout privkey.pem -out helpdesk.csr \
-  -subj "/CN=helpdesk.mckennalabs.com/O=McKenna Labs" \
-  -addext "subjectAltName=DNS:helpdesk.mckennalabs.com"
+  -subj "/CN=helpdesk.example.com/O=Example Company" \
+  -addext "subjectAltName=DNS:helpdesk.example.com"
 openssl req -in helpdesk.csr -noout -text | grep -A1 "Subject Alternative Name"
-# DNS:helpdesk.mckennalabs.com
+# DNS:helpdesk.example.com
 ```
 
 Send `helpdesk.csr` (it isn't secret) to whoever runs the internal CA (for
@@ -255,7 +255,7 @@ openssl x509 -in fullchain.pem -noout -subject -issuer -enddate -ext subjectAltN
 # The key matches the certificate: these two lines must be identical.
 openssl x509 -in fullchain.pem -noout -pubkey | openssl sha256
 openssl pkey -in privkey.pem -pubout | openssl sha256
-# The order: the first subject is helpdesk.mckennalabs.com, and each issuer is the next subject.
+# The order: the first subject is helpdesk.example.com, and each issuer is the next subject.
 openssl crl2pkcs7 -nocrl -certfile fullchain.pem | openssl pkcs7 -print_certs -noout
 # The chain leads to the company root: "fullchain.pem: OK".
 openssl verify -CAfile internal-root.pem -untrusted fullchain.pem fullchain.pem
@@ -296,7 +296,7 @@ The server uses the same app registration as the pilot
 An Entra admin:
 
 1. **Entra ID → App registrations → InH-Ticketing → Authentication.** Under
-   **Web → Redirect URIs**, add `https://helpdesk.mckennalabs.com/auth/callback`
+   **Web → Redirect URIs**, add `https://helpdesk.example.com/auth/callback`
    exactly (https, no trailing slash). Keep the `localhost` one for PCs. **Save**.
 2. **Certificates & secrets → New client secret.** Description `helpdesk
    server`, expiry 12 months. Copy the **Value** straight into the server's
@@ -327,12 +327,12 @@ cat > .env <<EOF
 
 # Docker Compose: always use both files; the name the proxy serves.
 COMPOSE_FILE=compose.yaml:compose.prod.yaml
-HELPDESK_HOSTNAME=helpdesk.mckennalabs.com
+HELPDESK_HOSTNAME=helpdesk.example.com
 
 DJANGO_DEBUG=False
 DJANGO_SECRET_KEY=$(openssl rand -hex 32)
-DJANGO_ALLOWED_HOSTS=helpdesk.mckennalabs.com
-DJANGO_CSRF_TRUSTED_ORIGINS=https://helpdesk.mckennalabs.com
+DJANGO_ALLOWED_HOSTS=helpdesk.example.com
+DJANGO_CSRF_TRUSTED_ORIGINS=https://helpdesk.example.com
 TIME_ZONE=America/Los_Angeles
 
 # Hex only, so it is safe inside the database URL. Used when the database is first created.
@@ -341,19 +341,19 @@ POSTGRES_PASSWORD=$(openssl rand -hex 24)
 ENTRA_TENANT_ID=
 ENTRA_CLIENT_ID=
 ENTRA_CLIENT_SECRET=
-ENTRA_REDIRECT_URI=https://helpdesk.mckennalabs.com/auth/callback
+ENTRA_REDIRECT_URI=https://helpdesk.example.com/auth/callback
 ENTRA_ROLE_AGENT=Agent
 ENTRA_ROLE_ADMIN=Admin
 
 EMAIL_BACKEND=graph
-SITE_URL=https://helpdesk.mckennalabs.com
+SITE_URL=https://helpdesk.example.com
 # The TEST shared mailbox until the pilot ends (docs/email-setup.md).
-HELPDESK_MAILBOX=helpdesk-test@mckennalabs.com
+HELPDESK_MAILBOX=helpdesk-test@example.com
 IT_NOTIFY_EMAIL=
 # Shown under "Can't sign in?" and on error pages. Keep the quotes if it has a #.
 HELP_CONTACT="Call IT on ext. 1234, or post in IT Help in Teams."
 INBOUND_EMAIL=graph
-INBOUND_ALLOWED_DOMAINS=mckennalabs.com
+INBOUND_ALLOWED_DOMAINS=example.com
 EOF
 chmod 600 .env
 nano .env       # fill in the three ENTRA_ values, HELP_CONTACT, and IT_NOTIFY_EMAIL if wanted
@@ -363,22 +363,22 @@ ls -l .env      # -rw------- 1 inhadmin inhadmin ...
 | Setting | Value on the server | Why |
 |---|---|---|
 | `COMPOSE_FILE` | `compose.yaml:compose.prod.yaml` | A `docker compose` command typed without `-f` still uses both files |
-| `HELPDESK_HOSTNAME` | `helpdesk.mckennalabs.com` | The name the proxy serves and redirects to |
+| `HELPDESK_HOSTNAME` | `helpdesk.example.com` | The name the proxy serves and redirects to. Required: the proxy won't start without it |
 | `DJANGO_DEBUG` | `False` | Turns on the HTTPS hardening: secure cookies, redirect, HSTS |
 | `DJANGO_SECRET_KEY` | 64 random hex characters | Signs sessions. New for the server; never copy a PC's |
-| `DJANGO_ALLOWED_HOSTS` | `helpdesk.mckennalabs.com` | Other names get "400 Bad Request". (`127.0.0.1` is added automatically, for Docker's health check) |
-| `DJANGO_CSRF_TRUSTED_ORIGINS` | `https://helpdesk.mckennalabs.com` | Forms must come from this address |
+| `DJANGO_ALLOWED_HOSTS` | `helpdesk.example.com` | Other names get "400 Bad Request". (`127.0.0.1` is added automatically, for Docker's health check) |
+| `DJANGO_CSRF_TRUSTED_ORIGINS` | `https://helpdesk.example.com` | Forms must come from this address |
 | `POSTGRES_PASSWORD` | 48 random hex characters | Letters and digits only, so it's safe in `DATABASE_URL` |
 | `ENTRA_TENANT_ID`, `ENTRA_CLIENT_ID` | From the app registration's Overview | Same as on a PC |
 | `ENTRA_CLIENT_SECRET` | The server's own secret (section 4) | |
-| `ENTRA_REDIRECT_URI` | `https://helpdesk.mckennalabs.com/auth/callback` | Must match Entra exactly |
+| `ENTRA_REDIRECT_URI` | `https://helpdesk.example.com/auth/callback` | Must match Entra exactly |
 | `EMAIL_BACKEND` | `graph` | Really send email |
-| `SITE_URL` | `https://helpdesk.mckennalabs.com` | Links in emails |
+| `SITE_URL` | `https://helpdesk.example.com` | Links in emails |
 | `HELPDESK_MAILBOX` | The test shared mailbox during the pilot | |
 | `HELP_CONTACT` | How to reach IT, e.g. `"Call IT on ext. 1234, or post in IT Help in Teams."` | Shown under "Can't sign in?" and on error pages. Blank shows "Email IT at" the mailbox above, which is the test mailbox during the pilot. Quote it if it contains `#`, or everything after the `#` is dropped |
 | `REPORTS_FROM` | The go-live date, e.g. `2026-11-30` (blank until then) | Reports (`/reports/`, admins only) count tickets from this date, so pilot and test tickets don't skew them. Tickets whose subject starts with "Pilot:" are always left out |
 | `INBOUND_EMAIL` | `graph` | Read the mailbox |
-| `DEPARTMENT_MAILBOXES` | Blank until the department mailboxes are decided | e.g. `mechanics=mechanics-requests@mckennalabs.com, cleaning=cs@mckennalabs.com/Requests`. Each needs the Exchange steps in [email-setup.md](email-setup.md), 4d |
+| `DEPARTMENT_MAILBOXES` | Blank until the department mailboxes are decided | e.g. `mechanics=mechanics-requests@example.com, cleaning=cs@example.com/Requests`. Each needs the Exchange steps in [email-setup.md](email-setup.md), 4d |
 | `DEPARTMENT_NOTIFY_EMAILS` | Optional | Where Mechanics' and C&S's new-request alerts go; blank sends them to each of that department's agents |
 | `ENTRA_ROLE_AGENT_MECHANICS`, `ENTRA_ROLE_AGENT_CLEANING` | Leave out (defaults `Agent.Mechanics`, `Agent.Cleaning`) | Only if the app roles in Entra use other values |
 | `ARCHIVE_KEEP_DAYS` | Leave out (default 730, two years) | How long an archived ticket is kept; shown on the ticket |
@@ -444,10 +444,10 @@ the go-live records.
 |---|---|---|---|
 | 1 | Containers running | `docker compose -f compose.yaml -f compose.prod.yaml ps` | `db` and `web` healthy, `worker` and `proxy` up |
 | 2 | Port 8000 not reachable | `ss -tln \| grep 8000` | Nothing |
-| 3 | HTTPS and health check, from the server | `curl -sS --cacert /srv/inh-ticketing/certs/internal-root.pem https://helpdesk.mckennalabs.com/healthz` | `ok` |
-| 4 | HTTP redirects to HTTPS | `curl -sSI http://helpdesk.mckennalabs.com/queue/` | `301`, `Location: https://helpdesk.mckennalabs.com/queue/` |
-| 5 | One HSTS header | `curl -sSI --cacert /srv/inh-ticketing/certs/internal-root.pem https://helpdesk.mckennalabs.com/healthz \| grep -i strict` | One line: `max-age=31536000; includeSubDomains` |
-| 6 | **No browser warning on a company PC** | Open `https://helpdesk.mckennalabs.com` in Edge | A padlock; certificate issued by the internal CA |
+| 3 | HTTPS and health check, from the server | `curl -sS --cacert /srv/inh-ticketing/certs/internal-root.pem https://helpdesk.example.com/healthz` | `ok` |
+| 4 | HTTP redirects to HTTPS | `curl -sSI http://helpdesk.example.com/queue/` | `301`, `Location: https://helpdesk.example.com/queue/` |
+| 5 | One HSTS header | `curl -sSI --cacert /srv/inh-ticketing/certs/internal-root.pem https://helpdesk.example.com/healthz \| grep -i strict` | One line: `max-age=31536000; includeSubDomains` |
+| 6 | **No browser warning on a company PC** | Open `https://helpdesk.example.com` in Edge | A padlock; certificate issued by the internal CA |
 | 7 | Sign-in works | **Sign in with Microsoft 365** | Back in the app, your name in the header |
 | 8 | **The Admin role shows** | Sign in as someone with the Admin role | **Admin** badge; `/admin/` opens |
 | 9 | Agents see the queue | Sign in with the Agent role | The IT queue |
@@ -463,7 +463,7 @@ the go-live records.
 | 19 | PCs no longer read the mailbox | Section 5 | `INBOUND_EMAIL=off` on PCs |
 
 If the server can't resolve its own name for checks 3–5, add
-`--resolve helpdesk.mckennalabs.com:443:127.0.0.1` (or `:80:` for check 4).
+`--resolve helpdesk.example.com:443:127.0.0.1` (or `:80:` for check 4).
 
 ## 8. Backups
 
@@ -683,12 +683,12 @@ Logs: `docker compose -f compose.yaml -f compose.prod.yaml logs --tail 100 <serv
 | Symptom | Likely cause | Fix |
 |---|---|---|
 | Certificate warning on a company PC | The PC doesn't trust the internal root; the name isn't in the certificate's SAN; or the intermediate is missing from `fullchain.pem` | Re-run the checks in 3.2. The root reaches PCs through Group Policy or Intune |
-| Browser can't connect at all | DNS, the network firewall, or `proxy` isn't running | `nslookup helpdesk.mckennalabs.com`; `docker compose … ps` |
+| Browser can't connect at all | DNS, the network firewall, or `proxy` isn't running | `nslookup helpdesk.example.com`; `docker compose … ps` |
 | `proxy` keeps restarting | A certificate file is missing or unreadable, the key doesn't match, or the Caddyfile has an error | `docker compose … logs proxy`; repeat step 6.2 |
 | `502 Bad Gateway` | `web` is down or still starting | `docker compose … ps`; `logs web` |
-| `400 Bad Request` | Opened by IP address or a short name | Use `https://helpdesk.mckennalabs.com`. Other names need adding to `DJANGO_ALLOWED_HOSTS` |
+| `400 Bad Request` | Opened by IP address or a short name | Use `https://helpdesk.example.com`. Other names need adding to `DJANGO_ALLOWED_HOSTS` |
 | Too many redirects | Something in front of the proxy, or `X-Forwarded-Proto` doesn't reach Django | The proxy must be the only thing in front. Check `proxy` logs |
-| `403 CSRF verification failed` | `DJANGO_CSRF_TRUSTED_ORIGINS` doesn't match the address used | Must be `https://helpdesk.mckennalabs.com` exactly |
+| `403 CSRF verification failed` | `DJANGO_CSRF_TRUSTED_ORIGINS` doesn't match the address used | Must be `https://helpdesk.example.com` exactly |
 | `AADSTS50011` at sign-in | The server's redirect URI isn't on the app registration | Section 4, step 1 |
 | `AADSTS7000215` or `AADSTS7000222` | Wrong or expired client secret | New secret (section 4), update `.env`, `docker compose … up -d` |
 | Sign-in fails with "not yet valid" or "expired" | The server clock is off | `chronyc tracking`, section 1.2 |

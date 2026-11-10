@@ -18,7 +18,7 @@ Caddy reverse proxy. Installing the app on it is [deployment.md](deployment.md).
 | Machine | One Linux VM |
 | CPU, memory, disk | 2 vCPU, 4 GB RAM, 80 GB disk |
 | Operating system | Ubuntu Server LTS (or Debian stable), with Docker Engine |
-| Name | `helpdesk.mckennalabs.com`, in internal DNS only |
+| Name | `helpdesk.example.com`, in internal DNS only |
 | Reached from | The LAN and the VPN. Nothing from the internet |
 | Certificate | From the company's internal CA |
 | Users | Fewer than 5 IT agents, up to about 300 requesters |
@@ -84,7 +84,7 @@ deleting an old backup frees only the files no newer backup still shares.
   repository** (`docker-ce`, `docker-compose-plugin`). Both are free and open
   source. Compose 2.24 or later is required.
 - **Not Docker Desktop.** It is meant for PCs, not servers, and a company
-  McKenna Labs' size needs a paid subscription for it.
+  of more than 250 people needs a paid subscription for it.
 - Not Ubuntu's own `docker.io` or snap packages: they lag behind, and the
   snap can't see `/srv`.
 
@@ -93,7 +93,7 @@ deleting an old backup frees only the files no newer backup still shares.
 | What | Detail |
 |---|---|
 | IP address | Static, or a DHCP reservation |
-| DNS | Internal A record `helpdesk.mckennalabs.com` → the server. No public DNS record |
+| DNS | Internal A record `helpdesk.example.com` → the server. No public DNS record |
 | Inbound TCP 443 | From the LAN and VPN ranges: the app (HTTPS) |
 | Inbound TCP 80 | From the same ranges. Only redirects to 443 |
 | Inbound TCP 22 (SSH) | From IT admins' machines or jump host only |
@@ -133,7 +133,7 @@ containers use the server's clock.
 
 From the internal CA:
 
-- Issued for `helpdesk.mckennalabs.com`, with that name in the **Subject
+- Issued for `helpdesk.example.com`, with that name in the **Subject
   Alternative Name** (browsers ignore the Common Name).
 - RSA 2048-bit key or stronger, **without a passphrase** (the proxy starts
   unattended). The key is created on the server and never leaves it.

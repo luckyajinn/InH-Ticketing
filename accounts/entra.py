@@ -62,7 +62,7 @@ def is_configured() -> bool:
 
 
 def authority() -> str:
-    # A tenant-specific authority means only McKenna Labs accounts can sign in.
+    # A tenant-specific authority means only the organisation's own accounts can sign in.
     return f"https://login.microsoftonline.com/{settings.ENTRA_TENANT_ID}"
 
 

@@ -1,6 +1,6 @@
 # InH-Ticketing reverse proxy (Caddy 2), used by compose.prod.yaml.
 #
-#   - Serves https://HELPDESK_HOSTNAME with the certificate from McKenna Labs'
+#   - Serves https://HELPDESK_HOSTNAME with the certificate from the company's
 #     internal CA, mounted read-only at /certs (/srv/inh-ticketing/certs on
 #     the server).
 #   - Never requests certificates itself: no ACME, no Let's Encrypt.

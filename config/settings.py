@@ -222,7 +222,7 @@ ATTACHMENT_EXTENSIONS = {
 # The address people use to reach the app, for links in emails.
 SITE_URL = os.environ.get("SITE_URL", "http://localhost:8000").rstrip("/")
 
-# The shared mailbox emails are sent from, e.g. helpdesk-test@mckennalabs.com.
+# The shared mailbox emails are sent from, e.g. helpdesk-test@example.com.
 HELPDESK_MAILBOX = os.environ.get("HELPDESK_MAILBOX", "").strip()
 DEFAULT_FROM_EMAIL = HELPDESK_MAILBOX or "inh-ticketing@localhost"
 

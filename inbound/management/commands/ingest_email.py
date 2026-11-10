@@ -6,8 +6,8 @@ Handy for trying email-in on your PC before the mailbox is connected.
     python manage.py ingest_email path\\to\\message.eml
 
     # or type one
-    python manage.py ingest_email --from dana@mckennalabs.com --subject "Printer jammed" --body "Tray 2 again"
-    python manage.py ingest_email --from dana@mckennalabs.com --subject "RE: [#1028] Outlook" --body "Still happening"
+    python manage.py ingest_email --from dana@example.com --subject "Printer jammed" --body "Tray 2 again"
+    python manage.py ingest_email --from dana@example.com --subject "RE: [#1028] Outlook" --body "Still happening"
 """
 
 import uuid

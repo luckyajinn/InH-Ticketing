@@ -7,9 +7,9 @@ from inbound.text import split_signature
 from tickets.models import Category, PasswordWarning, Ticket
 from tickets.tests.helpers import MediaTestCase
 
-# Shaped like the CodeTwo signature on McKenna Labs mail (fictional details).
+# Shaped like the CodeTwo signature on a company's mail (fictional details).
 CODETWO = """Dana Whitfield
-Quality Analyst | McKenna Labs
+Quality Analyst | Example Labs
 1234 Example Way, Suite 100, Anytown, CA 90000
 T: +1 (555) 010-0100 | F: +1 (555) 010-0101
 www.example.com

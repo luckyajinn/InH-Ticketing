@@ -26,9 +26,9 @@ each version are in [roadmap.md](roadmap.md).
 
 ## Compliance (from the intended-use and risk assessment, 2026-11-06)
 
-McKenna Labs is FDA-regulated (cosmetics). The draft assessment proposes
+The company is FDA-regulated (cosmetics). The draft assessment proposes
 InH-Ticketing as **non-GxP**: internal IT support only, holding no
-FDA-required records. Ruben Martinez reviewed it, and the risk assessment
+FDA-required records. The compliance lead reviewed it, and the risk assessment
 passed (reported 2026-11-09).
 
 Before the pilot (by 2026-11-30):
@@ -40,7 +40,7 @@ Before the pilot (by 2026-11-30):
       (docs/email-setup.md, section 3a).
 - [x] **Actually set it** on the test mailbox (2026-11-09: `RequireSenderAuthenticationEnabled` is True).
 - [x] Set it on the live help-desk mailbox before go-live. *(Live, reported 2026-11-09.)*
-- [x] Record Ruben Martinez's review (the date and his decision) in the risk
+- [x] Record the compliance review (the date and the decision) in the risk
       assessment, version 0.2. *(The risk assessment passed, reported 2026-11-09.)*
 - [ ] File the `Test-ServicePrincipalAuthorization` results. *(Run 2026-11-09:
       Mail.Send and Mail.ReadWrite in scope for the test mailbox only. Save
@@ -77,8 +77,8 @@ Decided 2026-11-06:
 |---|---|
 | Server | Linux VM with Docker. 2 vCPU, 4 GB RAM, ~80 GB disk is plenty for the scale below. **Actual server (2026-11-09): 16 cores, 32 GB RAM**, so there is plenty of room for more features |
 | Scale | Fewer than 5 IT agents; up to ~300 requesters |
-| Address | `https://helpdesk.mckennalabs.com` (internal DNS record pointing at the server) |
-| HTTPS | Certificate from the McKenna Labs **private internal CA**, served by a reverse proxy in Docker Compose. Staff PCs must trust that CA (usually already done through Group Policy) |
+| Address | `https://helpdesk.example.com` (internal DNS record pointing at the server) |
+| HTTPS | Certificate from the company's **private internal CA**, served by a reverse proxy in Docker Compose. Staff PCs must trust that CA (usually already done through Group Policy) |
 | Backups | Stored locally on the server: nightly database dump plus attachments, kept 14 days |
 | Network | The server needs outbound HTTPS to `login.microsoftonline.com` and `graph.microsoft.com` |
 
@@ -87,7 +87,7 @@ Decided 2026-11-06:
       `check --deploy` warnings).
 - [x] Nightly local backups with 14-day retention, and a restore procedure.
 - [ ] The restore drill on the real server, recorded (docs/deployment.md section 9).
-- [ ] Entra: add the redirect URI `https://helpdesk.mckennalabs.com/auth/callback`,
+- [ ] Entra: add the redirect URI `https://helpdesk.example.com/auth/callback`,
       and use a separate client secret (or a certificate) for the server.
 - [x] A deployment guide covering first install, updating to a new version, and restoring.
 - [x] The first install on the server, following the guide and fixing it as needed.
@@ -119,7 +119,7 @@ Decided 2026-11-06:
 - [x] **Mechanics and Cleaning & sanitization requests.** Two new categories,
       each with three **common requests** that fill in the subject and the
       category when picked; people can still type their own. Admins edit the
-      lists in Admin, Categories (one per line, up to 20). *(Ruben Martinez
+      lists in Admin, Categories (one per line, up to 20). *(The compliance lead
       said it needn't go through the FDA rules, as no customer data is
       involved; a risk assessment to confirm that is planned for 2026-11-10.)*
 - [ ] Update `usage-rules.md` and the risk assessment for Mechanics and C&S,
@@ -302,35 +302,41 @@ ticket, subject starting "Pilot:", so it's tracked in the app itself.
 
 ## Licensing to other companies (after v1.0.0)
 
-The plan: finish the app for McKenna Labs, then license it to other companies,
-each with its own logo, look and needs. *(Raised 2026-11-09.)*
+The plan: finish the app for the first company, then license it to other
+companies, each with its own logo, look and needs. *(Raised 2026-11-09.)*
 
-- [ ] *(To decide)* How each company's version is kept. Suggested: one
-      codebase, plus a **brand pack** and an `.env` per company, chosen by a
-      setting such as `BRAND=mckenna`. A branch per company also works, but
-      every fix then has to be merged into, and tested on, every branch.
+- [x] How each company's version is kept. *Decided 2026-11-10: `main` stays
+      generic, with no company's name, domain or staff in it; each company
+      gets its own branch for its branding, settings and docs, starting with
+      the first company. Every fix lands on `main` first and is merged into
+      each company's branch.* (A brand pack chosen by a setting such as
+      `BRAND=<company>` is still an option inside a branch.)
 - [ ] Brand pack contents: logo, favicon and app icons, colours (the `:root`
       variables in `static/css/app.css`), company and app name, and the
       email header image.
-- [ ] Move the McKenna-only parts out of the code and into the McKenna pack
-      or settings:
+- [ ] Move the company-specific parts out of the code and into that company's
+      branch or settings:
   - the "IT issues only, complaints go to QA" notice on the New request page
     (an FDA control, in `templates/tickets/new.html`)
   - the app name, typed in `core/context_processors.py`,
     `notifications/notify.py`, `templates/500.html` and
     `INBOUND_PROCESSED_FOLDER` in `config/settings.py`
-  - the default hostname `helpdesk.mckennalabs.com` in `compose.prod.yaml`
-- [ ] McKenna Labs as the first brand pack, from the branding kit received
-      2026-11-09 (logos, icons, email header, `mckenna-theme.css`). Before
+  - [x] ~~the default hostname in `compose.prod.yaml`~~ *(2026-11-10:
+        `HELPDESK_HOSTNAME` is now required in `.env`)*
+- [ ] The first company's brand pack, on its own branch, from the branding
+      kit received 2026-11-09 (logos, icons, email header, theme CSS). Before
       using it beyond internal tools, get the official logo vector (the kit's
       logo is traced from the website) and sign-off on the "M" mark icon.
-- [ ] Split the docs: a general install guide, with McKenna's server, mailbox
-      and FDA details kept with the McKenna pack.
+- [ ] Split the docs: a general install guide on `main`, with each company's
+      server, mailbox, compliance details, roadmap and pilot notes on its
+      branch. *(2026-11-10: the company's name, domain and staff names are out
+      of `main`; its rollout plan in roadmap.md, overview.md and
+      pilot-testing.md is still there, unnamed.)*
 - [ ] Keep brand packs out of the shared code, so one company's branding is
       never shipped to another.
 - [ ] Each company sets up its own Microsoft 365 (Entra) app registration
-      and mailbox. This already works through `.env`; the setup guides need
-      the McKenna names taken out.
+      and mailbox. This already works through `.env`, and the setup guides
+      use `example.com` (2026-11-10).
 
 ## Later
 

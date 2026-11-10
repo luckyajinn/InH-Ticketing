@@ -51,7 +51,7 @@ services:
       - "80:80"
       - "443:443"
     environment:
-      HELPDESK_HOSTNAME: ${HELPDESK_HOSTNAME:-helpdesk.mckennalabs.com}
+      HELPDESK_HOSTNAME: ${HELPDESK_HOSTNAME:?Set HELPDESK_HOSTNAME in .env}
       # Same setting and default as Django's SECURE_HSTS_SECONDS.
       HSTS_MAX_AGE: ${DJANGO_SECURE_HSTS_SECONDS:-31536000}
     volumes:
