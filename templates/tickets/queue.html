@@ -73,11 +73,11 @@
           {% for t in page %}
           <tr role="row" class="{% if t.priority == 4 %}is-urgent{% elif t.priority == 3 %}is-high{% endif %}" data-href="{{ t.get_absolute_url }}">
             <td role="cell"><span class="ticket-num">#{{ t.number }}</span></td>
-            <td class="col-subject" role="cell">
-              <a class="subject-link" href="{{ t.get_absolute_url }}">{{ t.subject }}</a>
+            <td class="col-subject" role="cell"><span class="subject-line">
+              <a class="subject-link" href="{{ t.get_absolute_url }}" title="{{ t.subject }}">{{ t.subject }}</a>
               {% if t.source == "email" %}<span class="row-flag" title="Created from an email">{% icon "mail" %}<span class="visually-hidden">(created from email)</span></span>{% endif %}
               {% if t.is_blocking %}<span class="row-flag row-flag-block" title="Requester says this is blocking their work">{% icon "flag" %}<span class="visually-hidden">(blocking work)</span></span>{% endif %}
-            </td>
+            </span></td>
             <td role="cell">{{ t.requester }}</td>
             <td role="cell">{{ t.category }}</td>
             <td role="cell">{% include "tickets/partials/priority.html" with t=t %}</td>

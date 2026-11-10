@@ -1097,7 +1097,12 @@ form.is-saving .props-hint { color: var(--accent-soft-text); font-weight: 650; }
 .queue-table tbody tr[data-href] { cursor: pointer; transition: background-color var(--dur-fast) var(--ease-out); }
 .queue-table tbody tr[data-href]:hover { background: var(--row-hover); }
 .queue-table tbody tr[data-href]:hover .subject-link { color: var(--link); }
-.queue-table .col-subject { min-width: 260px; white-space: normal; }
+/* Subjects stay on one line so IT sees more tickets per screen. Long ones end
+   in an ellipsis; the full subject shows on hover, and screen readers read it all. */
+.queue-table .col-subject { width: 100%; max-width: 0; min-width: 240px; white-space: nowrap; }
+.subject-line { display: flex; align-items: center; min-width: 0; }
+.subject-line .subject-link { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.subject-line .row-flag { flex: none; }
 .queue-table .col-age { text-align: right; font-variant-numeric: tabular-nums; color: var(--text-muted); }
 .queue-table tr.is-urgent td:first-child { box-shadow: inset 4px 0 0 var(--pr-urgent-bg); }
 .queue-table tr.is-high td:first-child { box-shadow: inset 4px 0 0 var(--pr-high-edge); }
@@ -1279,7 +1284,10 @@ form.is-saving .props-hint { color: var(--accent-soft-text); font-weight: 650; }
   .queue-table td:nth-child(4) { order: 7; color: var(--text-muted); }
   .queue-table td:nth-child(4)::before { content: "\00B7"; margin-right: 10px; }
   .queue-table td:nth-child(7) { order: 8; margin-left: auto; font-size: var(--fs-xs); }
-  .queue-table .col-subject { min-width: 0; }
+  /* On phone cards the subject has a full line of its own, so let it wrap. */
+  .queue-table .col-subject { width: auto; max-width: none; min-width: 0; white-space: normal; }
+  .subject-line { display: block; }
+  .subject-line .subject-link { overflow: visible; white-space: normal; }
   .queue-table tr.empty-row { display: block; padding: 0; }
   .queue-table tr.empty-row td { display: block; }
 }
