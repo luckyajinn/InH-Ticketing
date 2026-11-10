@@ -94,6 +94,38 @@ Decided 2026-11-06:
       signature" link, so the request itself is what IT sees. *(Raised in
       testing, 2026-11-09, on ticket #1071.)*
 
+## Licensing to other companies (after v1.0.0)
+
+The plan: finish the app for McKenna Labs, then license it to other companies,
+each with its own logo, look and needs. *(Raised 2026-11-09.)*
+
+- [ ] *(To decide)* How each company's version is kept. Suggested: one
+      codebase, plus a **brand pack** and an `.env` per company, chosen by a
+      setting such as `BRAND=mckenna`. A branch per company also works, but
+      every fix then has to be merged into, and tested on, every branch.
+- [ ] Brand pack contents: logo, favicon and app icons, colours (the `:root`
+      variables in `static/css/app.css`), company and app name, and the
+      email header image.
+- [ ] Move the McKenna-only parts out of the code and into the McKenna pack
+      or settings:
+  - the "IT issues only, complaints go to QA" notice on the New request page
+    (an FDA control, in `templates/tickets/new.html`)
+  - the app name, typed in `core/context_processors.py`,
+    `notifications/notify.py`, `templates/500.html` and
+    `INBOUND_PROCESSED_FOLDER` in `config/settings.py`
+  - the default hostname `helpdesk.mckennalabs.com` in `compose.prod.yaml`
+- [ ] McKenna Labs as the first brand pack, from the branding kit received
+      2026-11-09 (logos, icons, email header, `mckenna-theme.css`). Before
+      using it beyond internal tools, get the official logo vector (the kit's
+      logo is traced from the website) and sign-off on the "M" mark icon.
+- [ ] Split the docs: a general install guide, with McKenna's server, mailbox
+      and FDA details kept with the McKenna pack.
+- [ ] Keep brand packs out of the shared code, so one company's branding is
+      never shipped to another.
+- [ ] Each company sets up its own Microsoft 365 (Entra) app registration
+      and mailbox. This already works through `.env`; the setup guides need
+      the McKenna names taken out.
+
 ## Later
 
 - [ ] Confirm DMARC is enforced on the company domain before relying on
