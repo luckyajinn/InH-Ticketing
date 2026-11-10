@@ -153,6 +153,24 @@ ticket, subject starting "Pilot:", so it's tracked in the app itself.
 
 ## v1.0.0 (everything for IT finalized, by 2026-11-13 or 11-16)
 
+- [ ] **A mailbox per department** *(required before v1.0.0, decided
+      2026-11-09)*. Mechanics and Cleaning & sanitization already have shared
+      mailboxes; IT uses the help-desk mailbox. Email to a department's
+      mailbox becomes a ticket in that department's category (no admin move
+      needed), and that ticket's emails are sent from the same mailbox, so
+      replies come back to the right team. Set as a list of mailbox and
+      department pairs in `.env`.
+  - **Watch out:** email-in takes over a mailbox's Inbox. It turns every
+    unread email into a ticket, sends the sender a receipt, marks it read and
+    moves it to "Processed by InH-Ticketing". On a mailbox a department
+    already reads every day, its emails would vanish from their Inbox, and
+    any email someone opens first would be skipped. *(To decide)* Either a
+    new request-only mailbox per department, or the existing mailbox with a
+    rule that files requests into a "Requests" folder the app reads instead
+    of the Inbox.
+  - Exchange, per mailbox: allow the app to send as it and read it
+    ([email-setup.md](email-setup.md) 3c and 4b), set internal senders only,
+    and record `Test-ServicePrincipalAuthorization` for it.
 - [ ] Everything in v0.9.0, plus the server and Microsoft 365 tasks in the
       roadmap's "Your side" list (restore drill, the server's own Entra
       secret, the permission-check record, DMARC, an off-server backup).
@@ -170,6 +188,21 @@ ticket, subject starting "Pilot:", so it's tracked in the app itself.
       Today their tickets land in the IT queue (filter by category) and only
       IT can reply. Each team gets its own queue and an Entra app role, and
       doesn't see IT's tickets or internal notes.
+
+  Decided 2026-11-09:
+
+  | | |
+  |---|---|
+  | Departments | IT, Mechanics, Cleaning & sanitization. Each category belongs to one |
+  | Entra app roles | **IT Agent** (value `Agent`, unchanged), **Mechanics Agent** (`Agent.Mechanics`), **C&S Agent** (`Agent.Cleaning`), **Admin** (`Admin`, unchanged). Values come from settings, so another company can use its own |
+  | Agents | See and work **only their own department's** tickets, including search, "other tickets from this requester" and linked tickets. IT agents see only IT tickets |
+  | Admins | One Admin role oversees **every** department, with a department filter on the queue. No per-department admins |
+  | Wrong department | **Only an admin can move a ticket** to another department. The department that got it asks an admin to move it from the ticket ("Ask an admin to move this"), which notifies the admins. The admin confirms with the receiving department **outside the app**, then moves it; the history records who asked, who moved it, from and to, and that it was confirmed |
+  | Agents and categories | Agents can change the category only within their own department, so they can't move a ticket out themselves |
+  | Internal notes | **Department-specific: they don't transfer** when a ticket moves. Each internal note has a toggle, *Share with the new department if this ticket moves*, **off by default**. On a move, only the notes with it on go to the receiving department; the rest stay with the original department and are never deleted. Admins always see every note. The history records which notes were shared |
+
+  Email-in: each department gets its own mailbox before v1.0.0 (see above),
+  so emailed requests land in the right department without an admin move.
 - [ ] More in-depth common requests for Mechanics and C&S, and a self-fill
       option *(the owner is gathering them)*.
 
