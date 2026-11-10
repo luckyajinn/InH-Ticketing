@@ -1,8 +1,9 @@
 from django.core.exceptions import PermissionDenied
 
+from accounts.models import User
 from tickets import services
 from tickets.models import Category, Ticket, TicketEvent
-from tickets.tests.helpers import MediaTestCase, make_ticket, upload
+from tickets.tests.helpers import MediaTestCase, make_ticket, make_user, upload
 
 Status = Ticket.Status
 
@@ -118,9 +119,16 @@ class UpdateTicketTests(MediaTestCase):
         self.assertIsNone(self.ticket.closed_at)
         services.update_ticket(ticket=self.ticket, actor=self.agent, status=Status.CLOSED)
         self.assertIsNotNone(self.ticket.closed_at)
+        # Closing archives it: read-only until an admin takes it out of the archive.
+        self.assertEqual(self.ticket.archived_at, self.ticket.closed_at)
+        with self.assertRaises(PermissionDenied):
+            services.update_ticket(ticket=self.ticket, actor=self.agent, status=Status.OPEN)
+        admin = make_user("Ada Admin", User.Role.ADMIN)
+        self.assertTrue(services.unarchive(ticket=self.ticket, actor=admin))
         services.update_ticket(ticket=self.ticket, actor=self.agent, status=Status.OPEN)
         self.assertIsNone(self.ticket.resolved_at)
         self.assertIsNone(self.ticket.closed_at)
+        self.assertIsNone(self.ticket.archived_at)
 
     def test_requester_cannot_update(self):
         with self.assertRaises(PermissionDenied):

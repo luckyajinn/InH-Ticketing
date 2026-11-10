@@ -9,6 +9,7 @@ from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.utils import timezone
 
+from notifications import graph
 from notifications.models import OutboundEmail
 
 logger = logging.getLogger(__name__)
@@ -23,14 +24,18 @@ def send_pending(limit: int = 25) -> tuple[int, int]:
     due = list(
         OutboundEmail.objects.filter(
             status=OutboundEmail.Status.PENDING, next_attempt_at__lte=now
-        ).order_by("created_at")[:limit]
+        ).select_related("ticket__category").order_by("created_at")[:limit]
     )
     sent = failed = 0
     for email in due:
+        # A department's ticket emails come from its own mailbox, so replies go back to that team.
+        from_email = settings.DEFAULT_FROM_EMAIL
+        if email.ticket_id and settings.DEPARTMENT_MAILBOXES:
+            from_email = graph.sending_mailbox(email.ticket.category.department) or from_email
         message = EmailMultiAlternatives(
             subject=email.subject,
             body=email.body_text,
-            from_email=settings.DEFAULT_FROM_EMAIL,
+            from_email=from_email,
             to=[email.to],
         )
         message.attach_alternative(email.body_html, "text/html")

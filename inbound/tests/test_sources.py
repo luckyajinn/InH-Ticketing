@@ -70,7 +70,9 @@ class EmlTests(MediaTestCase):
 class GraphInboxTests(MediaTestCase):
     def setUp(self):
         super().setUp()
-        graph_inbox._folder_id = "folder-1"
+        graph_inbox._folder_ids.clear()
+        graph_inbox._folder_ids["/users/helpdesk-test@example.invalid|processed"] = "folder-1"
+        self.addCleanup(graph_inbox._folder_ids.clear)
         patcher = mock.patch.object(graph_inbox.graph, "call")
         self.call = patcher.start()
         self.addCleanup(patcher.stop)

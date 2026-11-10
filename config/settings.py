@@ -26,6 +26,25 @@ def env_bool(name: str, default: bool = False) -> bool:
     return os.environ.get(name, str(default)).strip().lower() in {"1", "true", "yes", "on"}
 
 
+_OTHER_DEPARTMENTS = ("mechanics", "cleaning")
+
+
+def env_departments(name: str) -> dict[str, str]:
+    """"mechanics=a@example.com, cleaning=b@example.com" -> {"mechanics": "a@example.com", ...}"""
+    result = {}
+    for part in os.environ.get(name, "").replace(";", ",").split(","):
+        key, _, value = part.partition("=")
+        key, value = key.strip().lower(), value.strip()
+        if not key and not value:
+            continue
+        if key not in _OTHER_DEPARTMENTS or not value:
+            raise ImproperlyConfigured(
+                f"{name}: use department=address pairs, with department one of {', '.join(_OTHER_DEPARTMENTS)}."
+            )
+        result[key] = value
+    return result
+
+
 def env_list(name: str, default: str = "") -> list[str]:
     return [item.strip() for item in os.environ.get(name, default).split(",") if item.strip()]
 
@@ -69,6 +88,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "core.middleware.PrivatePagesMiddleware",  # signed-in pages: Cache-Control private, no-store
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -122,7 +142,10 @@ AUTHENTICATION_BACKENDS = ["django.contrib.auth.backends.ModelBackend"]
 
 # Roles are read from Entra each time someone signs in, so a session length of
 # a working day means a role change in Entra takes effect by the next day.
-SESSION_COOKIE_AGE = 60 * 60 * 12  # 12 hours
+SESSION_COOKIE_AGE = 60 * 60 * 12  # 12 hours at most
+# Signing in lasts until the browser closes (and 12 hours at most), so a
+# shared PC doesn't stay signed in for the next person.
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 
@@ -136,6 +159,9 @@ ENTRA_REDIRECT_URI = os.environ.get(
 # The *values* (not display names) of the app roles defined on the registration.
 ENTRA_ROLE_AGENT = os.environ.get("ENTRA_ROLE_AGENT", "Agent").strip()
 ENTRA_ROLE_ADMIN = os.environ.get("ENTRA_ROLE_ADMIN", "Admin").strip()
+# Agents for the other departments: they see and work only their department's tickets.
+ENTRA_ROLE_AGENT_MECHANICS = os.environ.get("ENTRA_ROLE_AGENT_MECHANICS", "Agent.Mechanics").strip()
+ENTRA_ROLE_AGENT_CLEANING = os.environ.get("ENTRA_ROLE_AGENT_CLEANING", "Agent.Cleaning").strip()
 
 # --------------------------------------------------------------------------
 # Internationalisation
@@ -151,6 +177,9 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+# The web manifest (static/icons/site.webmanifest) with its proper type.
+WHITENOISE_MIMETYPES = {".webmanifest": "application/manifest+json"}
+
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
@@ -170,6 +199,10 @@ MEDIA_URL = "/media/"
 # Resolved tickets close by themselves this many days after IT resolved them,
 # unless the requester replies first. 0 turns auto-close off.
 AUTO_CLOSE_RESOLVED_DAYS = int(os.environ.get("AUTO_CLOSE_RESOLVED_DAYS", "7"))
+# Closed tickets are archived: read-only and out of the working views. They're
+# kept this many days after that (2 years). Deleting them when the time is up
+# isn't switched on yet; the ticket page shows the date.
+ARCHIVE_KEEP_DAYS = int(os.environ.get("ARCHIVE_KEEP_DAYS", str(2 * 365)))
 
 ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024  # 10 MB per file
 ATTACHMENT_MAX_FILES = 5  # per request or reply
@@ -198,6 +231,12 @@ DEFAULT_FROM_EMAIL = HELPDESK_MAILBOX or "inh-ticketing@localhost"
 # Blank = "Email IT at HELPDESK_MAILBOX", or "Contact IT." if that's blank too.
 HELP_CONTACT = os.environ.get("HELP_CONTACT", "").strip()
 
+# Email-in: an email that claims to be from IT only becomes a public reply if
+# Exchange confirmed the sender (sent inside the organisation, or DMARC or
+# composite authentication passed). Otherwise it's kept as an internal note.
+# Turn off only if Exchange doesn't add those headers here (see email-setup.md).
+INBOUND_VERIFY_IT_SENDERS = env_bool("INBOUND_VERIFY_IT_SENDERS", True)
+
 # Reports (/reports/, admins only) count tickets from this date, e.g. the
 # go-live date, so test and pilot tickets before it don't skew them.
 # YYYY-MM-DD; blank = every ticket. Tickets whose subject starts with
@@ -207,6 +246,10 @@ REPORTS_FROM = os.environ.get("REPORTS_FROM", "").strip()
 # Optional: where "new ticket" and unassigned-reply alerts for IT go
 # (a distribution list, or a Teams channel's email address). Blank = none.
 IT_NOTIFY_EMAIL = os.environ.get("IT_NOTIFY_EMAIL", "").strip()
+# The same for the other departments, e.g. "mechanics=mech-team@..., cleaning=cs-team@...".
+# A department without one gets its alerts sent to each of its agents.
+# Never a mailbox listed in DEPARTMENT_MAILBOXES (the app would read its own alerts).
+DEPARTMENT_NOTIFY_EMAILS = env_departments("DEPARTMENT_NOTIFY_EMAILS")
 
 # How emails leave the app:
 #   file    - written to tmp/emails/ for you to open (default; nothing is sent)
@@ -231,6 +274,19 @@ EMAIL_MAX_ATTEMPTS = 5
 #   off   - don't read the mailbox (default)
 #   graph - the worker reads the inbox through Microsoft Graph
 INBOUND_EMAIL = os.environ.get("INBOUND_EMAIL", "off").strip().lower() or "off"
+# A mailbox per department (besides HELPDESK_MAILBOX, which is IT's):
+# "mechanics=mechanics@example.com, cleaning=cs@example.com/Requests".
+# Email to it becomes a ticket for that department, and that department's
+# tickets are emailed from it, so replies come back to the right team. After
+# a "/": read that folder instead of the Inbox (a rule files requests there,
+# so the team's everyday email in the Inbox is left alone). Blank = none.
+DEPARTMENT_MAILBOXES = {
+    department: {
+        "address": value.split("/", 1)[0].strip().lower(),
+        "folder": value.split("/", 1)[1].strip() if "/" in value else "",
+    }
+    for department, value in env_departments("DEPARTMENT_MAILBOXES").items()
+}
 INBOUND_POLL_SECONDS = int(os.environ.get("INBOUND_POLL_SECONDS", "60"))
 # Only accept email from these domains. Blank means the domain of
 # HELPDESK_MAILBOX (blank too, as on a PC without one, means any domain).

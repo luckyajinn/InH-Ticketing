@@ -6,6 +6,7 @@ from django.db.models import Q
 from django.template.defaultfilters import filesizeformat
 
 from accounts.models import User
+from core.departments import Department
 from tickets import password_guard
 from tickets.models import Category, Ticket
 
@@ -183,6 +184,8 @@ class ReplyForm(PasswordCheckMixin, forms.Form):
         widget=forms.Textarea(attrs={"rows": 5}),
     )
     visibility = forms.ChoiceField(choices=VISIBILITY_CHOICES, required=False, initial="public")
+    # Internal notes only: go with the ticket if an admin moves it to another department.
+    share_on_move = forms.BooleanField(required=False)
     # Set by the composer's "Send and set Waiting on User" / "Send and resolve" buttons.
     then_status = forms.ChoiceField(
         choices=[("", "Keep status"), (Ticket.Status.WAITING, "Waiting on User"), (Ticket.Status.RESOLVED, "Resolved")],
@@ -192,22 +195,26 @@ class ReplyForm(PasswordCheckMixin, forms.Form):
     password_ack = forms.BooleanField(required=False)
     password_warned = forms.BooleanField(required=False)
 
-    def __init__(self, *args, user, **kwargs):
+    def __init__(self, *args, user, ticket: Ticket | None = None, **kwargs):
         super().__init__(*args, **kwargs)
         self.user = user
+        self.ticket = ticket
+
+    def _works(self) -> bool:
+        return self.user.works_on(self.ticket) if self.ticket else self.user.is_agent
 
     def clean_visibility(self):
         value = self.cleaned_data.get("visibility") or "public"
-        # Only IT can write internal notes, whatever the browser sends.
-        if value == "internal" and not self.user.is_agent:
-            raise forms.ValidationError("Only IT can add internal notes.")
+        # Only staff working the ticket can write internal notes, whatever the browser sends.
+        if value == "internal" and not self._works():
+            raise forms.ValidationError("Only staff working this ticket can add internal notes.")
         return value
 
     def clean(self):
         cleaned = super().clean()
         if cleaned.get("then_status"):
-            if not self.user.is_agent:
-                self.add_error("then_status", "Only IT can change the status when replying.")
+            if not self._works():
+                self.add_error("then_status", "Only staff working this ticket can change the status when replying.")
             elif cleaned.get("visibility") == "internal":
                 # The requester wouldn't be told why their ticket changed.
                 self.add_error("then_status", "Change the status with a public reply, or use the side panel.")
@@ -218,9 +225,19 @@ class ReplyForm(PasswordCheckMixin, forms.Form):
     def is_internal(self) -> bool:
         return self.cleaned_data.get("visibility") == "internal"
 
+    @property
+    def shares_on_move(self) -> bool:
+        """An internal note marked to go with the ticket if it moves department."""
+        return self.is_internal and bool(self.cleaned_data.get("share_on_move"))
+
 
 def agent_choices(ticket: Ticket | None = None):
-    query = Q(role__in=[User.Role.AGENT, User.Role.ADMIN], is_active=True)
+    """Who a ticket can be assigned to: its department's agents, and admins."""
+    agents = Q(role=User.Role.AGENT)
+    if ticket is not None:
+        department = ticket.department
+        agents &= Q(department=department) | (Q(department="") if department == Department.IT else Q(pk__in=[]))
+    query = (agents | Q(role=User.Role.ADMIN)) & Q(is_active=True)
     if ticket and ticket.assignee_id:
         query |= Q(pk=ticket.assignee_id)  # keep the current assignee selectable
     return User.objects.filter(query).order_by("display_name")
@@ -259,6 +276,78 @@ class TicketPropertiesForm(forms.Form):
             self.fields["assignee"].label_from_instance = (
                 lambda u: f"{u} (me)" if u.pk == me.pk else str(u)
             )
+        # Within the ticket's department only: moving it elsewhere is MoveForm, for admins.
         self.fields["category"].queryset = Category.objects.filter(
-            Q(is_active=True) | Q(pk=ticket.category_id)
+            (Q(is_active=True) & Q(department=ticket.category.department)) | Q(pk=ticket.category_id)
         )
+
+
+class RemovalForm(forms.Form):
+    """What an admin takes out of one part of a ticket (the subject, the request, or a message)."""
+
+    text = forms.CharField(
+        required=False, max_length=500, strip=False,
+        widget=forms.TextInput(attrs={"class": "input", "autocomplete": "off", "spellcheck": "false"}),
+    )
+    whole = forms.BooleanField(required=False)
+    # Not "files": a form's .files is its uploads.
+    remove_files = forms.MultipleChoiceField(required=False, widget=forms.CheckboxSelectMultiple)
+
+    def __init__(self, *args, current: str, files=(), allow_whole: bool = True, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.current = current
+        self.allow_whole = allow_whole
+        self.attachments = {str(a.pk): a for a in files}
+        self.fields["remove_files"].choices = [(pk, a.original_name) for pk, a in self.attachments.items()]
+
+    def clean(self):
+        cleaned = super().clean()
+        text, whole = cleaned.get("text") or "", cleaned.get("whole") and self.allow_whole
+        cleaned["whole"] = bool(whole)
+        if text and not whole:
+            if len(text.strip()) < 4:
+                self.add_error("text", "Enter at least 4 characters, so only the password is removed.")
+            elif text not in self.current:
+                self.add_error("text", "That text isn't in this message. Copy it exactly as it appears above.")
+        if not text.strip() and not whole and not cleaned.get("remove_files"):
+            raise forms.ValidationError("Enter the text to remove, or choose what else to remove.")
+        cleaned["attachments"] = [self.attachments[pk] for pk in cleaned.get("remove_files") or []]
+        return cleaned
+
+
+class MoveForm(forms.Form):
+    """An admin moves a ticket to another department's category."""
+
+    category = forms.ModelChoiceField(
+        queryset=Category.objects.none(), empty_label="Choose a category",
+        widget=forms.Select(attrs={"class": "select select-sm"}),
+        error_messages={"required": "Choose where it goes."},
+    )
+    confirmed = forms.BooleanField(
+        error_messages={"required": "Check with the other department first, then tick this."},
+    )
+
+    def __init__(self, *args, ticket: Ticket, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["category"].queryset = Category.objects.filter(is_active=True).exclude(
+            department=ticket.category.department
+        )
+        self.fields["category"].label_from_instance = (
+            lambda c: f"{Department(c.department).label}: {c.name}"
+        )
+
+
+class MoveRequestForm(forms.Form):
+    """Staff ask an admin to move a ticket that landed in the wrong department."""
+
+    department = forms.ChoiceField(choices=(), widget=forms.Select(attrs={"class": "select select-sm"}))
+    reason = forms.CharField(
+        max_length=200, required=False,
+        widget=forms.TextInput(attrs={"class": "input input-sm", "placeholder": "Why (optional)"}),
+    )
+
+    def __init__(self, *args, ticket: Ticket, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["department"].choices = [
+            (value, label) for value, label in Department.choices if value != ticket.category.department
+        ]

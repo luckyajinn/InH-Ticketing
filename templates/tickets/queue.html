@@ -11,7 +11,7 @@
     <ul class="views-list">
       {% for v in views %}
       <li>
-        <a class="view-link" href="?view={{ v.id }}"{% if v.current %} aria-current="page"{% endif %}>
+        <a class="view-link" href="?view={{ v.id }}{% if department %}&amp;dept={{ department }}{% endif %}"{% if v.current %} aria-current="page"{% endif %}>
           {% icon v.icon %}<span>{{ v.label }}</span>
           <span class="count">{{ v.count }}<span class="visually-hidden"> ticket{{ v.count|pluralize }}</span></span>
         </a>
@@ -23,7 +23,7 @@
   <div class="queue-main">
     <div class="page-head">
       <div>
-        <p class="eyebrow">Queue</p>
+        <p class="eyebrow">Queue · {{ department_label }}</p>
         <h1 id="queue-title">{{ current.label }}</h1>
       </div>
     </div>
@@ -35,6 +35,13 @@
         {% icon "search" %}
         <input type="search" id="q-search" name="q" value="{{ q }}" class="input" placeholder="Search number, subject or requester" autocomplete="off">
       </div>
+      {% if departments %}
+      <label for="q-dept" class="visually-hidden">Department</label>
+      <select id="q-dept" name="dept" class="select" onchange="this.form.requestSubmit()">
+        <option value="">All departments</option>
+        {% for value, label in departments %}<option value="{{ value }}"{% if department == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+      {% endif %}
       <label for="q-cat" class="visually-hidden">Category</label>
       <select id="q-cat" name="category" class="select" onchange="this.form.requestSubmit()">
         <option value="">All categories</option>

@@ -26,7 +26,8 @@
     <ul>
       <li>Your name and work email, from your Microsoft 365 sign-in. {{ APP_NAME }} never sees your password.</li>
       <li>Your requests, replies and attached files, and the history of changes to each ticket.</li>
-      <li>Emails you send to the help-desk mailbox, which become part of a ticket.</li>
+      <li>Emails you send to the help-desk mailbox, which become part of a ticket. An email it doesn't act on (an out-of-office reply, say) is logged with its sender and subject only.</li>
+      <li>A copy of each email it sends you about a ticket.</li>
       <li>When the password warning appeared and what you chose, but never the text itself.</li>
     </ul>
   </section>
@@ -35,7 +36,7 @@
     <h2>Who can see it</h2>
     <ul>
       <li>You see your own requests and the replies to them.</li>
-      <li>IT staff see all requests, plus their internal notes and each ticket's history.</li>
+      <li>Each team's staff (IT, Mechanics, Cleaning & sanitization) see the requests for their team, plus their internal notes and each ticket's history. Admins see every team's.</li>
       <li>Admins also see reports made from the requests: counts and times per team, never figures for one person.</li>
       <li>Internal notes and history are never shown or emailed to you.</li>
     </ul>
@@ -45,14 +46,14 @@
     <h2>How long it's kept</h2>
     <ul>
       {% if auto_close_days %}<li>A resolved request closes by itself after {{ auto_close_days }} day{{ auto_close_days|pluralize }} if nobody replies.</li>{% endif %}
-      <li>Closed requests stay in {{ APP_NAME }}. How long they're kept after that is still being decided.</li>
+      <li>A closed request is archived: it can still be read, but not changed. Archived requests are kept for two years.</li>
       <li>The server keeps nightly backups for 14 days.</li>
     </ul>
   </section>
 
   <section>
     <h2>Cookies</h2>
-    <p>Only the ones it needs to work: one keeps you signed in (for up to 12 hours), one protects forms from being sent by other sites, and a short-lived one carries notes like "Request sent" to the next page. No tracking, no analytics.</p>
+    <p>Only the ones it needs to work: one keeps you signed in until you close the browser (12 hours at most), one protects forms from being sent by other sites, and a short-lived one carries notes like "Request sent" to the next page. No tracking, no analytics.</p>
   </section>
 
   <section>

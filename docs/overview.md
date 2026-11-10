@@ -1,7 +1,7 @@
 # InH-Ticketing: overview
 
 What the system is, where it stands, and how each feature and system works.
-Written 2026-11-10 for v0.9.0. Each section is meant to work as one slide.
+Written 2026-11-10 for v0.9.1. Each section is meant to work as one slide.
 
 ## 1. In one paragraph
 
@@ -16,25 +16,26 @@ It runs on McKenna Labs' own server, inside the company network.
 
 | | |
 |---|---|
-| Version | **v0.9.0**, released 2026-11-10 |
-| Built | v0.1.0 to v0.9.0 between 2026-11-05 and 2026-11-10, each release tested and documented with screenshots |
+| Version | **v0.9.1**, released 2026-11-10 |
+| Built | v0.1.0 to v0.9.1 between 2026-11-05 and 2026-11-10, each release tested and documented with screenshots |
 | Server | Live on the internal server (16 cores, 32 GB RAM) at `helpdesk.mckennalabs.com` |
 | Pilot | Starts 2026-11-10 with one other tester, trying to break it |
 | Compliance | Intended-use and risk assessment passed (Ruben Martinez); internal setup approved (Michael Rocovitz). A risk assessment for the Mechanics and C&S use is on 2026-11-10 |
 | Target | Everything finalized by **Friday 2026-11-20**; go-live date set then (earliest Monday 2026-11-30) |
-| Quality | 315 automated tests, all passing, including an attack test (SQL, shell and template injection in every input) |
+| Quality | 356 automated tests, all passing, including an attack test (SQL, shell and template injection in every input) |
 
 ## 3. Who uses it
 
 | Role | Who | What they can do |
 |---|---|---|
 | **Requester** | Any staff member (~300) | Send requests, follow their own, reply, mark resolved, reopen, start a follow-up |
-| **Agent** | IT staff | Everything a requester can, plus the queue, every ticket, internal notes, history, and setting status, priority, assignee and category |
-| **Admin** | IT admins | Everything an agent can, plus Reports and the admin site (categories, common requests, the password audit trail) |
+| **Agent** | IT, Mechanics or C&S staff (Entra roles `Agent`, `Agent.Mechanics`, `Agent.Cleaning`) | Everything a requester can, plus their own department's queue and tickets: internal notes, history, and setting status, priority, assignee and category within the department |
+| **Admin** | IT admins | Every department's tickets, moving a ticket between departments, removing a pasted password or file, Reports and the admin site (categories, common requests, the password audit trail) |
 
 Roles come from Microsoft 365 (Entra app roles), checked at every sign-in.
-Planned for v1.2.0: Mechanics and C&S agents with their own queues, who see
-only their department's tickets, and admins who see everything.
+An agent never sees another department's tickets or internal notes. Staff ask
+an admin to move a ticket that's in the wrong department; the admin checks
+with the other team first.
 
 ## 4. A request, start to finish
 
@@ -104,9 +105,11 @@ Every change is written to the ticket's history: who, what, when.
   it. It saves only the field you changed, so an old page never undoes
   someone else's change, and a reply you were typing is kept. Also the requester's other tickets and any linked tickets.
 
-### The IT queue
+### The queue
+- Each department's agents get their own queue; admins see every department,
+  with a department filter.
 - Views: Unassigned, Assigned to me, All open, Waiting on user, Recently
-  resolved (last 14 days), each with a count.
+  resolved (last 14 days), Archive, each with a count.
 - Search by ticket number, subject or requester; filter by category or
   priority. Urgent and high tickets are marked on the left edge.
 - On a phone, each ticket becomes a card.
@@ -138,6 +141,8 @@ Every change is written to the ticket's history: who, what, when.
 ### Automations
 - Resolved tickets close by themselves after 7 days without a reply
   (checked hourly).
+- **Closed tickets are archived:** read-only, out of the working views (there's
+  an Archive view), and kept for two years. Admins can take one back out.
 - Follow-ups: a closed ticket offers "Start a follow-up", which links the two
   tickets; email replies to closed tickets do the same.
 
@@ -197,9 +202,17 @@ A load test on 2026-11-09 (app held to 2 CPUs and 4 GB): responses averaged
 - **Privacy enforced on the server:** requesters only ever get their own
   tickets and public replies; someone else's ticket shows "Not found".
 - **Mailbox locked down:** accepts internal senders only; the app can only
-  use the help-desk mailbox.
+  use the help-desk mailbox (and each department's, once set).
+- **Fake "IT" emails:** an email claiming to be from IT is only a public reply
+  if Exchange confirmed the sender; otherwise it's an internal note.
+- **Departments kept apart:** agents see only their department's tickets and
+  notes.
+- **Shared PCs:** signed-in pages aren't kept by the browser, and signing in
+  ends when the browser closes.
 - **Passwords:** never seen at sign-in; warned about before sending; audit
-  trail without the text.
+  trail without the text; admins can remove one that was pasted, from the
+  ticket and the app's copies of sent emails.
+- **Nothing deleted:** tickets can't be deleted; closed ones are archived.
 - **Files:** always downloaded, never opened in the browser; stored under
   random names.
 - **No tracking:** only necessary cookies; not indexed by search engines.
@@ -211,14 +224,15 @@ A load test on 2026-11-09 (app held to 2 CPUs and 4 GB): responses averaged
 |---|---|
 | Tue Nov 10 | Demo, pilot starts, risk assessment for Mechanics and C&S |
 | Tue Nov 10 | v0.9.0: Reports for admins (done) |
-| After the pilot's testing | v0.9.x: pilot fixes, a tool to remove a pasted password, what happens to closed tickets |
+| Tue Nov 10 | v0.9.1: departments, the archive, the removal tool, safety fixes (done) |
+| After the pilot's testing | v0.9.x: pilot fixes |
 | Fri Nov 13 (or Mon 16) | v1.0.0: everything for IT finalized, a mailbox per department, server checks (restore drill, off-server backup) |
 | Mon–Tue Nov 16–17 | v1.1.0 (stretch): reply templates, response targets, Teams alerts |
-| Wed–Thu Nov 18–19 | v1.2.0 (stretch): own queues and roles for Mechanics and C&S |
+| Wed–Thu Nov 18–19 | v1.2.0 (stretch): more common requests and a self-fill option for Mechanics and C&S |
 | Fri Nov 20 | Go / no-go, go-live date set (earliest Mon Nov 30) |
 
 **Decisions needed:** department mailboxes (new request-only mailboxes, or a
-folder in the existing ones); what happens to closed tickets; the go-live date.
+folder in the existing ones; the app supports both); the go-live date.
 
 ## 9. Demo script (about 10 minutes)
 

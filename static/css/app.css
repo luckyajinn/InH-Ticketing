@@ -1424,6 +1424,42 @@ form.is-saving .props-hint { color: var(--accent-soft-text); font-weight: 650; }
 }
 
 /* ---------------------------------------------------------------------
+   Archive, departments and removal (v0.9.1)
+   --------------------------------------------------------------------- */
+.notice {
+  display: flex; gap: 12px; align-items: flex-start;
+  margin: 0 0 var(--sp-5);
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2); color: var(--text);
+  font-size: var(--fs-sm);
+}
+.notice > .icon { margin-top: 2px; color: var(--text-muted); }
+.notice-body { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-4); }
+.notice-body form { margin: 0; }
+.notice-move { border-color: transparent; background: var(--accent-soft); }
+.notice-move > .icon { color: var(--accent-soft-text); }
+.share-check { margin: var(--sp-3) 0 0; padding: 0 var(--sp-4); font-size: var(--fs-sm); }
+.share-check label { font-weight: 600; }
+.share-hint { margin: 2px var(--sp-4) var(--sp-3) calc(var(--sp-4) + 32px); }
+.composer .share-check.when-internal { display: none; }
+.composer:has(input[value="internal"]:checked) .share-check.when-internal { display: flex; }
+.composer .share-hint.when-internal { display: none; }
+.composer:has(input[value="internal"]:checked) .share-hint.when-internal { display: block; }
+.move-form { display: grid; gap: var(--sp-2); margin-top: var(--sp-2); }
+.move-form .check { font-size: var(--fs-sm); }
+.move-form .btn { justify-self: start; }
+.move-ask { margin-top: var(--sp-4); padding-top: var(--sp-3); border-top: 1px solid var(--border-soft); font-size: var(--fs-sm); }
+.move-ask summary { color: var(--link); font-weight: 600; cursor: pointer; }
+.input-sm { min-height: 38px; padding: 6px 12px; font-size: var(--fs-sm); }
+.remove-link { margin-left: var(--sp-2); color: var(--text-muted); font-size: var(--fs-xs); font-weight: 600; text-decoration: none; }
+.remove-link:hover { color: var(--danger); text-decoration: underline; }
+.remove-preview { margin: var(--sp-3) 0 var(--sp-5); padding: var(--sp-4); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--fs-sm); }
+.remove-files { margin: 0; padding: 0; list-style: none; }
+.remove-files li + li { margin-top: var(--sp-2); }
+
+/* ---------------------------------------------------------------------
    Reports (tickets/reports.html, admins only)
    --------------------------------------------------------------------- */
 .report-filters { margin-bottom: var(--sp-5); }

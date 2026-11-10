@@ -1,10 +1,12 @@
 """
-Read the help-desk mailbox through Microsoft Graph. Called by the worker.
+Read the help-desk mailbox, and each department's (DEPARTMENT_MAILBOXES),
+through Microsoft Graph. Called by the worker.
 
-For each unread email in the Inbox: process it, then mark it read and move
-it to the "Processed by InH-Ticketing" folder. An email that fails is left
-unread and retried, at most INBOUND_MAX_ATTEMPTS times; after that it's
-marked read but left in the Inbox for a person to look at.
+For each unread email in the Inbox (or the department's chosen folder):
+process it, then mark it read and move it to the "Processed by InH-Ticketing"
+folder. An email that fails is left unread and retried, at most
+INBOUND_MAX_ATTEMPTS times; after that it's marked read but left where it is
+for a person to look at.
 """
 
 from __future__ import annotations
@@ -26,27 +28,48 @@ FIELDS = ",".join([
     "id", "subject", "from", "receivedDateTime", "internetMessageId",
     "internetMessageHeaders", "hasAttachments", "body", "uniqueBody",
 ])
-_folder_id = None
+_folder_ids: dict[str, str] = {}  # (mailbox, folder name) -> Graph folder id, found once
 
 
-def _processed_folder() -> str:
+def _quote(name: str) -> str:
+    return name.replace("'", "''")  # OData string literal
+
+
+def _find_folder(box: str, name: str) -> str | None:
+    """A folder by its name: at the top of the mailbox, or inside the Inbox."""
+    for path in (f"{box}/mailFolders", f"{box}/mailFolders/inbox/childFolders"):
+        found = graph.call("GET", path, params={"$filter": f"displayName eq '{_quote(name)}'", "$select": "id"}).json()
+        if found.get("value"):
+            return found["value"][0]["id"]
+    return None
+
+
+def _processed_folder(box: str) -> str:
     """The id of the folder processed emails move to, created on first use."""
-    global _folder_id
-    if _folder_id:
-        return _folder_id
-    name = settings.INBOUND_PROCESSED_FOLDER
-    found = graph.call("GET", f"{graph.mailbox()}/mailFolders",
-                       params={"$filter": f"displayName eq '{name}'", "$select": "id"}).json()
-    if found.get("value"):
-        _folder_id = found["value"][0]["id"]
-    else:
-        _folder_id = graph.call("POST", f"{graph.mailbox()}/mailFolders",
-                                json={"displayName": name}, expected=(201,)).json()["id"]
-    return _folder_id
+    key = f"{box}|processed"
+    if key not in _folder_ids:
+        name = settings.INBOUND_PROCESSED_FOLDER
+        _folder_ids[key] = _find_folder(box, name) or graph.call(
+            "POST", f"{box}/mailFolders", json={"displayName": name}, expected=(201,)
+        ).json()["id"]
+    return _folder_ids[key]
 
 
-def _attachments(graph_id: str) -> list[IncomingAttachment]:
-    data = graph.call("GET", f"{graph.mailbox()}/messages/{graph_id}/attachments").json()
+def _read_folder(box: str, folder: str) -> str:
+    """The Graph path of the folder to read: the Inbox, or a department's chosen folder."""
+    if not folder:
+        return f"{box}/mailFolders/inbox"
+    key = f"{box}|{folder}"
+    if key not in _folder_ids:
+        found = _find_folder(box, folder)
+        if not found:
+            raise graph.GraphError(f"No folder called {folder!r} in {box} (DEPARTMENT_MAILBOXES).")
+        _folder_ids[key] = found
+    return f"{box}/mailFolders/{_folder_ids[key]}"
+
+
+def _attachments(box: str, graph_id: str) -> list[IncomingAttachment]:
+    data = graph.call("GET", f"{box}/messages/{graph_id}/attachments").json()
     result = []
     for item in data.get("value", []):
         if item.get("@odata.type") != "#microsoft.graph.fileAttachment":
@@ -62,7 +85,11 @@ def _attachments(graph_id: str) -> list[IncomingAttachment]:
 
 def to_message(item: dict) -> IncomingMessage:
     sender = (item.get("from") or {}).get("emailAddress") or {}
-    headers = {h["name"]: h.get("value", "") for h in item.get("internetMessageHeaders") or []}
+    # A header can appear more than once (Authentication-Results, Received): keep every value.
+    headers: dict[str, str] = {}
+    for h in item.get("internetMessageHeaders") or []:
+        name, value = h.get("name", ""), h.get("value", "")
+        headers[name] = f"{headers[name]}\n{value}" if name in headers else value
     unique = (item.get("uniqueBody") or {}).get("content")
     return IncomingMessage(
         message_id=item.get("internetMessageId") or f"graph:{item['id']}",
@@ -77,19 +104,39 @@ def to_message(item: dict) -> IncomingMessage:
     )
 
 
-def _mark_read(graph_id: str) -> None:
-    graph.call("PATCH", f"{graph.mailbox()}/messages/{graph_id}", json={"isRead": True})
+def _mark_read(box: str, graph_id: str) -> None:
+    graph.call("PATCH", f"{box}/messages/{graph_id}", json={"isRead": True})
 
 
-def _move_to_processed(graph_id: str) -> None:
-    graph.call("POST", f"{graph.mailbox()}/messages/{graph_id}/move",
-               json={"destinationId": _processed_folder()}, expected=(200, 201))
+def _move_to_processed(box: str, graph_id: str) -> None:
+    graph.call("POST", f"{box}/messages/{graph_id}/move",
+               json={"destinationId": _processed_folder(box)}, expected=(200, 201))
 
 
 def poll(limit: int = 25) -> tuple[int, int]:
-    """Process up to `limit` unread emails. Returns (handled, failed)."""
+    """Process up to `limit` unread emails from each mailbox. Returns (handled, failed)."""
+    handled = failed = 0
+    errors = []
+    boxes = graph.mailboxes()
+    for department, address, folder in boxes:
+        try:
+            done, broken = poll_mailbox(department, address, folder, limit)
+        except graph.GraphError as exc:
+            # One mailbox not set up yet (permissions, a folder name) mustn't stop the others.
+            logger.error("Couldn't read %s: %s", address, exc)
+            errors.append(exc)
+            continue
+        handled += done
+        failed += broken
+    if errors and len(errors) == len(boxes):
+        raise errors[0]  # none could be read: the worker says so
+    return handled, failed + len(errors)
+
+
+def poll_mailbox(department: str, address: str, folder: str, limit: int = 25) -> tuple[int, int]:
+    box = graph.mailbox(address)
     items = graph.call(
-        "GET", f"{graph.mailbox()}/mailFolders/inbox/messages", headers=TEXT,
+        "GET", f"{_read_folder(box, folder)}/messages", headers=TEXT,
         params={"$filter": "isRead eq false", "$top": str(limit), "$select": FIELDS},
     ).json().get("value", [])
     items.sort(key=lambda i: i.get("receivedDateTime") or "")  # oldest first
@@ -97,18 +144,19 @@ def poll(limit: int = 25) -> tuple[int, int]:
     handled = failed = 0
     for item in items:
         message = to_message(item)
+        message.department = department
         try:
             if item.get("hasAttachments"):
-                message.attachments = _attachments(item["id"])
+                message.attachments = _attachments(box, item["id"])
             result = process(message)
         except Exception as exc:
             failed += 1
             row = record_error(message, exc)
             if row.attempts >= settings.INBOUND_MAX_ATTEMPTS:
-                _mark_read(item["id"])  # stop retrying; a person needs to look at it
+                _mark_read(box, item["id"])  # stop retrying; a person needs to look at it
             continue
         handled += 1
-        _mark_read(item["id"])
-        _move_to_processed(item["id"])
-        logger.info("Email from %s: %s %s", message.from_address, result.outcome, result.detail)
+        _mark_read(box, item["id"])
+        _move_to_processed(box, item["id"])
+        logger.info("Email to %s from %s: %s %s", address, message.from_address, result.outcome, result.detail)
     return handled, failed

@@ -235,11 +235,62 @@ Restart the worker. It should print `Email-in: reading helpdesk-test@… every 6
 Email the test mailbox from your own account: within a minute it shows up in the
 queue, and you get a receipt.
 
+### 4d. A mailbox per department (optional)
+
+Mechanics and Cleaning & sanitization can have their own mailbox. Email to it
+becomes a ticket for that department, and that department's tickets are
+emailed from it, so replies come back to the right team. Replies are matched
+by the `[#1042]` in the subject, whichever mailbox they land in.
+
+Email-in takes over what it reads: every unread email becomes a ticket, is
+marked read and moves to "Processed by InH-Ticketing". So either:
+
+- **A new, request-only mailbox** for the department (it reads the Inbox), or
+- **The department's existing mailbox, with an Outlook rule** that files
+  requests into a folder (say "Requests"), and the app reads only that
+  folder, at the top of the mailbox or inside the Inbox. The team's everyday
+  email stays where it is.
+
+In `.env` (a `/` and a folder name for the second option):
+
+```
+DEPARTMENT_MAILBOXES=mechanics=mechanics-requests@mckennalabs.com, cleaning=cs@mckennalabs.com/Requests
+```
+
+In Exchange, add each mailbox to the app's scope. That's the same management
+scope as in sections 3c and 4b, with every address in the filter:
+
+```powershell
+Set-ManagementScope -Identity "InH-Ticketing test mailbox" `
+  -RecipientRestrictionFilter "PrimarySmtpAddress -eq 'helpdesk-test@mckennalabs.com' -or PrimarySmtpAddress -eq 'mechanics-requests@mckennalabs.com' -or PrimarySmtpAddress -eq 'cs@mckennalabs.com'"
+
+# InScope True for each department mailbox, False for anyone else
+Test-ServicePrincipalAuthorization -Identity $appId -Resource "mechanics-requests@mckennalabs.com"
+Test-ServicePrincipalAuthorization -Identity $appId -Resource "someone.else@mckennalabs.com"
+```
+
+Also set each mailbox to accept internal senders only, as for the help-desk
+mailbox, and file the `Test-ServicePrincipalAuthorization` output with the
+risk assessment. The worker prints every mailbox it reads when it starts. If
+one isn't set up yet, the others still work and the log says which one failed.
+
+New-request alerts for a department go to its address in
+`DEPARTMENT_NOTIFY_EMAILS` (a team list, never one of these mailboxes), or to
+each of its agents if it has none.
+
 ### Things to know
 
 - **Sender addresses can be forged.** The domain check relies on Exchange's
   spam and spoofing protection: SPF, DKIM and DMARC on your domain. IT should
   confirm DMARC is enforced before email-in is used for anything sensitive.
+- **An email that claims to be from IT** only becomes a public reply when
+  Exchange confirmed the sender: sent inside the organisation (Exchange marks
+  it `X-MS-Exchange-Organization-AuthAs: Internal` and strips that header
+  from outside email), or `dmarc=pass` / `compauth=pass` in
+  `Authentication-Results`. Otherwise it's kept as an internal note, marked as
+  unconfirmed, and the requester never sees it. If IT's genuine replies by email
+  start arriving as notes, check those headers on one; `INBOUND_VERIFY_IT_SENDERS=false`
+  turns the check off.
 - **IT replying by email sends a public reply.** The footer of every IT email
   says so. For an internal note, use the ticket page.
 - **Only the test mailbox.** Pointing this at the live help-desk mailbox turns

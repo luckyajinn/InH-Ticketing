@@ -5,8 +5,9 @@ from tickets.models import Attachment, Category, Comment, PasswordWarning, Ticke
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ["name", "hint", "is_active", "sort_order"]
+    list_display = ["name", "department", "hint", "is_active", "sort_order"]
     list_editable = ["hint", "is_active", "sort_order"]
+    list_filter = ["department"]
     ordering = ["sort_order", "name"]
 
     def has_delete_permission(self, request, obj=None):
@@ -52,7 +53,7 @@ class TicketAdmin(admin.ModelAdmin):
     """
 
     list_display = ["number", "subject", "status", "priority", "requester", "assignee", "category", "created_at"]
-    list_filter = ["status", "priority", "category", "source"]
+    list_filter = ["status", "category__department", "priority", "category", "source", "archived_at"]
     search_fields = ["subject", "requester__display_name", "requester__email"]
     list_select_related = ["requester", "assignee", "category"]
     date_hierarchy = "created_at"
@@ -62,6 +63,10 @@ class TicketAdmin(admin.ModelAdmin):
         return False
 
     def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        # The usage rules: never delete a ticket. Closed tickets are archived instead.
         return False
 
     @admin.display(description="#", ordering="pk")

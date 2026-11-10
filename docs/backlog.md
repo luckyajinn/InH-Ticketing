@@ -47,13 +47,16 @@ Before the pilot (by 2026-11-30):
       the output with the risk assessment.)*
 
 Before go-live (by 2027-01-11):
-- [ ] Admin tool to remove a pasted password or file from a ticket, with the
-      removal itself logged. *Planned for v0.7.0 (see below).*
+- [x] Admin tool to remove a pasted password or file from a ticket, with the
+      removal itself logged. *(v0.9.1.)*
 - [x] Decide how long tickets are kept. *Decided 2026-11-09: a resolved ticket
       closes automatically after 7 days (already built in v0.5.0,
       `AUTO_CLOSE_RESOLVED_DAYS=7`).*
-- [ ] *(To decide)* What happens to closed tickets after that: move them to a
-      backup, or an alternative still to be chosen.
+- [x] What happens to closed tickets after that. *Decided 2026-11-10:
+      archived (read-only, out of the working views) for two years, then
+      deleted. Archiving is built (v0.9.1).*
+  - [ ] Delete archived tickets when their two years are up (`ARCHIVE_KEEP_DAYS`).
+        Reports' trends lose them then: keep monthly totals first.
 - [x] ~~Quarterly review of who holds the Agent and Admin roles.~~ *Not needed (decided 2026-11-09).*
 - [ ] Monthly check of dependencies for security updates.
 - [ ] Off-server backup copy and one tested restore (also under v0.6.0).
@@ -157,16 +160,16 @@ deployment) and an attack test, all on 2026-11-10.
 
 Still from the review, before v1.0.0:
 
-- [ ] **Email spoofing:** an email that only *claims* to be from IT becomes
-      a public IT reply. Check `Authentication-Results` (`dmarc=pass` or
-      `compauth=pass`), and keep anything else as an internal note. Also
-      send one spoofed test email to the pilot mailbox to confirm Exchange
-      junks it.
-- [ ] **Shared PCs:** mark signed-in pages and downloads `Cache-Control:
-      private, no-store`, and end the sign-in when the browser closes.
-- [ ] **Start-up order:** the worker should wait for the web container's
-      database updates (`depends_on: web: condition: service_healthy`).
-- [ ] The web manifest's content type (`application/manifest+json`).
+- [x] **Email spoofing:** an email that only *claims* to be from IT becomes
+      a public IT reply. *(v0.9.1: it needs `AuthAs: Internal`, `dmarc=pass`
+      or `compauth=pass`, or it's kept as an internal note.)*
+  - [ ] Send one spoofed test email to the pilot mailbox to confirm Exchange
+        junks it, and check one genuine IT reply by email still arrives as a reply.
+- [x] **Shared PCs:** signed-in pages and downloads `Cache-Control: private,
+      no-store`, and the sign-in ends when the browser closes. *(v0.9.1.)*
+- [x] **Start-up order:** the worker waits for the web container
+      (`condition: service_healthy`). *(v0.9.1.)*
+- [x] The web manifest's content type (`application/manifest+json`). *(v0.9.1.)*
 - [ ] *(Later)* A Content-Security-Policy header; password hints that never
       show an earlier password; matching first sign-ins on
       `preferred_username`; a length limit on descriptions and replies;
@@ -184,6 +187,16 @@ Still from the review, before v1.0.0:
 - [x] Reports for admins (`/reports/`), built early from v1.1.0: see v1.1.0's
       Reporting item below and [releases/v0.9.0.md](releases/v0.9.0.md).
 
+## v0.9.1 (released 2026-11-10: before go-live)
+
+- [x] Departments: Mechanics and C&S see and work their own tickets; only
+      admins move tickets between departments; notes stay with their department.
+- [x] Closed tickets are archived for two years.
+- [x] The removal tool for a pasted password or file.
+- [x] Fake "IT" emails, shared PCs, no ticket deletes, the start-up order,
+      the manifest type, the privacy page.
+- [x] A mailbox per department, ready to switch on.
+
 ## v0.9.x (pilot fixes, after the pilot's testing)
 
 Paused until the pilot's testing is done (2026-11-10).
@@ -192,17 +205,18 @@ Filled from the pilot, which starts 2026-11-10. Report what you find as a
 ticket, subject starting "Pilot:", so it's tracked in the app itself.
 
 - [ ] Fixes for everything the pilot breaks (see [pilot-testing.md](pilot-testing.md)).
-- [ ] **Remove a pasted password or file from a ticket.** An admin tool to take
+- [x] **Remove a pasted password or file from a ticket.** *(v0.9.1.)* An admin tool to take
       out a password someone pasted into a message, or a file they attached.
       The removal itself is recorded in the ticket's history (who, when, and
       what kind of thing was removed, never the removed content). *(A
       compliance item, needed before go-live. The audit trail already links
       each warning to its message, so it can start there.)*
-- [ ] *(To decide)* What happens to closed tickets (see Compliance above).
+- [x] What happens to closed tickets: archived for two years (see Compliance above). *(v0.9.1.)*
 
 ## v1.0.0 (everything for IT finalized, by 2026-11-13 or 11-16)
 
-- [ ] **A mailbox per department** *(required before v1.0.0, decided
+- [x] **A mailbox per department** *(built in v0.9.1, `DEPARTMENT_MAILBOXES`;
+      switched on once the addresses are decided. Required before v1.0.0, decided
       2026-11-09)*. Mechanics and Cleaning & sanitization already have shared
       mailboxes; IT uses the help-desk mailbox. Email to a department's
       mailbox becomes a ticket in that department's category (no admin move
@@ -210,6 +224,8 @@ ticket, subject starting "Pilot:", so it's tracked in the app itself.
       replies come back to the right team. Set as a list of mailbox and
       department pairs in `.env`. *(2026-11-10: no confirmation yet of a
       shared mailbox for each department; waiting on the CFO meeting.)*
+  - [ ] Set `DEPARTMENT_MAILBOXES` and do the Exchange steps (email-setup.md, 4d)
+        once the CFO decides.
   - **Watch out:** email-in takes over a mailbox's Inbox. It turns every
     unread email into a ticket, sends the sender a receipt, marks it read and
     moves it to "Processed by InH-Ticketing". On a mailbox a department
@@ -222,18 +238,15 @@ ticket, subject starting "Pilot:", so it's tracked in the app itself.
     ([email-setup.md](email-setup.md) 3c and 4b), set internal senders only,
     and record `Test-ServicePrincipalAuthorization` for it.
 - [ ] From the reports research (2026-11-10):
-  - [ ] Admins can hard-delete a ticket and its history in the admin site,
-        against the usage rules ("never delete it"): turn off delete for
-        tickets, as categories and the password audit trail already are.
-  - [ ] The closed-ticket decision (v0.9.x) must keep a closed ticket's row
-        and history, with the content stripped if needed, or the reports
-        lose their trends.
+  - [x] Admins can hard-delete a ticket and its history in the admin site,
+        against the usage rules ("never delete it"). *(Turned off in v0.9.1.)*
+  - [x] The closed-ticket decision keeps a closed ticket's row and history
+        (archived), so Reports keeps its trends. *(v0.9.1.)*
   - [ ] A worker heartbeat (last round, last inbox read, last auto-close),
         so Reports can say for sure that the worker is running. Today it
         infers it from emails waiting to be sent.
-  - [ ] Usage and privacy page: say that ignored emails are logged with
-        their sender and subject, and that the emails the app sends are
-        kept.
+  - [x] Usage and privacy page: ignored emails are logged with their sender
+        and subject, and the emails the app sends are kept. *(v0.9.1.)*
 - [ ] Everything in v0.9.x, plus the server and Microsoft 365 tasks in the
       roadmap's "Your side" list (restore drill, the server's own Entra
       secret, the permission-check record, DMARC, an off-server backup).
@@ -256,7 +269,8 @@ ticket, subject starting "Pilot:", so it's tracked in the app itself.
 
 ## v1.2.0 (stretch: the other teams, by 2026-11-19)
 
-- [ ] **Own queue and role for Mechanics and for Cleaning & sanitization.**
+- [x] **Own queue and role for Mechanics and for Cleaning & sanitization.**
+      *(Built early, in v0.9.1, as decided below.)*
       Today their tickets land in the IT queue (filter by category) and only
       IT can reply. Each team gets its own queue and an Entra app role, and
       doesn't see IT's tickets or internal notes.

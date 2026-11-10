@@ -20,6 +20,10 @@ urlpatterns = [
     path("queue/", views.queue, name="queue"),
     path("tickets/<int:number>/update/", views.update_properties, name="update"),
     path("tickets/<int:number>/assign-to-me/", views.assign_to_me, name="assign_to_me"),
+    path("tickets/<int:number>/ask-to-move/", views.ask_to_move, name="ask_to_move"),
+    path("tickets/<int:number>/move/", views.move_ticket, name="move"),
+    path("tickets/<int:number>/unarchive/", views.unarchive, name="unarchive"),
+    path("tickets/<int:number>/remove/", views.remove_content, name="remove"),
     # Admins
     path("reports/", views.reports_page, name="reports"),
     path("reports/requests.csv", views.reports_csv, name="reports_csv"),

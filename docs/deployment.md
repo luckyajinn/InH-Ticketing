@@ -378,6 +378,11 @@ ls -l .env      # -rw------- 1 inhadmin inhadmin ...
 | `HELP_CONTACT` | How to reach IT, e.g. `"Call IT on ext. 1234, or post in IT Help in Teams."` | Shown under "Can't sign in?" and on error pages. Blank shows "Email IT at" the mailbox above, which is the test mailbox during the pilot. Quote it if it contains `#`, or everything after the `#` is dropped |
 | `REPORTS_FROM` | The go-live date, e.g. `2026-11-30` (blank until then) | Reports (`/reports/`, admins only) count tickets from this date, so pilot and test tickets don't skew them. Tickets whose subject starts with "Pilot:" are always left out |
 | `INBOUND_EMAIL` | `graph` | Read the mailbox |
+| `DEPARTMENT_MAILBOXES` | Blank until the department mailboxes are decided | e.g. `mechanics=mechanics-requests@mckennalabs.com, cleaning=cs@mckennalabs.com/Requests`. Each needs the Exchange steps in [email-setup.md](email-setup.md), 4d |
+| `DEPARTMENT_NOTIFY_EMAILS` | Optional | Where Mechanics' and C&S's new-request alerts go; blank sends them to each of that department's agents |
+| `ENTRA_ROLE_AGENT_MECHANICS`, `ENTRA_ROLE_AGENT_CLEANING` | Leave out (defaults `Agent.Mechanics`, `Agent.Cleaning`) | Only if the app roles in Entra use other values |
+| `ARCHIVE_KEEP_DAYS` | Leave out (default 730, two years) | How long an archived ticket is kept; shown on the ticket |
+| `INBOUND_VERIFY_IT_SENDERS` | Leave out (default on) | Emails that only claim to be from IT become internal notes |
 
 Things to know:
 
@@ -634,6 +639,13 @@ Now and then, clear out old images: `docker image prune -f`.
   notes at the end of section 9 about emails. Always finish with `up -d
   --build` as above: plain `up -d` would start the new version's images on
   the restored database, and they would re-apply the new migrations.
+- **From v0.9.1 back to v0.9.0:** v0.9.1 adds migrations `tickets` 0007 and
+  `accounts` 0002 (departments and the archive). Restore the backup taken
+  before the update, with v0.9.0 checked out, as above. Or, to keep the
+  tickets made since, undo them first, then check out and rebuild:
+  `docker compose -f compose.yaml -f compose.prod.yaml exec web python manage.py migrate tickets 0006`,
+  then the same with `migrate accounts 0001`. That drops each category's
+  department, the archive dates and which department each note belongs to.
 - **From v0.8.4 back to v0.8.3:** v0.8.4's only migration, `tickets` 0006,
   rewords a help text and changes nothing in the database. Check out
   `v0.8.3` and rebuild, as for no database changes; no restore needed.

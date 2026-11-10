@@ -39,19 +39,29 @@ When you're done, you'll have four values for `.env`:
 
 ## 3. Define the app roles
 
-**App roles → Create app role**, three times:
+**App roles → Create app role**, once for each:
 
 | Display name | Allowed member types | Value | Description |
 |---|---|---|---|
 | Requester | Users/Groups | `Requester` | Can submit and follow their own tickets |
-| Agent | Users/Groups | `Agent` | IT staff who work tickets |
-| Admin | Users/Groups | `Admin` | Agents who can also use the admin site |
+| Agent | Users/Groups | `Agent` | IT staff who work IT's tickets |
+| Mechanics Agent | Users/Groups | `Agent.Mechanics` | Mechanics staff who work Mechanics' tickets |
+| C&S Agent | Users/Groups | `Agent.Cleaning` | Cleaning & sanitization staff who work their tickets |
+| Admin | Users/Groups | `Admin` | Sees and works every department's tickets, moves tickets between departments, Reports and the admin site |
 
 Leave **Do you want to enable this app role?** ticked for each.
 
 The **Value** is what appears in the sign-in token and is what the app checks.
-If you use different values, set `ENTRA_ROLE_AGENT` and `ENTRA_ROLE_ADMIN` to match.
-Anyone with neither Agent nor Admin is treated as a Requester.
+If you use different values, set `ENTRA_ROLE_AGENT`, `ENTRA_ROLE_AGENT_MECHANICS`,
+`ENTRA_ROLE_AGENT_CLEANING` and `ENTRA_ROLE_ADMIN` to match. Anyone with none of
+them is treated as a Requester.
+
+**Departments.** An agent sees and works only their own department's tickets
+(each category belongs to a department, set in the admin site); an admin works
+them all. Give the Mechanics and C&S groups their own role. **Never give them
+the plain `Agent` role**, which is IT's. Someone with two agent roles works
+for the first of IT, Mechanics, Cleaning & sanitization. A role change applies
+at the person's next sign-in.
 
 ## 4. Grant consent (optional, avoids a prompt)
 

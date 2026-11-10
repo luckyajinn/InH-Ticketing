@@ -22,6 +22,7 @@ from django.conf import settings
 from django.db import transaction
 
 from accounts.models import User
+from core.departments import Department
 
 logger = logging.getLogger(__name__)
 
@@ -130,14 +131,31 @@ def finish_flow(flow: dict, auth_response: dict) -> dict:
     return claims
 
 
+def _agent_roles() -> list[tuple[str, str]]:
+    """Entra role value -> department, in order of precedence (IT first)."""
+    return [
+        (settings.ENTRA_ROLE_AGENT, Department.IT),
+        (settings.ENTRA_ROLE_AGENT_MECHANICS, Department.MECHANICS),
+        (settings.ENTRA_ROLE_AGENT_CLEANING, Department.CLEANING),
+    ]
+
+
 def role_from_claims(roles: list[str] | None) -> str:
     """Map Entra app role values to our roles. The highest one wins."""
     roles = set(roles or [])
     if settings.ENTRA_ROLE_ADMIN in roles:
         return User.Role.ADMIN
-    if settings.ENTRA_ROLE_AGENT in roles:
+    if any(value in roles for value, _ in _agent_roles()):
         return User.Role.AGENT
     return User.Role.REQUESTER
+
+
+def department_from_claims(roles: list[str] | None) -> str:
+    """The department an agent works for. Admins work for all of them, so blank."""
+    roles = set(roles or [])
+    if settings.ENTRA_ROLE_ADMIN in roles:
+        return ""
+    return next((department for value, department in _agent_roles() if value in roles), "")
 
 
 @transaction.atomic
@@ -147,6 +165,7 @@ def sync_user(claims: dict) -> User:
     email = (claims.get("email") or claims.get("preferred_username") or "").strip()
     name = (claims.get("name") or "").strip()
     role = role_from_claims(claims.get("roles"))
+    department = department_from_claims(claims.get("roles"))
 
     user = User.objects.select_for_update().filter(entra_oid=oid).first()
     if user is None and email:
@@ -167,6 +186,7 @@ def sync_user(claims: dict) -> User:
     user.email = email
     user.display_name = name or email
     user.role = role
+    user.department = department
     # Admins get the Django admin site. Recomputed every sign-in, so removing
     # the Admin role in Entra removes admin access next time they sign in.
     user.is_staff = role == User.Role.ADMIN

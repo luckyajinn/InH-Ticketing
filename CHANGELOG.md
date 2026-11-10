@@ -3,6 +3,53 @@
 All notable changes to InH-Ticketing. Versions follow [Semantic Versioning](https://semver.org).
 Each version also has illustrated release notes in [docs/releases](docs/releases/README.md).
 
+## [0.9.1] - 2026-11-10
+
+Before go-live: departments, the archive, removing passwords, and the safety
+fixes from the reviews. [Release notes](docs/releases/v0.9.1.md).
+
+### Added
+- **Departments.** Each category belongs to IT, Mechanics or Cleaning &
+  sanitization. The Entra roles `Agent.Mechanics` and `Agent.Cleaning` give
+  staff their department.
+  - **Agents see and work only their department's tickets:** the queue, search,
+    other tickets from the requester, linked tickets and files; anything else
+    shows Not found.
+  - **Admins see all of them,** with a department filter.
+  - **Assignees and categories stay within the department.** Only an admin
+    moves a ticket to another department, once that department has agreed;
+    staff ask from the ticket ("Wrong department?"), and admins are emailed.
+  - **Internal notes stay with their department** unless marked "Share with
+    the new department if this ticket moves".
+  - **New-request alerts go to the department:** `DEPARTMENT_NOTIFY_EMAILS`,
+    or else each of its agents.
+- **The archive.** Closing a ticket archives it: read-only, out of the working
+  views, kept for `ARCHIVE_KEEP_DAYS` (730). There's a new Archive view in the
+  queue, and admins can take a ticket out of the archive. Tickets already
+  closed are archived on upgrade.
+- **Removing a pasted password or file** (admins): from the subject, the
+  request or any message, also taken out of the app's copies of sent emails.
+  The history records the removal, never the content.
+- **A mailbox per department** (`DEPARTMENT_MAILBOXES`), reading the Inbox or
+  a chosen folder. That department's tickets are emailed from it.
+
+### Fixed
+- **Fake "IT" emails:** an email that claims to be from IT is a public reply
+  only if Exchange confirmed the sender (`AuthAs: Internal`, DMARC or
+  compauth pass); otherwise it's an internal note (`INBOUND_VERIFY_IT_SENDERS`).
+- **Shared PCs:** signed-in pages and downloads are `Cache-Control: private,
+  no-store`, and signing in ends when the browser closes (12 hours at most).
+- **Tickets can't be deleted** in the admin site.
+- **Start-up order:** the worker waits for the web container to be healthy.
+- **The web manifest** is served as `application/manifest+json`.
+- **Usage and privacy page:** ignored emails, kept copies of sent emails, who
+  sees what by team, the archive, and how long signing in lasts.
+
+### Upgrading
+- Migrations `tickets` 0007 and `accounts` 0002. Create the Entra roles first
+  (entra-setup.md, section 3). Mechanics and C&S tickets leave IT agents'
+  queues.
+
 ## [0.9.0] - 2026-11-10
 
 Reports for admins, built early from v1.1.0. [Release notes](docs/releases/v0.9.0.md).
@@ -370,6 +417,7 @@ Milestone 1: skeleton and Microsoft 365 sign-in. [Release notes with screenshots
 - `/healthz` endpoint, Dockerfile and Docker Compose with PostgreSQL 17.
 - Entra setup guide (`docs/entra-setup.md`) and the UI mockup (`mockups/`).
 
+[0.9.1]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.9.1
 [0.9.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.9.0
 [0.8.4]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.8.4
 [0.8.3]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.8.3

@@ -4,11 +4,17 @@ transaction as the ticket change, so an email is only queued if the change saved
 
     Event                         Goes to
     ----------------------------  ---------------------------------------------
-    Request submitted             the requester (receipt) + IT_NOTIFY_EMAIL
-    IT posts a public reply       the requester
-    Requester replies / reopens   the assignee, or IT_NOTIFY_EMAIL if unassigned
+    Request submitted             the requester (receipt) + the department's alerts
+    Staff post a public reply     the requester
+    Requester replies / reopens   the assignee, or the department's alerts if unassigned
     Ticket assigned               the new assignee (unless they assigned themselves)
-    IT resolves the ticket        the requester
+    Staff resolve the ticket      the requester
+    Staff ask for a move          every admin
+    An admin moves the ticket     the new department's alerts
+
+The department's alerts: IT_NOTIFY_EMAIL for IT. For Mechanics and Cleaning &
+sanitization, their address in DEPARTMENT_NOTIFY_EMAILS, or else each of that
+department's agents.
 
 Rules that always apply:
   * Internal notes never trigger an email, and never appear in one.
@@ -23,6 +29,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.formats import date_format
 
+from core.departments import Department
 from notifications.models import OutboundEmail
 
 
@@ -81,14 +88,37 @@ def _queue(*, kind, ticket, to, heading, intro, reason, message=None, message_au
     )
 
 
-def _it_recipient(ticket, actor) -> str:
-    """The assignee if there is one, otherwise the IT alert address."""
+def department_alerts(ticket) -> list[str]:
+    """Where a department's new-request and unassigned alerts go."""
+    from accounts.models import User  # notify is imported by the ticket models' services
+
+    department = ticket.department
+    if department == Department.IT:
+        return [settings.IT_NOTIFY_EMAIL] if settings.IT_NOTIFY_EMAIL else []
+    address = settings.DEPARTMENT_NOTIFY_EMAILS.get(department)
+    if address:
+        return [address]
+    agents = User.objects.filter(role=User.Role.AGENT, department=department, is_active=True).exclude(email="")
+    return sorted({agent.email for agent in agents})
+
+
+def _alerts_reason(ticket) -> str:
+    return f"this address gets {ticket.department_label}'s alerts"
+
+
+def _staff_recipients(ticket, actor) -> list[str]:
+    """The assignee if there is one, otherwise the department's alerts."""
     if ticket.assignee_id:
         assignee = ticket.assignee
         if _reachable(assignee) and assignee.pk != actor.pk:
-            return assignee.email
-        return ""
-    return settings.IT_NOTIFY_EMAIL
+            return [assignee.email]
+        return []
+    return department_alerts(ticket)
+
+
+def _queue_each(addresses, **kwargs):
+    for address in addresses:
+        _queue(to=address, **kwargs)
 
 
 def request_received(ticket) -> None:
@@ -101,12 +131,13 @@ def request_received(ticket) -> None:
             message=ticket.description, message_author="You wrote",
             reason="you raised this request",
         )
-    _queue(
-        kind="new_ticket", ticket=ticket, to=settings.IT_NOTIFY_EMAIL, audience="it",
+    _queue_each(
+        department_alerts(ticket),
+        kind="new_ticket", ticket=ticket, audience="it",
         heading=f"New request from {requester}",
         intro=f"{ticket.category} · {'blocking their work' if ticket.is_blocking else 'not marked as blocking'}",
         message=ticket.description, message_author=f"{requester} wrote",
-        action="Open the ticket", reason="this address gets IT's new-request alerts",
+        action="Open the ticket", reason=f"this address gets {ticket.department_label}'s new-request alerts",
     )
 
 
@@ -116,19 +147,19 @@ def comment_added(comment) -> None:
     ticket, author = comment.ticket, comment.author
 
     if author.pk == ticket.requester_id:
-        to = _it_recipient(ticket, author)
-        _queue(
-            kind="requester_replied", ticket=ticket, to=to, audience="it",
+        _queue_each(
+            _staff_recipients(ticket, author),
+            kind="requester_replied", ticket=ticket, audience="it",
             heading=f"{author} replied",
             intro=f"New reply on #{ticket.number}, now {ticket.get_status_display()}.",
             message=comment.body, message_author=f"{author} wrote",
             action="Open the ticket",
-            reason="you're assigned to this ticket" if ticket.assignee_id else "this address gets IT's alerts",
+            reason="you're assigned to this ticket" if ticket.assignee_id else _alerts_reason(ticket),
         )
         return
 
     requester = ticket.requester
-    if author.is_agent and _reachable(requester):
+    if author.works_on(ticket) and _reachable(requester):
         if ticket.status == "waiting":
             intro = f"{author} is waiting for your reply."
         elif ticket.status == "resolved":
@@ -148,16 +179,19 @@ def comment_added(comment) -> None:
         )
 
 
-def third_party_email(comment) -> None:
-    """An email from someone other than the requester, saved as an internal note."""
+def third_party_email(comment, unconfirmed: bool = False) -> None:
+    """An email from someone other than the requester (or not confirmed as IT's), saved as an internal note."""
     ticket, sender = comment.ticket, comment.author
-    _queue(
-        kind="third_party_email", ticket=ticket, to=_it_recipient(ticket, sender), audience="it",
+    why = (f"It says it's from {sender}, but Exchange couldn't confirm that" if unconfirmed
+           else f"{sender} isn't the requester")
+    _queue_each(
+        _staff_recipients(ticket, sender),
+        kind="third_party_email", ticket=ticket, audience="it",
         heading=f"Email from {sender} on #{ticket.number}",
-        intro=f"{sender} isn't the requester, so it was saved as an internal note. {ticket.requester} can't see it.",
+        intro=f"{why}, so it was saved as an internal note. {ticket.requester} can't see it.",
         message=comment.body, message_author=f"{sender} wrote",
         action="Open the ticket",
-        reason="you're assigned to this ticket" if ticket.assignee_id else "this address gets IT's alerts",
+        reason="you're assigned to this ticket" if ticket.assignee_id else _alerts_reason(ticket),
     )
 
 
@@ -191,10 +225,39 @@ def resolved(ticket, actor) -> None:
 
 
 def reopened(ticket, actor) -> None:
-    _queue(
-        kind="reopened", ticket=ticket, to=_it_recipient(ticket, actor), audience="it",
+    _queue_each(
+        _staff_recipients(ticket, actor),
+        kind="reopened", ticket=ticket, audience="it",
         heading=f"{actor} reopened #{ticket.number}",
         intro="They say it's still a problem.",
         action="Open the ticket",
-        reason="you're assigned to this ticket" if ticket.assignee_id else "this address gets IT's alerts",
+        reason="you're assigned to this ticket" if ticket.assignee_id else _alerts_reason(ticket),
+    )
+
+
+def move_requested(ticket, actor, department_label: str, reason: str) -> None:
+    """Staff asked for a ticket to be moved: every admin hears, since only admins move tickets."""
+    from accounts.models import User
+
+    admins = User.objects.filter(role=User.Role.ADMIN, is_active=True).exclude(email="").exclude(pk=actor.pk)
+    _queue_each(
+        sorted({a.email for a in admins}),
+        kind="move_requested", ticket=ticket, audience="it",
+        heading=f"{actor} asked to move #{ticket.number} to {department_label}",
+        intro=(f"It's with {ticket.department_label} now. Check with {department_label} that they'll take it, "
+               "then move it from the ticket page."),
+        message=reason or None, message_author=f"{actor} wrote" if reason else None,
+        action="Open the ticket", reason="you're an admin, and only admins move tickets",
+    )
+
+
+def moved(ticket, actor, old_department_label: str) -> None:
+    """An admin moved a ticket to another department: tell its new department."""
+    _queue_each(
+        department_alerts(ticket),
+        kind="moved", ticket=ticket, audience="it",
+        heading=f"#{ticket.number} moved to {ticket.department_label}",
+        intro=f"{actor} moved it from {old_department_label}. From {ticket.requester} · {ticket.category}",
+        message=ticket.description, message_author=f"{ticket.requester} wrote",
+        action="Open the ticket", reason=f"this address gets {ticket.department_label}'s alerts",
     )

@@ -4,6 +4,7 @@ One page per version, each with screenshots of what changed. Newest first.
 
 | Version | What | Notes |
 |---|---|---|
+| v0.9.1 | Before go-live: departments, the archive, removing passwords, safety fixes | [v0.9.1.md](v0.9.1.md) |
 | v0.9.0 | Reports for admins: per team, never per person | [v0.9.0.md](v0.9.0.md) |
 | v0.8.4 | The admin in the app's look, and common requests as the subject | [v0.8.4.md](v0.8.4.md) |
 | v0.8.3 | Pre-pilot fixes: side panel, unsent replies, password check, signatures, odd characters | [v0.8.3.md](v0.8.3.md) |

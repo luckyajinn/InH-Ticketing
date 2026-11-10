@@ -3,7 +3,7 @@
 An in-house IT help desk for McKenna Labs. Staff send IT a request; IT works
 it through to resolution. People sign in with their Microsoft 365 work account.
 
-**Status:** v0.9.0: Reports for admins, on top of v0.8.4's admin look and common requests as the subject, v0.8.3's fixes from the pre-pilot review, and v0.8.2's basics (a new Not found page, a help contact, no double-sent requests, a usage and privacy page, a favicon), v0.8.0's Mechanics and Cleaning & sanitization requests and v0.7.0's new look, password check and folded email signatures. Live on the internal server; the pilot starts 2026-11-10, and the target is to have everything finalized by Friday 2026-11-20 (see [docs/roadmap.md](docs/roadmap.md)). This is a test build, approved for internal setup.
+**Status:** v0.9.1: departments (Mechanics and C&S work their own tickets), the archive for closed tickets, removing a pasted password, and the safety fixes from the reviews, on top of v0.9.0's Reports for admins, v0.8.4's admin look and common requests as the subject, v0.8.3's fixes from the pre-pilot review, and v0.8.2's basics (a new Not found page, a help contact, no double-sent requests, a usage and privacy page, a favicon), v0.8.0's Mechanics and Cleaning & sanitization requests and v0.7.0's new look, password check and folded email signatures. Live on the internal server; the pilot starts 2026-11-10, and the target is to have everything finalized by Friday 2026-11-20 (see [docs/roadmap.md](docs/roadmap.md)). This is a test build, approved for internal setup.
 See the [release notes with screenshots](docs/releases/README.md) for how it looks and what changed in each version.
 
 ## What works today
@@ -28,8 +28,14 @@ See the [release notes with screenshots](docs/releases/README.md) for how it loo
   `tickets/password_guard.py`.
 - **Privacy:** requesters are never sent internal notes, files on internal
   notes, or the history log. This is filtered on the server, not hidden in the browser.
-- **Other teams:** Mechanics and Cleaning & sanitization requests use the same
-  form. Their tickets land in the IT queue for now (filter by category).
+- **Departments:** Mechanics and Cleaning & sanitization requests use the same
+  form. Each team's staff (Entra roles `Agent`, `Agent.Mechanics`,
+  `Agent.Cleaning`) see and work only their own tickets; admins see them all
+  and are the only ones who move a ticket between departments. Internal notes
+  stay with their department.
+- **The archive:** closing a ticket archives it, read-only, for two years.
+- **Removing a pasted password or file** (admins), from the ticket and the
+  app's copies of the emails it sent.
 - **Common requests:** quick picks on the New request form. A picked one
   becomes the subject (the subject box greys out, with a note) and fills in
   the category; choosing "None" lets people type their own.

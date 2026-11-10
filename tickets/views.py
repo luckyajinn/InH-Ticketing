@@ -12,8 +12,9 @@ from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
+from core.departments import Department
 from tickets import password_guard, reports, selectors, services
-from tickets.forms import NewTicketForm, ReplyForm, TicketPropertiesForm
+from tickets.forms import MoveForm, MoveRequestForm, NewTicketForm, RemovalForm, ReplyForm, TicketPropertiesForm
 from tickets.models import Attachment, Category, PasswordWarning, Ticket
 
 Status = Ticket.Status
@@ -147,7 +148,8 @@ def go_to_ticket(request):
 # ---------------------------------------------------------------------------
 # Ticket detail (one URL, two views: IT sees everything, requesters see public)
 # ---------------------------------------------------------------------------
-def _render_detail(request, ticket, *, reply_form=None, props_form=None, status=200):
+def _render_detail(request, ticket, *, reply_form=None, props_form=None, move_form=None,
+                   move_request_form=None, status=200):
     user = request.user
     context = {
         "ticket": ticket,
@@ -155,17 +157,23 @@ def _render_detail(request, ticket, *, reply_form=None, props_form=None, status=
         "original_attachments": [
             a for a in selectors.visible_attachments(ticket, user) if a.comment_id is None
         ],
-        "reply_form": reply_form or ReplyForm(user=user),
+        "reply_form": reply_form or ReplyForm(user=user, ticket=ticket),
     }
     context["follows_up"], context["follow_ups"] = selectors.linked_tickets(ticket, user)
-    if user.is_agent:
+    if user.works_on(ticket):
         context["props_form"] = props_form or TicketPropertiesForm(ticket=ticket, me=user)
         context["all_attachments"] = selectors.visible_attachments(ticket, user)
+        # Only this person's department's tickets (all of them for admins).
         context["other_tickets"] = (
-            Ticket.objects.filter(requester=ticket.requester_id)
-            .exclude(pk=ticket.pk)
+            Ticket.objects.worked_by(user).filter(requester=ticket.requester_id)
+            .exclude(pk=ticket.pk).select_related("category")
             .order_by("-created_at")[:5]
         )
+        if user.is_admin:
+            context["move_form"] = move_form or MoveForm(ticket=ticket)
+            context["move_request"] = services.pending_move_request(ticket)
+        else:
+            context["move_request_form"] = move_request_form or MoveRequestForm(ticket=ticket)
         template = "tickets/detail_agent.html"
     else:
         context["reopened"] = request.GET.get("reopened") == "1"
@@ -188,7 +196,10 @@ def ticket_detail(request, number: int):
 @require_POST
 def add_reply(request, number: int):
     ticket = _get_ticket(request, number)
-    form = ReplyForm(request.POST, request.FILES, user=request.user)
+    if ticket.is_archived:
+        messages.error(request, services.ARCHIVED)
+        return redirect(ticket)
+    form = ReplyForm(request.POST, request.FILES, user=request.user, ticket=ticket)
     if not form.is_valid():
         return _render_detail(request, ticket, reply_form=form, status=400)
     then_status = form.cleaned_data.get("then_status") or None
@@ -200,6 +211,7 @@ def add_reply(request, number: int):
             is_internal=form.is_internal,
             files=form.cleaned_data["attachments"],
             then_status=then_status,
+            share_on_move=form.shares_on_move,
         )
     except PermissionDenied as exc:
         messages.error(request, str(exc) or "You can't reply to this ticket.")
@@ -208,7 +220,7 @@ def add_reply(request, number: int):
     password_guard.record_form(form, user=request.user, place=place, ticket=ticket, comment=comment)
     if form.is_internal:
         messages.success(request, "Internal note added. The requester can't see it.")
-    elif request.user.is_agent and request.user.pk != ticket.requester_id:
+    elif request.user.works_on(ticket) and request.user.pk != ticket.requester_id:
         done = f" Status set to {ticket.get_status_display()}." if then_status else ""
         messages.success(request, f"Public reply sent to {ticket.requester}.{done}")
     else:
@@ -243,10 +255,21 @@ def _changed_here(request, name: str, value) -> bool:
     return shown is None or str("" if value is None else value) != shown
 
 
+def _get_worked_ticket(request, number: int) -> Ticket:
+    """A ticket this person works on and can still change, or 404 / 403 / back to it."""
+    ticket = _get_ticket(request, number)
+    if not request.user.works_on(ticket):
+        raise PermissionDenied
+    return ticket
+
+
 @agent_required
 @require_POST
 def update_properties(request, number: int):
-    ticket = _get_ticket(request, number)
+    ticket = _get_worked_ticket(request, number)
+    if ticket.is_archived:
+        messages.error(request, services.ARCHIVED)
+        return redirect(ticket)
     form = TicketPropertiesForm(request.POST, ticket=ticket, me=request.user)
     if not form.is_valid():
         return _render_detail(request, ticket, props_form=form, status=400)
@@ -269,9 +292,99 @@ def update_properties(request, number: int):
 @agent_required
 @require_POST
 def assign_to_me(request, number: int):
-    ticket = _get_ticket(request, number)
-    if services.assign_to_me(ticket=ticket, actor=request.user):
+    ticket = _get_worked_ticket(request, number)
+    if ticket.is_archived:
+        messages.error(request, services.ARCHIVED)
+    elif services.assign_to_me(ticket=ticket, actor=request.user):
         messages.success(request, f"#{ticket.number} is assigned to you.")
+    return redirect(ticket)
+
+
+@admin_required
+@require_POST
+def move_ticket(request, number: int):
+    """An admin moves a ticket to another department, once that department has agreed."""
+    ticket = _get_ticket(request, number)
+    if ticket.is_archived:
+        messages.error(request, services.ARCHIVED)
+        return redirect(ticket)
+    form = MoveForm(request.POST, ticket=ticket)
+    if not form.is_valid():
+        return _render_detail(request, ticket, move_form=form, status=400)
+    changes = services.move_ticket(ticket=ticket, actor=request.user, category=form.cleaned_data["category"])
+    messages.success(request, "Done: " + ", ".join(changes) + ".")
+    return redirect(ticket)
+
+
+@agent_required
+@require_POST
+def ask_to_move(request, number: int):
+    """Staff ask an admin to move a ticket that's in the wrong department."""
+    ticket = _get_worked_ticket(request, number)
+    if ticket.is_archived:
+        messages.error(request, services.ARCHIVED)
+        return redirect(ticket)
+    form = MoveRequestForm(request.POST, ticket=ticket)
+    if not form.is_valid():
+        return _render_detail(request, ticket, move_request_form=form, status=400)
+    department = form.cleaned_data["department"]
+    services.request_move(ticket=ticket, actor=request.user, department=department,
+                          reason=form.cleaned_data["reason"])
+    messages.success(request, f"Asked an admin to move it to {Department(department).label}. "
+                              "Let them know once that team has agreed to take it.")
+    return redirect(ticket)
+
+
+def _removal_part(ticket: Ticket, raw: str):
+    """(part, comment, current text, label, files) for ?part=subject|description|c<id>, or None."""
+    if raw == "subject":
+        return "subject", None, ticket.subject, "the subject", []
+    if raw == "description":
+        files = list(ticket.attachments.filter(comment__isnull=True))
+        return "description", None, ticket.description, "the request", files
+    if raw.startswith("c") and raw[1:].isdecimal():
+        comment = ticket.comments.select_related("author").filter(pk=int(raw[1:])).first()
+        if comment:
+            kind = "internal note" if comment.is_internal else "reply"
+            return "comment", comment, comment.body, f"a {kind} from {comment.author}", list(comment.attachments.all())
+    return None
+
+
+@admin_required
+@never_cache
+@require_http_methods(["GET", "POST"])
+def remove_content(request, number: int):
+    """Take a pasted password or a file out of a ticket. Admins only; the history says that, never what."""
+    ticket = _get_ticket(request, number)
+    raw = request.POST.get("part") or request.GET.get("part") or ""
+    found = _removal_part(ticket, raw)
+    if found is None:
+        raise Http404
+    part, comment, current, label, files = found
+    form = RemovalForm(request.POST or None, current=current, files=files, allow_whole=part != "subject")
+    if request.method == "POST" and form.is_valid():
+        data = form.cleaned_data
+        summary = services.remove_content(
+            ticket=ticket, actor=request.user, part=part, comment=comment,
+            text=data["text"], whole=data["whole"], attachments=data["attachments"],
+        )
+        messages.success(request, f"Removed {summary}. Emails already delivered are still in people's "
+                                  "mailboxes: ask them to delete those, and reset the password if it was one.")
+        return redirect(ticket)
+    status = 400 if request.method == "POST" else 200
+    return render(request, "tickets/remove.html", {
+        "ticket": ticket, "form": form, "part": raw, "label": label, "current": current,
+        "files": files, "allow_whole": part != "subject",
+    }, status=status)
+
+
+@admin_required
+@require_POST
+def unarchive(request, number: int):
+    """An admin takes a ticket out of the archive, so it can be reopened."""
+    ticket = _get_ticket(request, number)
+    if services.unarchive(ticket=ticket, actor=request.user):
+        messages.success(request, f"#{ticket.number} is out of the archive. It's still Closed; reopen it from Status.")
     return redirect(ticket)
 
 
@@ -325,12 +438,19 @@ QUEUE_VIEWS = [
     {"id": "open", "label": "All open", "icon": "users"},
     {"id": "waiting", "label": "Waiting on user", "icon": "pause"},
     {"id": "resolved", "label": "Recently resolved", "icon": "check-circle"},
+    {"id": "archive", "label": "Archive", "icon": "archive"},
 ]
 RECENT = timedelta(days=14)
 
 
-def _queue_queryset(view_id: str, user):
-    tickets = Ticket.objects.all()
+def _queue_queryset(view_id: str, user, department: str = ""):
+    """A queue view's tickets: this person's department's (all of them, or one, for admins)."""
+    tickets = Ticket.objects.worked_by(user)
+    if user.is_admin and department in Department.values:
+        tickets = tickets.filter(category__department=department)
+    if view_id == "archive":
+        return tickets.archived()
+    tickets = tickets.not_archived()
     if view_id == "unassigned":
         return tickets.open().filter(assignee__isnull=True)
     if view_id == "mine":
@@ -338,10 +458,7 @@ def _queue_queryset(view_id: str, user):
     if view_id == "waiting":
         return tickets.filter(status=Status.WAITING)
     if view_id == "resolved":
-        return tickets.filter(
-            status__in=[Status.RESOLVED, Status.CLOSED],
-            updated_at__gte=timezone.now() - RECENT,
-        )
+        return tickets.filter(status=Status.RESOLVED, updated_at__gte=timezone.now() - RECENT)
     return tickets.open()
 
 
@@ -350,13 +467,15 @@ def _queue_queryset(view_id: str, user):
 def queue(request):
     view_ids = [v["id"] for v in QUEUE_VIEWS]
     view_id = request.GET.get("view") if request.GET.get("view") in view_ids else "open"
+    department = request.GET.get("dept", "") if request.user.is_admin else ""
+    department = department if department in Department.values else ""
     views = [
-        {**v, "count": _queue_queryset(v["id"], request.user).count(), "current": v["id"] == view_id}
+        {**v, "count": _queue_queryset(v["id"], request.user, department).count(), "current": v["id"] == view_id}
         for v in QUEUE_VIEWS
     ]
     current = next(v for v in views if v["current"])
 
-    tickets = _queue_queryset(view_id, request.user).select_related(
+    tickets = _queue_queryset(view_id, request.user, department).select_related(
         "requester", "assignee", "category"
     )
     q = request.GET.get("q", "").strip()
@@ -380,6 +499,9 @@ def queue(request):
     if view_id == "resolved":
         tickets = tickets.order_by("-updated_at")
         sort_label = "last 14 days, most recent first"
+    elif view_id == "archive":
+        tickets = tickets.order_by("-archived_at")
+        sort_label = "most recently archived first"
     else:
         tickets = tickets.order_by("-priority", "created_at")
         sort_label = "priority, then oldest first"
@@ -395,8 +517,14 @@ def queue(request):
             "q": q,
             "category": category,
             "priority": priority,
-            "filtered": bool(q or category or priority),
-            "categories": Category.objects.all(),
+            "filtered": bool(q or category or priority or department),
+            "categories": (Category.objects.all() if request.user.is_admin
+                           else Category.objects.filter(department=request.user.agent_department)),
+            "department": department,
+            "departments": Department.choices if request.user.is_admin else [],
+            "department_label": (Department(department).label if department
+                                 else "All departments" if request.user.is_admin
+                                 else Department(request.user.agent_department).label),
             "priorities": sorted(Ticket.Priority.choices, reverse=True),
             "sort_label": sort_label,
         },

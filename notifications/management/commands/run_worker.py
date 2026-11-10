@@ -57,8 +57,11 @@ class Command(BaseCommand):
         self.stdout.write(
             f"Worker started. Email backend: {settings.EMAIL_BACKEND}. Checking every {interval}s."
         )
+        from notifications.graph import mailboxes
+
+        boxes = ", ".join(f"{address}{'/' + folder if folder else ''}" for _, address, folder in mailboxes())
         self.stdout.write(
-            f"Email-in: reading {settings.HELPDESK_MAILBOX} every {settings.INBOUND_POLL_SECONDS}s."
+            f"Email-in: reading {boxes or '(no mailbox set)'} every {settings.INBOUND_POLL_SECONDS}s."
             if inbox_on else "Email-in: off (INBOUND_EMAIL=off)."
         )
         last_poll = 0.0

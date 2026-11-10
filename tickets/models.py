@@ -1,7 +1,7 @@
 """
 Ticket data model.
 
-    Category       Admin-editable list: Hardware, Software, Access, Network, Other
+    Category       Admin-editable list: Hardware, Software, ..., each in one department
     Ticket         One request from one person
     Comment        A public reply or an internal note (is_internal) on a ticket
     TicketEvent    History: who changed status/priority/assignee/category, and when
@@ -15,7 +15,10 @@ from pathlib import Path
 
 from django.conf import settings
 from django.db import models
+from django.db.models import Q
 from django.urls import reverse
+
+from core.departments import Department
 
 
 class Category(models.Model):
@@ -28,6 +31,10 @@ class Category(models.Model):
         default=True, help_text="Untick to stop offering this category on new requests."
     )
     sort_order = models.PositiveSmallIntegerField(default=0)
+    department = models.CharField(
+        max_length=16, choices=Department.choices, default=Department.IT,
+        help_text="Which department works these requests. Only admins move a ticket to another department.",
+    )
     subject_options = models.TextField(
         "common requests", blank=True,
         help_text="One subject per line. Shown as quick picks on the New request form: a picked one "
@@ -57,13 +64,32 @@ class Category(models.Model):
 
 class TicketQuerySet(models.QuerySet):
     def visible_to(self, user):
-        """IT sees every ticket. Everyone else sees only their own."""
-        if user.is_agent:
+        """
+        Admins see every ticket. An agent sees their department's tickets, and
+        everyone sees their own requests.
+        """
+        if user.is_admin:
             return self
+        if user.is_agent:
+            return self.filter(Q(category__department=user.agent_department) | Q(requester=user))
         return self.filter(requester=user)
+
+    def worked_by(self, user):
+        """The tickets this person works on: their department's, or all of them for admins."""
+        if user.is_admin:
+            return self
+        if user.is_agent:
+            return self.filter(category__department=user.agent_department)
+        return self.none()
 
     def open(self):
         return self.filter(status__in=Ticket.OPEN_STATUSES)
+
+    def archived(self):
+        return self.filter(archived_at__isnull=False)
+
+    def not_archived(self):
+        return self.filter(archived_at__isnull=True)
 
 
 class Ticket(models.Model):
@@ -114,6 +140,9 @@ class Ticket(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     resolved_at = models.DateTimeField(null=True, blank=True)
     closed_at = models.DateTimeField(null=True, blank=True)
+    # Closed tickets are archived: read-only, out of the working views, and kept
+    # for ARCHIVE_KEEP_DAYS (deleting them after that isn't switched on yet).
+    archived_at = models.DateTimeField(null=True, blank=True, db_index=True)
 
     objects = TicketQuerySet.as_manager()
 
@@ -145,6 +174,25 @@ class Ticket(models.Model):
         return self.status in self.OPEN_STATUSES
 
     @property
+    def is_archived(self) -> bool:
+        return self.archived_at is not None
+
+    @property
+    def keep_until(self) -> datetime | None:
+        """When an archived ticket's time is up (ARCHIVE_KEEP_DAYS after archiving)."""
+        if not self.archived_at:
+            return None
+        return self.archived_at + timedelta(days=settings.ARCHIVE_KEEP_DAYS)
+
+    @property
+    def department(self) -> str:
+        return self.category.department
+
+    @property
+    def department_label(self) -> str:
+        return Department(self.category.department).label
+
+    @property
     def auto_close_at(self) -> datetime | None:
         """
         When a Resolved ticket will close by itself, or None if it won't
@@ -174,6 +222,12 @@ class Comment(models.Model):
     is_internal = models.BooleanField(default=False)
     source = models.CharField(max_length=8, choices=Ticket.Source.choices, default=Ticket.Source.WEB)
     created_at = models.DateTimeField(auto_now_add=True)
+    # Internal notes belong to the department that wrote them. If an admin moves
+    # the ticket, only notes marked share_on_move go with it to the new department.
+    department = models.CharField(max_length=16, choices=Department.choices, blank=True)
+    share_on_move = models.BooleanField(
+        "share with the new department if this ticket moves", default=False,
+    )
 
     class Meta:
         ordering = ["created_at", "pk"]
@@ -196,6 +250,11 @@ class TicketEvent(models.Model):
         CATEGORY = "category", "Category"
         # A possible password was sent anyway, or arrived by email.
         PASSWORD = "password", "Possible password"
+        ARCHIVE = "archive", "Archive"
+        DEPARTMENT = "department", "Department"
+        MOVE_REQUEST = "move_request", "Move request"
+        # Something taken out of the ticket (a pasted password, a file). Never what.
+        REMOVED = "removed", "Removed"
 
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name="events")
     actor = models.ForeignKey(

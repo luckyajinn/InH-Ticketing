@@ -62,6 +62,10 @@ then swap. Use the test shared mailbox for email.
 ## 6. New in v0.8
 
 - [ ] **Common requests:** type a subject, then pick a common request: the subject box greys out, a note says what you typed won't be used, and the category fills in. Send it: the ticket's subject is the common request. Pick "None" again: your typed subject comes back. Change the category after picking: your category wins.
+- [ ] **Departments:** as a Mechanics agent (`Agent.Mechanics`), the queue shows only Mechanics tickets; an IT ticket's number shows Not found. "Wrong department?" asks an admin; the admin's Move needs "That department has agreed" ticked. An internal note not marked to share isn't visible to the new department.
+- [ ] **Archive:** close a ticket: it's read-only, in the Archive view, and shows "kept until". A requester's reply to it by email starts a follow-up. An admin can take it out of the archive.
+- [ ] **Remove a password:** as an admin, paste a fake password into a reply, then use Remove… on it: the reply shows "[removed by IT]", the history says something was removed (not what), and the copy of the email in the admin site's Outbound emails no longer has it.
+- [ ] **Shared PC:** sign out, then press Back: the ticket isn't shown again. Close the browser and reopen it: you're signed out.
 - [ ] **Reports (admins only):** open Reports from the header. As an agent or a requester, `/reports/` says No access. The numbers match the queue (open now, unassigned), and Download CSV opens in Excel without descriptions or names.
 - [ ] **Mechanics and Cleaning & sanitization:** both are offered on New request, and the queue's category filter shows just their tickets.
 - [ ] **Not found page:** open a made-up address. "Go to my tickets" (or "Go to the queue" for IT) and "New request" work; your own ticket number in the box opens it; someone else's shows Not found.

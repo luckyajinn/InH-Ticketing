@@ -32,18 +32,17 @@ from django.conf import settings
 from django.db.models import F, Max, Min, Q
 from django.utils import timezone
 
+from core.departments import Department
 from inbound.models import InboundEmail
 from notifications.models import OutboundEmail
 from tickets.models import Category, Comment, PasswordWarning, Ticket, TicketEvent
 
 Status = Ticket.Status
 
-# Teams. Until v1.2 gives each category a department, the team comes from
-# the category: Mechanics and Cleaning & sanitization, and everything else is IT.
-TEAMS = [("it", "IT"), ("mechanics", "Mechanics"), ("cleaning", "Cleaning & sanitization")]
+# Teams are the departments: each category belongs to one (Category.department).
+TEAMS = list(Department.choices)
 TEAM_LABELS = dict(TEAMS)
-TEAM_SLOTS = {"it": 1, "mechanics": 2, "cleaning": 3}  # chart colour per team; never by rank
-_TEAM_BY_CATEGORY = {"Mechanics": "mechanics", "Cleaning & sanitization": "cleaning"}
+TEAM_SLOTS = {Department.IT: 1, Department.MECHANICS: 2, Department.CLEANING: 3}  # colour per team, never by rank
 
 PERIODS = {
     "7": (7, "Last 7 days"),
@@ -66,14 +65,12 @@ AGE_BANDS = [
 _PAUSED = {Status.WAITING.label, Status.RESOLVED.label}
 
 
-def team_of(category_name: str) -> str:
-    return _TEAM_BY_CATEGORY.get(category_name, "it")
+def team_of(department: str) -> str:
+    return department if department in TEAM_LABELS else Department.IT
 
 
 def _team_q(team: str) -> Q:
-    if team == "it":
-        return ~Q(category__name__in=list(_TEAM_BY_CATEGORY))
-    return Q(category__name__in=[name for name, t in _TEAM_BY_CATEGORY.items() if t == team])
+    return Q(category__department=team)
 
 
 def reports_from() -> dt.datetime | None:
@@ -245,23 +242,23 @@ def _period_stats(team: str, start: dt.datetime, end: dt.datetime) -> dict:
     """Ticket figures for one period: new requests, response and resolve times, per team."""
     base = counted_tickets(team)
     new = base.filter(created_at__gte=start, created_at__lt=end)
-    rows = list(new.values("pk", "created_at", "category__name", "is_blocking", "source", "subject"))
+    rows = list(new.values("pk", "created_at", "category__name", "category__department", "is_blocking", "source", "subject"))
     first = first_responses(new)
     resolved = base.filter(resolved_at__gte=start, resolved_at__lt=end, status__in=[Status.RESOLVED, Status.CLOSED])
     resolve = resolve_seconds(resolved)
-    resolved_team = dict(resolved.values_list("pk", "category__name"))
+    resolved_team = dict(resolved.values_list("pk", "category__department"))
     reopened = (
         TicketEvent.objects.filter(
             ticket__in=base, kind=TicketEvent.Kind.STATUS, created_at__gte=start, created_at__lt=end,
             old_value__in=[Status.RESOLVED.label, Status.CLOSED.label], new_value=Status.OPEN.label,
         )
-        .exclude(note="requester replied").values_list("ticket__category__name", flat=True)
+        .exclude(note="requester replied").values_list("ticket__category__department", flat=True)
     )
 
     per_team = {key: {"new": 0, "web": 0, "blocking": 0, "first": [], "resolve": [], "resolved": 0, "reopened": 0}
                 for key, _ in TEAMS}
     for row in rows:
-        stats = per_team[team_of(row["category__name"])]
+        stats = per_team[team_of(row["category__department"])]
         stats["new"] += 1
         if row["source"] == Ticket.Source.WEB:
             stats["web"] += 1
@@ -272,8 +269,8 @@ def _period_stats(team: str, start: dt.datetime, end: dt.datetime) -> dict:
         stats = per_team[team_of(resolved_team[pk])]
         stats["resolved"] += 1
         stats["resolve"].append(seconds)
-    for category_name in reopened:
-        per_team[team_of(category_name)]["reopened"] += 1
+    for department in reopened:
+        per_team[team_of(department)]["reopened"] += 1
 
     every = {
         "new": len(rows),
@@ -425,7 +422,7 @@ def build(period: str = DEFAULT_PERIOD, team: str = "", now: dt.datetime | None 
     # Requests over time
     by_bucket = defaultdict(Counter)
     for row in cur["rows"]:
-        by_bucket[_bucket_of(row["created_at"], window.bucket)][team_of(row["category__name"])] += 1
+        by_bucket[_bucket_of(row["created_at"], window.bucket)][team_of(row["category__department"])] += 1
     buckets = []
     for day in _buckets(window):
         short, long = _bucket_labels(day, window.bucket)
@@ -449,9 +446,9 @@ def build(period: str = DEFAULT_PERIOD, team: str = "", now: dt.datetime | None 
     # Open now (not limited to the period)
     open_tickets = counted_tickets(team).open()
     open_rows = list(open_tickets.order_by("created_at").values(
-        "pk", "subject", "status", "created_at", "assignee_id", "category__name"))
+        "pk", "subject", "status", "created_at", "assignee_id", "category__department"))
     for row in team_rows:
-        row["open"] = sum(1 for r in open_rows if team_of(r["category__name"]) == row["key"])
+        row["open"] = sum(1 for r in open_rows if team_of(r["category__department"]) == row["key"])
     bands = Counter()
     for row in open_rows:
         age = now - row["created_at"]
@@ -469,7 +466,7 @@ def build(period: str = DEFAULT_PERIOD, team: str = "", now: dt.datetime | None 
         .values("ticket_id").annotate(at=Max("created_at")).values_list("ticket_id", "at")
     )
     oldest = [{
-        "number": r["pk"] + settings.TICKET_NUMBER_OFFSET, "subject": r["subject"], "team": TEAM_LABELS[team_of(r["category__name"])],
+        "number": r["pk"] + settings.TICKET_NUMBER_OFFSET, "subject": r["subject"], "team": TEAM_LABELS[team_of(r["category__department"])],
         "status": Status(r["status"]).label, "age": format_duration((now - r["created_at"]).total_seconds()),
     } for r in open_rows[:5]]
 
@@ -560,7 +557,7 @@ def csv_export(period: str = DEFAULT_PERIOD, team: str = "", now: dt.datetime | 
     for t in tickets.select_related("category").order_by("created_at"):
         local = timezone.localtime(t.created_at)
         writer.writerow([_cell(v) for v in [
-            t.number, f"{local:%Y-%m-%d %H:%M}", TEAM_LABELS[team_of(t.category.name)], t.category.name,
+            t.number, f"{local:%Y-%m-%d %H:%M}", TEAM_LABELS[team_of(t.category.department)], t.category.name,
             t.get_priority_display(), t.get_source_display(), t.get_status_display(),
             "Yes" if t.is_blocking else "No",
             f"{(first[t.pk] - t.created_at).total_seconds() / 3600:.1f}" if t.pk in first else "",

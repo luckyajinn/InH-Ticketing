@@ -38,11 +38,12 @@ Nov 9 is a Monday.
 | ✅ Tue Nov 10 | **v0.8.3** | Fixes from the pre-pilot review (three reviews and an attack test): side panel, unsent replies, password check false alarms, signature folding, odd characters | — |
 | ✅ Tue Nov 10 | **v0.8.4** | The admin site in the app's look; a chosen common request is always the subject | — |
 | ✅ Tue Nov 10 | **v0.9.0** | Reports for admins, built early from v1.1.0: requests, response and resolve times, open tickets by age and email health, per team, never per person; CSV download | — |
+| ✅ Tue Nov 10 | **v0.9.1** | Before go-live: Mechanics and C&S see and work their own tickets (v1.2.0's queues, built early), closed tickets archived for two years, the pasted-password removal tool, fake "IT" emails, shared PCs, no ticket deletes; department mailboxes ready to switch on | — |
 | **Tue Nov 10** | Demo, pilot starts | CFO demo of v0.8.3. Pilot with one other tester, trying to break it ([pilot-testing.md](pilot-testing.md)). Risk assessment for the new teams with Ruben Martinez | v0.8.3 installed on the server |
-| **After the pilot's testing** | **v0.9.x** | Paused until the pilot's testing is done. Then: pilot fixes, the pasted-password removal tool (a before-go-live compliance item), the closed-ticket decision | Pilot findings, decisions |
+| **After the pilot's testing** | **v0.9.x** | Paused until the pilot's testing is done. Then: pilot fixes | Pilot findings |
 | **Fri Nov 13** (or Mon Nov 16) | **v1.0.0** | **Everything for IT finalized,** plus **a mailbox per department**: email to Mechanics' or C&S's mailbox becomes a ticket for that department, answered from the same mailbox. Final checks on the server, docs and release done | Your side (below); the mailbox decision |
 | Mon–Tue Nov 16–17 | v1.1.0 (stretch) | IT improvements: reply templates, response targets, Teams alerts (reporting shipped early, in v0.9.0) | A Teams webhook or permission for the alerts |
-| Wed–Thu Nov 18–19 | v1.2.0 (stretch) | Mechanics and Cleaning & sanitization get their own queue and role, so they don't see IT's tickets and notes; more common requests and a self-fill option | The common requests from the teams (the Entra groups are live) |
+| Wed–Thu Nov 18–19 | v1.2.0 (stretch) | More common requests and a self-fill option for Mechanics and C&S (their own queues and roles shipped early, in v0.9.1) | The common requests from the teams |
 | **Fri Nov 20** | Final | **Go / no-go**, go-live date set, last docs and release | Sign-off |
 | Go-live (date set on Nov 20) | Live | Switch to the live help-desk mailbox, assign all ~300 staff in Entra, set `REPORTS_FROM` to the go-live date, tell everyone. Earliest Mon Nov 30, after Thanksgiving week; not during the Dec 21 – Jan 1 freeze | Go / no-go |
 | 2027 | v1.x | Improvements, chosen from pilot and live use (see below) | — |
@@ -54,7 +55,8 @@ Nov 9 is a Monday.
 | **Tue Nov 10, morning** | Install v0.8.3 on the server ([deployment.md](deployment.md), section 10; the migrations run when it starts). Set `HELP_CONTACT` in `.env` first. Check ticket #1071's signature is folded, and that Mechanics and Cleaning & sanitization are on the New request form | Demo, pilot |
 | Tue Nov 10 | Start the pilot with one tester; report findings as tickets with "Pilot:" in the subject | v0.9.x fixes |
 | Tue Nov 10 | Risk assessment for Mechanics and Cleaning & sanitization with Ruben Martinez; then update [usage-rules.md](usage-rules.md) | v1.2.0 |
-| After the pilot | Decide what happens to closed tickets; keep each ticket's record either way, or Reports loses its history | v0.9.x |
+| ✅ Tue Nov 10 | Closed tickets: archived for two years, then deleted (archiving built in v0.9.1) | v0.9.1 |
+| **Before installing v0.9.1** | In Entra, create the `Agent.Mechanics` and `Agent.Cleaning` app roles and assign each team's group to its own (never plain `Agent`) | v0.9.1 |
 | Thu Nov 12 | Department mailboxes (no confirmation yet of a shared mailbox for each, Nov 10): decide new request-only mailboxes or a "Requests" folder in the existing ones (see [backlog.md](backlog.md), v1.0.0); send the addresses; in Exchange, allow the app to send as and read each one, set internal senders only, and record `Test-ServicePrincipalAuthorization` for each | v1.0.0 |
 | Fri Nov 13 | Restore drill on the server, recorded ([deployment.md](deployment.md) section 9) | v1.0.0 |
 | Fri Nov 13 | Entra: confirm the server's redirect URI, and give the server its own client secret or certificate | v1.0.0 |

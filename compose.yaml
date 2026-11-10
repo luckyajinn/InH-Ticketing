@@ -40,7 +40,7 @@ services:
 
   worker:
     build: .
-    restart: unless-stopped  # also restarts it if it starts before migrations finish
+    restart: unless-stopped
     env_file: .env
     environment:
       DATABASE_URL: postgres://inh:${POSTGRES_PASSWORD}@db:5432/inh
@@ -51,7 +51,9 @@ services:
       db:
         condition: service_healthy
       web:
-        condition: service_started
+        # Healthy = the web container has applied the database updates and is
+        # answering, so the worker never starts on a database that's out of date.
+        condition: service_healthy
     command: python manage.py run_worker
     healthcheck:
       disable: true  # the image's check is for the web server, not the worker

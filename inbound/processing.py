@@ -10,6 +10,7 @@ IncomingMessage and call process(), so they follow exactly the same rules:
   4. Subject has [#1001] and that ticket exists:
        from the requester or IT  -> public reply (Closed? -> a new follow-up ticket)
        from anyone else          -> internal note for IT
+       "from IT" that Exchange can't confirm -> internal note (see sender_confirmed)
   5. Otherwise                   -> a new ticket from the sender
 
 Anything that looks like a password is logged in the password audit trail and
@@ -20,6 +21,7 @@ can't be warned about before it's sent, the way the web forms are.
 from __future__ import annotations
 
 import logging
+import re
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -33,6 +35,7 @@ from django.template.defaultfilters import filesizeformat
 from accounts.models import User
 from inbound.models import InboundEmail
 from inbound.text import clean_subject, find_ticket_number, is_automatic, strip_quoted
+from notifications import graph
 from tickets import password_guard, services
 from tickets.models import Category, Ticket
 
@@ -62,6 +65,8 @@ class IncomingMessage:
     attachments: list[IncomingAttachment] = field(default_factory=list)
     received_at: datetime | None = None
     source: str = "graph"
+    # Which department's mailbox it arrived in (IT for the help-desk mailbox).
+    department: str = "it"
 
 
 @dataclass
@@ -76,6 +81,26 @@ class Result:
 def _allowed_domain(address: str) -> bool:
     allowed = settings.INBOUND_ALLOWED_DOMAINS
     return not allowed or address.rsplit("@", 1)[-1].lower() in allowed
+
+
+_PASS = re.compile(r"\b(?:dmarc|compauth)=pass\b", re.IGNORECASE)
+
+
+def sender_confirmed(message: IncomingMessage) -> bool:
+    """
+    Did Exchange confirm who sent this email? Anyone can type someone else's
+    address into the From line, so an email that claims to be from IT only
+    becomes a public IT reply when it was sent from inside the organisation
+    (Exchange marks it AuthAs: Internal, a header it strips from outside
+    email) or passed DMARC or Microsoft's composite authentication.
+    The ingest_email command is run by an admin on the server, so it's trusted.
+    """
+    if message.source != "graph" or not settings.INBOUND_VERIFY_IT_SENDERS:
+        return True
+    headers = {name.lower(): value for name, value in message.headers.items()}
+    if headers.get("x-ms-exchange-organization-authas", "").strip().lower() == "internal":
+        return True
+    return bool(_PASS.search(headers.get("authentication-results", "")))
 
 
 def _sender(address: str, name: str) -> User:
@@ -141,8 +166,8 @@ def process(message: IncomingMessage) -> Result:
         return record(Outcome.IGNORED, f"Automatic email ({automatic}).")
     if not message.from_address or "@" not in message.from_address:
         return record(Outcome.IGNORED, "No sender address.")
-    if settings.HELPDESK_MAILBOX and message.from_address == settings.HELPDESK_MAILBOX.lower():
-        return record(Outcome.IGNORED, "Sent from the help-desk mailbox itself.")
+    if message.from_address in graph.own_addresses():
+        return record(Outcome.IGNORED, "Sent from one of the app's own mailboxes.")
     if not _allowed_domain(message.from_address):
         return record(Outcome.IGNORED, "Sender's domain isn't accepted (INBOUND_ALLOWED_DOMAINS).")
 
@@ -161,14 +186,32 @@ def process(message: IncomingMessage) -> Result:
         if ticket:
             reply = message.new_text if message.new_text is not None else strip_quoted(message.body_text)
             reply = _with_skipped_note(reply.strip()[:MAX_BODY] or "(empty email)", skipped)
-            is_party = sender.pk == ticket.requester_id or sender.is_agent
+            works = sender.works_on(ticket)
+            is_party = sender.pk == ticket.requester_id or works
+
+            if is_party and works and sender.pk != ticket.requester_id and not sender_confirmed(message):
+                note = services.add_email_from_third_party(
+                    ticket=ticket, sender=sender, body=reply, files=files,
+                    why="but Exchange couldn't confirm it really came from them",
+                )
+                password_guard.record_email(sender=sender, ticket=ticket, comment=note, texts={"body": reply})
+                return record(Outcome.NOTE, f"Claims to be from {sender}, but the sender wasn't confirmed "
+                                            "(no AuthAs: Internal, DMARC or compauth pass).", ticket)
 
             if not is_party:
                 note = services.add_email_from_third_party(ticket=ticket, sender=sender, body=reply, files=files)
                 password_guard.record_email(sender=sender, ticket=ticket, comment=note, texts={"body": reply})
-                return record(Outcome.NOTE, f"{sender} isn't the requester or IT.", ticket)
+                return record(Outcome.NOTE, f"{sender} isn't the requester or staff working this ticket.", ticket)
 
-            if ticket.status == Ticket.Status.CLOSED and not sender.is_agent:
+            if ticket.is_archived and works:
+                # Staff emailing about an archived ticket: keep it on the ticket, but out of sight of the requester.
+                note = services.add_email_from_third_party(
+                    ticket=ticket, sender=sender, body=reply, files=files, why="about this archived ticket",
+                )
+                password_guard.record_email(sender=sender, ticket=ticket, comment=note, texts={"body": reply})
+                return record(Outcome.NOTE, f"#{ticket.number} is archived, so this was kept as an internal note.", ticket)
+
+            if ticket.status == Ticket.Status.CLOSED and not works:
                 subject = clean_subject(message.subject)
                 follow_up = services.create_ticket(
                     requester=sender, subject=subject,
@@ -187,12 +230,9 @@ def process(message: IncomingMessage) -> Result:
             password_guard.record_email(sender=sender, ticket=ticket, comment=comment, texts={"body": reply})
             return record(Outcome.REPLY, "", ticket)
 
-        # Rule 5: a new ticket.
+        # Rule 5: a new ticket, for the department whose mailbox it arrived in.
         description = _with_skipped_note((message.body_text or "").strip()[:MAX_BODY] or "(empty email)", skipped)
-        category = (
-            Category.objects.filter(name__iexact=settings.INBOUND_DEFAULT_CATEGORY).first()
-            or Category.objects.filter(is_active=True).last()
-        )
+        category = _new_ticket_category(message.department)
         subject = clean_subject(message.subject)
         new = services.create_ticket(
             requester=sender, subject=subject, description=description,
@@ -201,6 +241,18 @@ def process(message: IncomingMessage) -> Result:
         password_guard.record_email(sender=sender, ticket=new, texts={"subject": subject, "description": description})
         detail = f"Subject mentioned #{number}, which doesn't exist." if number else ""
         return record(Outcome.NEW_TICKET, detail, new)
+
+
+def _new_ticket_category(department: str) -> Category:
+    """IT's emailed requests go to INBOUND_DEFAULT_CATEGORY; another department's to its first category."""
+    if department and department != "it":
+        found = Category.objects.filter(department=department, is_active=True).order_by("sort_order", "name").first()
+        if found:
+            return found
+    return (
+        Category.objects.filter(name__iexact=settings.INBOUND_DEFAULT_CATEGORY).first()
+        or Category.objects.filter(is_active=True).last()
+    )
 
 
 def record_error(message: IncomingMessage, error: Exception) -> InboundEmail:

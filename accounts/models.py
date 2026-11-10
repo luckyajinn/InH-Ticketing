@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+from core.departments import Department
+
 
 class User(AbstractUser):
     """
@@ -28,6 +30,10 @@ class User(AbstractUser):
         default=Role.REQUESTER,
         help_text="Managed in Entra (app roles). Refreshed on every sign-in.",
     )
+    department = models.CharField(
+        max_length=16, choices=Department.choices, blank=True,
+        help_text="The department an agent works for, from their Entra app role. Admins work for all of them.",
+    )
 
     class Meta:
         ordering = ["display_name", "username"]
@@ -42,8 +48,21 @@ class User(AbstractUser):
 
     @property
     def is_admin(self) -> bool:
-        """Admins also get the admin site and Reports."""
+        """Admins also get the admin site and Reports, and work every department's tickets."""
         return self.role == self.Role.ADMIN
+
+    @property
+    def agent_department(self) -> str:
+        """The department an agent works for (IT unless Entra says otherwise); blank for others."""
+        if not self.is_agent:
+            return ""
+        return self.department or Department.IT
+
+    def works_on(self, ticket) -> bool:
+        """Can this person work the ticket: see its notes and history, reply as staff, change it?"""
+        if self.is_admin:
+            return True
+        return self.is_agent and ticket.category.department == self.agent_department
 
     @property
     def avatar_variant(self) -> int:

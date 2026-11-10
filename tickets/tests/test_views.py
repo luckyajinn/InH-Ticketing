@@ -309,7 +309,7 @@ class QueueViewTests(MediaTestCase):
     def test_counts(self):
         response = self.client.get(reverse("tickets:queue"))
         counts = {v["id"]: v["count"] for v in response.context["views"]}
-        self.assertEqual(counts, {"unassigned": 2, "mine": 1, "open": 3, "waiting": 1, "resolved": 1})
+        self.assertEqual(counts, {"unassigned": 2, "mine": 1, "open": 3, "waiting": 1, "resolved": 1, "archive": 0})
 
     def test_search_and_filters(self):
         self.assertEqual(self._subjects(q=f"#{self.urgent.number}"), ["Server room is hot"])

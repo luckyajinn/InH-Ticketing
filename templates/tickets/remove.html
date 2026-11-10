@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% load ticket_tags %}
+
+{% block title %}Remove from #{{ ticket.number }}{% endblock %}
+{% block page_class %}page-narrow{% endblock %}
+
+{% block content %}
+<a class="back-link" href="{{ ticket.get_absolute_url }}">{% icon "arrow-left" %}#{{ ticket.number }}</a>
+<div class="page-head">
+  <div>
+    <p class="eyebrow">Admin</p>
+    <h1>Remove a password or file</h1>
+    <p class="page-sub">From {{ label }}, on #{{ ticket.number }} {{ ticket.subject }}.</p>
+  </div>
+</div>
+
+<form class="card" method="post" novalidate>
+  {% csrf_token %}
+  <input type="hidden" name="part" value="{{ part }}">
+  {% for error in form.non_field_errors %}<p class="field-error" role="alert">{% icon "alert" %}{{ error }}</p>{% endfor %}
+
+  <p class="label">It says</p>
+  <div class="remove-preview">{{ current }}</div>
+
+  <div class="field">
+    <label for="{{ form.text.id_for_label }}">Text to remove</label>
+    <input class="input" type="text" name="text" id="{{ form.text.id_for_label }}" maxlength="500" autocomplete="off" spellcheck="false"
+           value="{{ form.text.value|default:'' }}" aria-describedby="text-hint{% if form.text.errors %} text-error{% endif %}"{% if form.text.errors %} aria-invalid="true"{% endif %}>
+    <p class="hint" id="text-hint">Copy the password exactly as it appears above. Every place it appears here is replaced with "[removed by IT]".</p>
+    {% if form.text.errors %}<p class="field-error" id="text-error">{% icon "alert" %}{{ form.text.errors.0 }}</p>{% endif %}
+  </div>
+
+  {% if allow_whole %}
+  <div class="field">
+    <div class="check">
+      <input type="checkbox" name="whole" id="id_whole"{% if form.whole.value %} checked{% endif %}>
+      <label for="id_whole">Remove the whole message instead</label>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if files %}
+  <fieldset class="field">
+    <legend class="label">Files on it</legend>
+    <ul class="remove-files">
+      {% for value, name in form.fields.remove_files.choices %}
+      <li class="check">
+        <input type="checkbox" name="remove_files" value="{{ value }}" id="file-{{ value }}"{% if value in form.remove_files.value %} checked{% endif %}>
+        <label for="file-{{ value }}">Remove {{ name }}</label>
+      </li>
+      {% endfor %}
+    </ul>
+  </fieldset>
+  {% endif %}
+
+  <div class="hint-box">
+    {% icon "lock" %}
+    <p>This also takes it out of the copies the app keeps of the emails it sent. The ticket's history will say that something was removed, and by whom, but never what. Emails already delivered stay in people's mailboxes: ask them to delete those. If it was a password, reset it.</p>
+  </div>
+
+  <div class="form-actions">
+    <a class="btn" href="{{ ticket.get_absolute_url }}">Cancel</a>
+    <button type="submit" class="btn btn-primary">Remove</button>
+  </div>
+</form>
+{% endblock %}

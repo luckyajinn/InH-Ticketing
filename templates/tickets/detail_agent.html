@@ -4,7 +4,7 @@
 {% block title %}#{{ ticket.number }} {{ ticket.subject }}{% endblock %}
 
 {% block content %}
-{# IT view: everything, including internal notes and history. #}
+{# Staff view (the ticket's department, or an admin): everything, including internal notes and history. #}
 <a class="back-link" href="{% url 'tickets:queue' %}">{% icon "arrow-left" %}Queue</a>
 <header class="detail-head">
   <p class="eyebrow">#{{ ticket.number }}</p>
@@ -13,26 +13,49 @@
     {% include "tickets/partials/status.html" with t=ticket %}
     {% include "tickets/partials/priority.html" with t=ticket %}
     {% if ticket.is_blocking %}<span class="chip chip-block">{% icon "flag" %}Blocking work</span>{% endif %}
-    <span class="detail-meta">Opened by {{ ticket.requester }} {{ ticket.created_at|ago }} via {% if ticket.source == "email" %}email{% else %}the web form{% endif %}</span>
+    <span class="detail-meta">Opened by {{ ticket.requester }} {{ ticket.created_at|ago }} via {% if ticket.source == "email" %}email{% else %}the web form{% endif %} · {{ ticket.department_label }}</span>
   </div>
 </header>
+
+{% if ticket.is_archived %}
+<div class="notice notice-archive" role="status">
+  {% icon "archive" %}
+  <div class="notice-body">
+    <p><strong>Archived {{ ticket.archived_at|date:"M j, Y" }}.</strong> It's read-only and kept until {{ ticket.keep_until|date:"M j, Y" }}. If the problem is back, start a follow-up.</p>
+    {% if user.is_admin %}
+    <form method="post" action="{% url 'tickets:unarchive' ticket.number %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-sm">Take it out of the archive</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% elif move_request %}
+<div class="notice notice-move" role="status">
+  {% icon "tag" %}
+  <div class="notice-body">
+    <p><strong>{{ move_request.actor|default:"Someone" }} asked to move this to {{ move_request.new_value }}</strong>{% if move_request.note %}: "{{ move_request.note }}"{% endif %}. Check with {{ move_request.new_value }} that they'll take it, then use <a href="#move">Move to another department</a>.</p>
+  </div>
+</div>
+{% endif %}
 
 <div class="detail-grid">
   <div class="detail-main">
     <h2 class="section-title">Timeline</h2>
     <ol class="timeline">
-      {% include "tickets/partials/message.html" with author=ticket.requester body=ticket.description at=ticket.created_at internal=False source=ticket.source files=original_attachments %}
+      {% include "tickets/partials/message.html" with author=ticket.requester body=ticket.description at=ticket.created_at internal=False source=ticket.source files=original_attachments removable=True %}
       {% for item in timeline %}
         {% if item.kind == "event" %}
           {% include "tickets/partials/event.html" with e=item.event %}
         {% else %}
           {% with c=item.comment %}
-          {% include "tickets/partials/message.html" with author=c.author body=c.body at=c.created_at internal=c.is_internal source=c.source files=c.attachments.all %}
+          {% include "tickets/partials/message.html" with author=c.author body=c.body at=c.created_at internal=c.is_internal source=c.source files=c.attachments.all note=c removable=True %}
           {% endwith %}
         {% endif %}
       {% endfor %}
     </ol>
 
+    {% if not ticket.is_archived %}
     <form class="composer" id="reply" method="post" action="{% url 'tickets:reply' ticket.number %}" enctype="multipart/form-data" novalidate aria-labelledby="composer-heading"
           data-password-check="{% url 'tickets:check_text' %}" data-password-fields="body">
       {% csrf_token %}
@@ -47,7 +70,7 @@
         </fieldset>
         <p class="composer-audience" id="composer-audience">
           <span class="when-public">{{ ticket.requester }} will see this.</span>
-          <span class="when-internal">Only IT staff can see this.</span>
+          <span class="when-internal">Only {{ ticket.department_label }} staff and admins can see this.</span>
         </p>
       </div>
       <div class="composer-banner">{% icon "lock" %}<span>Internal note: not visible to requester</span></div>
@@ -55,7 +78,7 @@
       <textarea id="composer-text" name="body" class="composer-text" rows="5"
                 placeholder="Reply to {{ ticket.requester }}..."
                 data-placeholder-public="Reply to {{ ticket.requester }}..."
-                data-placeholder-internal="Add a note for the IT team..."
+                data-placeholder-internal="Add a note for the {{ ticket.department_label }} team..."
                 aria-describedby="composer-audience{% if reply_form.body.errors %} composer-error{% endif %}"
                 {% if reply_form.errors %}autofocus{% endif %}>{{ reply_form.body.value|default:'' }}</textarea>
       {% if reply_form.body.errors %}<p class="field-error" id="composer-error">{% icon "alert" %}{{ reply_form.body.errors.0 }}</p>{% endif %}
@@ -63,6 +86,11 @@
       {% if reply_form.visibility.errors %}<p class="field-error">{% icon "alert" %}{{ reply_form.visibility.errors.0 }}</p>{% endif %}
       {% if reply_form.then_status.errors %}<p class="field-error">{% icon "alert" %}{{ reply_form.then_status.errors.0 }}</p>{% endif %}
       {% include "tickets/partials/password_warning.html" with form=reply_form %}
+      <div class="check share-check when-internal">
+        <input type="checkbox" name="share_on_move" id="share-on-move"{% if reply_form.share_on_move.value %} checked{% endif %} aria-describedby="share-hint">
+        <label for="share-on-move">Share with the new department if this ticket moves</label>
+      </div>
+      <p class="hint share-hint when-internal" id="share-hint">Otherwise the note stays with {{ ticket.department_label }} if an admin moves the ticket.</p>
       <div class="composer-foot">
         <label class="btn btn-ghost btn-sm file-btn">{% icon "clip" %}Attach<input type="file" name="attachments" class="file-input" multiple data-file-list="composer-files"></label>
         <span class="composer-files" id="composer-files" aria-live="polite"></span>
@@ -80,11 +108,20 @@
         </span>
       </div>
     </form>
+    {% endif %}
   </div>
 
   <aside class="side-panel" aria-label="Ticket properties">
     <section class="panel">
       <h2 class="panel-title">Properties</h2>
+      {% if ticket.is_archived %}
+      <dl class="dl">
+        <dt>Status</dt><dd>{{ ticket.get_status_display }}</dd>
+        <dt>Priority</dt><dd>{{ ticket.get_priority_display }}</dd>
+        <dt>Assignee</dt><dd>{{ ticket.assignee|default:"Unassigned" }}</dd>
+        <dt>Category</dt><dd>{{ ticket.category }}</dd>
+      </dl>
+      {% else %}
       <form method="post" action="{% url 'tickets:update' ticket.number %}" data-autosubmit>
         {% csrf_token %}
         {# What the panel showed when the page loaded, so saving only applies what was changed here. #}
@@ -109,6 +146,36 @@
           <button type="submit" class="btn btn-sm props-save">Save</button>
         </div>
       </form>
+      {% if move_form %}
+      <h3 class="panel-subtitle" id="move">Move to another department</h3>
+      <form method="post" action="{% url 'tickets:move' ticket.number %}" class="move-form">
+        {% csrf_token %}
+        <label class="visually-hidden" for="{{ move_form.category.id_for_label }}">New category</label>
+        {{ move_form.category }}
+        <div class="check">
+          <input type="checkbox" name="confirmed" id="move-confirmed"{% if move_form.confirmed.value %} checked{% endif %}>
+          <label for="move-confirmed">That department has agreed to take it</label>
+        </div>
+        {% for field in move_form %}{% for error in field.errors %}<p class="field-error">{% icon "alert" %}{{ error }}</p>{% endfor %}{% endfor %}
+        <p class="hint">Internal notes stay with {{ ticket.department_label }}, except those marked to share.</p>
+        <button type="submit" class="btn btn-sm">Move</button>
+      </form>
+      {% elif move_request_form %}
+      <details class="move-ask"{% if move_request_form.errors %} open{% endif %}>
+        <summary>Wrong department?</summary>
+        <form method="post" action="{% url 'tickets:ask_to_move' ticket.number %}" class="move-form">
+          {% csrf_token %}
+          <label class="visually-hidden" for="{{ move_request_form.department.id_for_label }}">Department</label>
+          {{ move_request_form.department }}
+          <label class="visually-hidden" for="{{ move_request_form.reason.id_for_label }}">Why</label>
+          {{ move_request_form.reason }}
+          {% for field in move_request_form %}{% for error in field.errors %}<p class="field-error">{% icon "alert" %}{{ error }}</p>{% endfor %}{% endfor %}
+          <p class="hint">An admin moves it, once you've checked with that team (by phone, Teams or email) that they'll take it.</p>
+          <button type="submit" class="btn btn-sm">Ask an admin to move it</button>
+        </form>
+      </details>
+      {% endif %}
+      {% endif %}
     </section>
 
     <section class="panel">
@@ -136,11 +203,13 @@
       <h2 class="panel-title">Details</h2>
       <dl class="dl">
         <dt>Ticket</dt><dd>#{{ ticket.number }}</dd>
+        <dt>Department</dt><dd>{{ ticket.department_label }}</dd>
         <dt>Source</dt><dd>{% if ticket.source == "email" %}{% icon "mail" %}Email{% else %}{% icon "globe" %}Web form{% endif %}</dd>
         <dt>Created</dt><dd>{{ ticket.created_at|date:"M j, g:i A" }}</dd>
         <dt>Updated</dt><dd>{{ ticket.updated_at|date:"M j, g:i A" }}</dd>
         <dt>Blocking</dt><dd>{% if ticket.is_blocking %}Yes, flagged by requester{% else %}No{% endif %}</dd>
       </dl>
+      {% if user.is_admin %}<p class="small mt-3"><a href="{% url 'tickets:remove' ticket.number %}?part=subject">Remove a password from the subject</a></p>{% endif %}
       <h3 class="panel-subtitle">Attachments</h3>
       {% if all_attachments %}
         {% include "tickets/partials/attachments.html" with files=all_attachments %}

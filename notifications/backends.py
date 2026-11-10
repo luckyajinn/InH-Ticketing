@@ -1,6 +1,7 @@
 """
-Send email through Microsoft Graph, from the shared mailbox in HELPDESK_MAILBOX.
-Exchange Online must restrict the app to that one mailbox; see docs/email-setup.md.
+Send email through Microsoft Graph, from the shared mailbox in HELPDESK_MAILBOX,
+or from a department's own mailbox (DEPARTMENT_MAILBOXES) for its tickets.
+Exchange Online must restrict the app to those mailboxes; see docs/email-setup.md.
 """
 
 from __future__ import annotations
@@ -46,7 +47,10 @@ class GraphEmailBackend(BaseEmailBackend):
         sent = 0
         for message in email_messages or []:
             try:
-                graph.call("POST", f"{graph.mailbox()}/sendMail", json=self._payload(message), expected=(202,))
+                # From the address the sender chose, if it's one of our mailboxes; never any other.
+                sender = (message.from_email or "").lower()
+                address = sender if sender in graph.own_addresses() else None
+                graph.call("POST", f"{graph.mailbox(address)}/sendMail", json=self._payload(message), expected=(202,))
                 sent += 1
             except Exception:
                 if not self.fail_silently:
