@@ -1,10 +1,11 @@
 {% load ticket_tags %}
 {# One message on the timeline: the original request, a reply, or an internal note. #}
-<li class="tl-item tl-comment{% if internal %} tl-note{% endif %}">
+{# Layout only: "is-mine" puts the viewer's side on the right (IT's side for IT staff, your own messages for requesters). #}
+<li class="tl-item tl-comment{% if internal %} tl-note{% endif %}{% if user.is_agent %}{% if author.is_agent and author.pk != ticket.requester_id %} is-mine{% endif %}{% elif author.pk == user.pk %} is-mine{% endif %}">
   <span class="avatar av-{{ author.avatar_variant }} tl-avatar" aria-hidden="true">{{ author.initials }}{% if internal %}<span class="avatar-lock">{% icon "lock" %}</span>{% endif %}</span>
   <article class="comment{% if internal %} is-note{% endif %}"
            aria-label="{% if internal %}Internal note{% elif author.pk == ticket.requester_id %}Message{% else %}Public reply{% endif %} from {{ author }}">
-    {% if internal %}<div class="note-band">{% icon "lock" %}<span>Internal note: not visible to requester</span></div>{% endif %}
+    {% if internal %}<div class="note-band">{% icon "lock" %}<span>Internal note, IT only</span></div>{% endif %}
     <header class="comment-head">
       <span class="comment-author">{% if not user.is_agent and author.pk == user.pk %}You{% else %}{{ author }}{% endif %}</span>
       {% if author.pk == ticket.requester_id %}

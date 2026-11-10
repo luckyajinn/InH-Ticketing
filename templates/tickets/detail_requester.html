@@ -19,6 +19,33 @@
 
 <div class="detail-grid">
   <div class="detail-main">
+    {# Progress tracker: driven only by the status value; the step is shown in words, not just colour. #}
+    {% with s=ticket.status %}
+    <section class="journey card" aria-labelledby="journey-title">
+      <h2 class="visually-hidden" id="journey-title">Progress</h2>
+      <ol class="tracker" data-step="{% if s == 'new' %}1{% elif s == 'open' or s == 'in_progress' %}2{% elif s == 'waiting' %}3{% else %}4{% endif %}">
+        <li class="step {% if s == 'new' %}is-current{% else %}is-done{% endif %}"{% if s == 'new' %} aria-current="step"{% endif %}>
+          <span class="step-dot" aria-hidden="true">{% icon "check" %}</span>
+          <span class="step-label">Submitted</span>
+          <span class="visually-hidden">{% if s == 'new' %}(current step){% else %}(done){% endif %}</span>
+        </li>
+        <li class="step {% if s == 'new' %}is-upcoming{% elif s == 'open' or s == 'in_progress' %}is-current{% else %}is-done{% endif %}"{% if s == 'open' or s == 'in_progress' %} aria-current="step"{% endif %}>
+          <span class="step-dot" aria-hidden="true">{% icon "check" %}</span>
+          <span class="step-label">With IT</span>
+          <span class="visually-hidden">{% if s == 'new' %}(not yet){% elif s == 'open' or s == 'in_progress' %}(current step){% else %}(done){% endif %}</span>
+        </li>
+        <li class="step {% if s == 'waiting' %}is-current{% elif s == 'resolved' or s == 'closed' %}is-done{% else %}is-upcoming{% endif %}"{% if s == 'waiting' %} aria-current="step"{% endif %}>
+          <span class="step-dot" aria-hidden="true">{% icon "check" %}</span>
+          <span class="step-label">Waiting on you</span>
+          <span class="visually-hidden">{% if s == 'waiting' %}(current step){% elif s == 'resolved' or s == 'closed' %}(done){% else %}(not yet){% endif %}</span>
+        </li>
+        <li class="step {% if s == 'resolved' %}is-done is-current{% elif s == 'closed' %}is-done{% else %}is-upcoming{% endif %}"{% if s == 'resolved' or s == 'closed' %} aria-current="step"{% endif %}>
+          <span class="step-dot" aria-hidden="true">{% icon "check" %}</span>
+          <span class="step-label">{% if s == 'closed' %}Closed{% else %}Resolved{% endif %}</span>
+          <span class="visually-hidden">{% if s == 'resolved' or s == 'closed' %}(current step){% else %}(not yet){% endif %}</span>
+        </li>
+      </ol>
+    {% endwith %}
     {% if ticket.status == "new" %}
       <div class="callout">{% icon "clock" %}<div><p class="callout-title">We've received your request.</p><p class="callout-text">Someone from IT will pick it up soon.</p></div></div>
     {% elif ticket.status == "open" or ticket.status == "in_progress" %}
@@ -33,6 +60,7 @@
     {% else %}
       <div class="callout callout-closed">{% icon "lock" %}<div><p class="callout-title">This request is closed.</p><p class="callout-text">Need more help with this? Start a follow-up and we'll link it to #{{ ticket.number }}.</p></div></div>
     {% endif %}
+    </section>
 
     <h2 class="section-title">Conversation</h2>
     <ol class="timeline">

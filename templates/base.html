@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ APP_NAME }}{% endblock %} · {{ APP_NAME }}</title>
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
-  <script src="{% static 'js/app.js' %}" defer></script>
+  {# Not deferred: app.js adds the "js" class before first paint, then waits for the DOM itself. #}
+  <script src="{% static 'js/app.js' %}"></script>
 </head>
 <body>
 {% include "partials/icons.html" %}

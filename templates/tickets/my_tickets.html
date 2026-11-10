@@ -43,8 +43,17 @@
     </a>
   </li>
   {% empty %}
-  <li class="empty">
-    <p>No {{ show }} requests.</p>
+  <li class="empty empty-state">
+    <svg class="empty-art" viewBox="0 0 120 96" aria-hidden="true" focusable="false">
+      <circle class="ea-blob" cx="60" cy="50" r="44"/>
+      <path class="ea-paper" d="M28 54 39 30h42l11 24v15a7 7 0 0 1-7 7H35a7 7 0 0 1-7-7Z"/>
+      <path class="ea-line" d="M28 54h17l4 7h22l4-7h17"/>
+      <path class="ea-line" d="M52 41q8 6 16 0"/>
+      <circle class="ea-dot" cx="94" cy="20" r="3"/>
+      <circle class="ea-dot" cx="22" cy="28" r="2.2"/>
+    </svg>
+    <p class="empty-title">No {{ show }} requests.</p>
+    <p class="empty-text">{% if show == "open" %}Nothing is waiting on IT right now. If something isn't working, we're happy to help.{% else %}Requests you're finished with will show up here.{% endif %}</p>
     <p><a href="{% url 'tickets:new' %}">Start a new request</a></p>
   </li>
   {% endfor %}

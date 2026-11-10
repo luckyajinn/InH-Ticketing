@@ -4,9 +4,19 @@
 {% block page_class %}page-narrow{% endblock %}
 
 {% block content %}
-<div class="page-head">
-  <h1>You don't have access to this page</h1>
-  <p class="page-sub">If you think you should, ask IT to check your role in Microsoft 365.</p>
+<div class="card error-card">
+  <div class="empty-state">
+    <svg class="empty-art" viewBox="0 0 120 96" aria-hidden="true" focusable="false">
+      <circle class="ea-blob" cx="60" cy="48" r="42"/>
+      <rect class="ea-paper" x="42" y="44" width="36" height="28" rx="7"/>
+      <path class="ea-line" d="M49 44v-7a11 11 0 0 1 22 0v7"/>
+      <path class="ea-line" d="M60 55v6"/>
+      <circle class="ea-dot" cx="97" cy="24" r="3"/>
+      <circle class="ea-dot" cx="22" cy="66" r="2.2"/>
+    </svg>
+    <h1 class="empty-title">You don't have access to this page</h1>
+    <p class="empty-text">If you think you should, ask IT to check your role in Microsoft 365.</p>
+    <a class="btn btn-primary" href="{% url 'core:home' %}">Back to home</a>
+  </div>
 </div>
-<p><a href="{% url 'core:home' %}">Back to home</a></p>
 {% endblock %}

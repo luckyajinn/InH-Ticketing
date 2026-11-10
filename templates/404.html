@@ -4,9 +4,20 @@
 {% block page_class %}page-narrow{% endblock %}
 
 {% block content %}
-<div class="page-head">
-  <h1>Page not found</h1>
-  <p class="page-sub">The link may be old, or the page may have moved.</p>
+<div class="card error-card">
+  <div class="empty-state">
+    <svg class="empty-art" viewBox="0 0 120 96" aria-hidden="true" focusable="false">
+      <circle class="ea-blob" cx="60" cy="48" r="42"/>
+      <circle class="ea-paper" cx="55" cy="44" r="17"/>
+      <path class="ea-line" d="m67.5 56.5 11 11"/>
+      <path class="ea-line" d="M50.5 39.5a6 6 0 1 1 7.5 5.8V48"/>
+      <circle class="ea-dot" cx="58" cy="53" r="1.8"/>
+      <circle class="ea-dot" cx="97" cy="24" r="3"/>
+      <circle class="ea-dot" cx="22" cy="66" r="2.2"/>
+    </svg>
+    <h1 class="empty-title">Page not found</h1>
+    <p class="empty-text">The link may be old, or the page may have moved.</p>
+    <a class="btn btn-primary" href="{% url 'core:home' %}">Back to home</a>
+  </div>
 </div>
-<p><a href="{% url 'core:home' %}">Back to home</a></p>
 {% endblock %}

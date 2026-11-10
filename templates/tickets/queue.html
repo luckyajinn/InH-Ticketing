@@ -55,38 +55,56 @@
     </p>
 
     <div class="table-wrap" role="region" aria-labelledby="queue-title" tabindex="0">
-      <table class="queue-table">
+      <table class="queue-table" role="table">
         <caption class="visually-hidden">Tickets in this view. Open a ticket from its subject.</caption>
-        <thead>
-          <tr>
-            <th scope="col">#</th>
-            <th scope="col">Subject</th>
-            <th scope="col">Requester</th>
-            <th scope="col">Category</th>
-            <th scope="col">Priority</th>
-            <th scope="col">Status</th>
-            <th scope="col">Assignee</th>
-            <th scope="col" class="col-age">Age</th>
+        <thead role="rowgroup">
+          <tr role="row">
+            <th scope="col" role="columnheader">#</th>
+            <th scope="col" role="columnheader">Subject</th>
+            <th scope="col" role="columnheader">Requester</th>
+            <th scope="col" role="columnheader">Category</th>
+            <th scope="col" role="columnheader">Priority</th>
+            <th scope="col" role="columnheader">Status</th>
+            <th scope="col" role="columnheader">Assignee</th>
+            <th scope="col" class="col-age" role="columnheader">Age</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody role="rowgroup">
           {% for t in page %}
-          <tr class="{% if t.priority == 4 %}is-urgent{% elif t.priority == 3 %}is-high{% endif %}" data-href="{{ t.get_absolute_url }}">
-            <td><span class="ticket-num">#{{ t.number }}</span></td>
-            <td class="col-subject">
+          <tr role="row" class="{% if t.priority == 4 %}is-urgent{% elif t.priority == 3 %}is-high{% endif %}" data-href="{{ t.get_absolute_url }}">
+            <td role="cell"><span class="ticket-num">#{{ t.number }}</span></td>
+            <td class="col-subject" role="cell">
               <a class="subject-link" href="{{ t.get_absolute_url }}">{{ t.subject }}</a>
               {% if t.source == "email" %}<span class="row-flag" title="Created from an email">{% icon "mail" %}<span class="visually-hidden">(created from email)</span></span>{% endif %}
               {% if t.is_blocking %}<span class="row-flag row-flag-block" title="Requester says this is blocking their work">{% icon "flag" %}<span class="visually-hidden">(blocking work)</span></span>{% endif %}
             </td>
-            <td>{{ t.requester }}</td>
-            <td>{{ t.category }}</td>
-            <td>{% include "tickets/partials/priority.html" with t=t %}</td>
-            <td>{% include "tickets/partials/status.html" with t=t %}</td>
-            <td>{% if t.assignee %}<span class="assignee">{% include "tickets/partials/avatar.html" with u=t.assignee size="avatar-xs" %}{{ t.assignee }}</span>{% else %}<span class="unassigned">Unassigned</span>{% endif %}</td>
-            <td class="col-age"><span aria-hidden="true" title="Created {{ t.created_at|date:'M j, g:i A' }}">{{ t.created_at|short_age }}</span><span class="visually-hidden">{{ t.created_at|long_age }}</span></td>
+            <td role="cell">{{ t.requester }}</td>
+            <td role="cell">{{ t.category }}</td>
+            <td role="cell">{% include "tickets/partials/priority.html" with t=t %}</td>
+            <td role="cell">{% include "tickets/partials/status.html" with t=t %}</td>
+            <td role="cell">{% if t.assignee %}<span class="assignee">{% include "tickets/partials/avatar.html" with u=t.assignee size="avatar-xs" %}{{ t.assignee }}</span>{% else %}<span class="unassigned">Unassigned</span>{% endif %}</td>
+            <td class="col-age" role="cell"><span aria-hidden="true" title="Created {{ t.created_at|date:'M j, g:i A' }}">{{ t.created_at|short_age }}</span><span class="visually-hidden">{{ t.created_at|long_age }}</span></td>
           </tr>
           {% empty %}
-          <tr class="empty-row"><td colspan="8">No tickets here{% if filtered %} match these filters.{% else %}. Nice work.{% endif %}</td></tr>
+          <tr class="empty-row" role="row"><td colspan="8" role="cell">
+            <div class="empty-state">
+              <svg class="empty-art" viewBox="0 0 120 96" aria-hidden="true" focusable="false">
+                <circle class="ea-blob" cx="60" cy="48" r="42"/>
+                {% if filtered %}
+                <circle class="ea-paper" cx="56" cy="45" r="17"/>
+                <path class="ea-line" d="m68.5 57.5 11 11M49 45h14"/>
+                {% else %}
+                <circle class="ea-paper" cx="60" cy="48" r="22"/>
+                <path class="ea-line" d="m50 48.5 7 7 13-14"/>
+                {% endif %}
+                <circle class="ea-dot" cx="98" cy="22" r="3"/>
+                <circle class="ea-dot" cx="20" cy="70" r="2.2"/>
+                <circle class="ea-dot" cx="27" cy="20" r="1.8"/>
+              </svg>
+              <p class="empty-title">No tickets here{% if filtered %} match these filters.{% else %}. Nice work.{% endif %}</p>
+              {% if filtered %}<p class="empty-text">Try a different search, or <a href="?view={{ current.id }}">clear the filters</a>.</p>{% endif %}
+            </div>
+          </td></tr>
           {% endfor %}
         </tbody>
       </table>
