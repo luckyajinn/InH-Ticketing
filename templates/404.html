@@ -32,7 +32,7 @@
       <p class="hint" id="ticket-number-hint">The number from your emails, like #1042.</p>
     </form>
 
-    {% if INBOUND_ADDRESS %}<p class="notfound-help">Still stuck? Email <a href="mailto:{{ INBOUND_ADDRESS }}">{{ INBOUND_ADDRESS }}</a>.</p>{% endif %}
+    <p class="notfound-help">Still stuck? {% include "partials/help_contact.html" %}</p>
     {% else %}
     <div class="notfound-actions">
       <a class="btn btn-primary" href="{% url 'accounts:signin' %}">{% icon "signin" %}Sign in</a>

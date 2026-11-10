@@ -12,5 +12,6 @@
     <p class="signin-lede" role="alert">{{ message }}</p>
     <a class="btn btn-primary btn-block" href="{% url 'accounts:signin' %}">Back to sign-in</a>
   </div>
+  <p class="signin-help">Still stuck? {% include "partials/help_contact.html" %}</p>
 </div>
 {% endblock %}

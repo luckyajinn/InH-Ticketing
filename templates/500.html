@@ -4,6 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Something went wrong · InH-Ticketing</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/static/icons/icon.svg" type="image/svg+xml">
   <style>
     /* Self-contained on purpose: this page must render even if static files can't be served. */
     :root {
@@ -31,7 +33,8 @@
     .dot { fill: var(--accent); }
     h1 { margin: 0 0 6px; font-family: var(--font-display); font-size: 22px; }
     p { margin: 0 0 8px; color: var(--muted); }
-    a { display: inline-flex; align-items: center; min-height: 40px; margin-top: 12px; padding: 0 18px; border-radius: 999px; background: var(--accent); color: var(--accent-text); font-weight: 650; text-decoration: none; }
+    p a { color: var(--accent); font-weight: 650; }
+    main > a { display: inline-flex; align-items: center; min-height: 40px; margin-top: 12px; padding: 0 18px; border-radius: 999px; background: var(--accent); color: var(--accent-text); font-weight: 650; text-decoration: none; }
     a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   </style>
 </head>
@@ -46,7 +49,8 @@
       <circle class="dot" cx="22" cy="66" r="2.2"/>
     </svg>
     <h1>Something went wrong</h1>
-    <p>InH-Ticketing hit an error. Please try again in a minute. If it keeps happening, contact IT.</p>
+    <p>InH-Ticketing hit an error. Please try again in a minute.</p>
+    <p>If it keeps happening: {% include "partials/help_contact.html" %}</p>
     <a href="/">Back to home</a>
   </main>
 </body>

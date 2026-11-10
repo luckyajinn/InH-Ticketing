@@ -162,5 +162,31 @@
           .catch(function () { send(submitter); });
       });
     });
+
+    // Sending: once a form really goes (nothing above stopped it), show it on
+    // the button that was pressed and ignore further clicks, so a double click
+    // can't send a request or reply twice. This runs after the password check,
+    // which stops the first submit while it asks the server.
+    document.querySelectorAll("form[method=post]:not([data-autosubmit])").forEach(function (form) {
+      form.addEventListener("submit", function (event) {
+        if (event.defaultPrevented) return;
+        if (form.getAttribute("aria-busy") === "true") {
+          event.preventDefault();
+          return;
+        }
+        form.setAttribute("aria-busy", "true");
+        var button = event.submitter || form.querySelector("button[type=submit]");
+        if (button) button.classList.add("is-sending");
+      });
+    });
+
+    // Coming back with the Back button shows the form ready again.
+    window.addEventListener("pageshow", function (event) {
+      if (!event.persisted) return;
+      document.querySelectorAll("form[aria-busy=true]").forEach(function (form) {
+        form.removeAttribute("aria-busy");
+        form.querySelectorAll(".is-sending").forEach(function (button) { button.classList.remove("is-sending"); });
+      });
+    });
   });
 })();

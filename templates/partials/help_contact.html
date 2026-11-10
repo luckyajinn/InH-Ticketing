@@ -1,0 +1,3 @@
+{% spaceless %}{# Who to contact when the app can't help: HELP_CONTACT, else the help-desk mailbox, else "Contact IT." #}
+{% if HELP_CONTACT %}{{ HELP_CONTACT }}{% elif HELP_EMAIL %}Email IT at <a href="mailto:{{ HELP_EMAIL }}">{{ HELP_EMAIL }}</a>.{% else %}Contact IT.{% endif %}
+{% endspaceless %}

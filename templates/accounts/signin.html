@@ -10,7 +10,7 @@
   <div class="signin-card">
     <div class="signin-mark"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-ticket"/></svg></div>
     <h1>{{ APP_NAME }}</h1>
-    <p class="signin-lede">Request help from IT and follow your tickets in one place.</p>
+    <p class="signin-lede">Ask IT, mechanics, or cleaning and sanitization for help, and follow your tickets in one place.</p>
 
     {% if not entra_configured %}
     <p class="setup-warning" role="alert">
@@ -31,6 +31,7 @@
       <span>You'll sign in on Microsoft's page. {{ APP_NAME }} never sees your password.</span>
     </p>
   </div>
-  <p class="signin-help">Can't sign in? Contact IT.</p>
+  <p class="signin-help">Can't sign in? {% include "partials/help_contact.html" %}</p>
+  <p class="signin-help"><a href="{% url 'core:about' %}">Usage and privacy</a></p>
 </div>
 {% endblock %}

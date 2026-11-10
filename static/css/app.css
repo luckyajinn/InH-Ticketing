@@ -354,6 +354,16 @@ main { flex: 1 0 auto; }
 }
 
 .app-footer { padding: var(--sp-5); color: var(--text-muted); font-size: var(--fs-xs); text-align: center; }
+.app-footer a { color: inherit; text-underline-offset: 2px; }
+.app-footer a:hover { color: var(--link); }
+
+/* Usage and privacy (core/about.html) */
+.about section + section { margin-top: var(--sp-6); padding-top: var(--sp-5); border-top: 1px solid var(--border); }
+.about h2 { margin: 0 0 var(--sp-2); font-family: var(--font-display); font-size: var(--fs-lg); }
+.about p { margin: 0; color: var(--text-muted); }
+.about ul { margin: var(--sp-2) 0 0; padding-left: 20px; color: var(--text-muted); }
+.about li + li { margin-top: 6px; }
+.about strong { color: var(--text); }
 
 /* Flash messages */
 .messages { list-style: none; margin: 0 0 var(--sp-5); padding: 0; }
@@ -397,6 +407,16 @@ main { flex: 1 0 auto; }
 .btn:active { transform: translateY(0); box-shadow: var(--shadow-btn); transition-duration: var(--dur-press); }
 .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
 .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+/* A form that's sending (app.js): the pressed button gets a small spinner, and
+   further clicks are ignored. With reduced motion the ring stays still. */
+form[aria-busy="true"] .btn { pointer-events: none; }
+.btn.is-sending { cursor: progress; opacity: .85; }
+.btn.is-sending::after {
+  content: ""; flex: none; width: 14px; height: 14px;
+  border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%;
+  animation: btn-spin 700ms linear infinite;
+}
+@keyframes btn-spin { to { transform: rotate(360deg); } }
 .btn-note { background: var(--note-btn-bg); border-color: var(--note-btn-bg); color: var(--note-btn-text); }
 .btn-note:hover { background: var(--note-btn-hover); border-color: var(--note-btn-hover); }
 .btn-ghost { background: transparent; border-color: transparent; box-shadow: none; color: var(--text-muted); }

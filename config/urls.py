@@ -9,6 +9,8 @@ admin.site.site_header = "InH-Ticketing admin"
 admin.site.site_title = "InH-Ticketing admin"
 admin.site.index_title = "Administration"
 
+handler500 = "core.views.server_error"
+
 urlpatterns = [
     path("", include("core.urls")),
     path("", include("accounts.urls")),

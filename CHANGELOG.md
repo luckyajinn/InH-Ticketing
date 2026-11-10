@@ -3,7 +3,29 @@
 All notable changes to InH-Ticketing. Versions follow [Semantic Versioning](https://semver.org).
 Each version also has illustrated release notes in [docs/releases](docs/releases/README.md).
 
-## [Unreleased]
+## [0.8.2] - 2026-11-09
+
+The basics: a new Not found page, who to contact when the app can't help,
+no more double-sent requests, wording for every team, a usage and privacy
+page, a favicon, and staying out of search engines.
+[Release notes](docs/releases/v0.8.2.md). (v0.8.1 was skipped: the Not found
+page was going to be v0.8.1 on its own.)
+
+### Added
+- **Help contact** (`HELP_CONTACT` in `.env`): shown under "Can't sign in?"
+  and on the sign-in problem, No access, Not found and Something went wrong
+  pages. Blank falls back to "Email IT at" the help-desk mailbox, then to
+  "Contact IT.". The Something went wrong page now has its own handler, which
+  reads settings only, never the database.
+- **Usage and privacy** page (`/about/`, open to everyone, linked from the
+  footer and the sign-in page): what the app is for, what it keeps, who can
+  see it, how long it's kept, and its cookies.
+- **Favicon set**: the app's ticket mark for browser tabs, phone home screens
+  and a web manifest; `/favicon.ico` points at it.
+- **Kept out of search engines**: `/robots.txt` disallows everything, and
+  every page says `noindex, nofollow`.
+- **Sending state**: the pressed button shows a small spinner, and a double
+  click no longer sends a request or reply twice.
 
 ### Changed
 - New **Not found** page: next steps first. Staff get "Go to my tickets", IT
@@ -11,10 +33,17 @@ Each version also has illustrated release notes in [docs/releases](docs/releases
   number?" box opens a ticket by its number (`/tickets/go/`). Signed out, it
   offers "Sign in". The wording never says whether a ticket exists, as the
   page also shows for tickets that aren't yours.
+- Wording for every team, not just IT: "Request #1042 sent. You'll get an
+  email when there's an update.", the tracker's "Being worked on" step, "Someone
+  will pick it up soon", the sign-in page, My tickets, and the password warning.
 
 ### Fixed
 - The hidden "Skip to content" link's shadow no longer peeks in at the top of
   signed-out pages.
+
+### Upgrading
+- No database changes. Optional: set `HELP_CONTACT` in `.env` (see
+  `.env.example`), then rebuild so the new setting is picked up.
 
 ## [0.8.0] - 2026-11-09
 
@@ -235,6 +264,7 @@ Milestone 1: skeleton and Microsoft 365 sign-in. [Release notes with screenshots
 - `/healthz` endpoint, Dockerfile and Docker Compose with PostgreSQL 17.
 - Entra setup guide (`docs/entra-setup.md`) and the UI mockup (`mockups/`).
 
+[0.8.2]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.8.2
 [0.8.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.8.0
 [0.7.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.7.0
 [0.6.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.6.0

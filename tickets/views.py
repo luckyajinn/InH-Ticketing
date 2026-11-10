@@ -107,7 +107,7 @@ def new_ticket(request):
         password_guard.record_form(
             form, user=request.user, place=PasswordWarning.Place.NEW_REQUEST, ticket=ticket
         )
-        messages.success(request, f"Request #{ticket.number} sent. IT will pick it up soon.")
+        messages.success(request, f"Request #{ticket.number} sent. You'll get an email when there's an update.")
         return redirect(ticket)
     status = 400 if request.method == "POST" else 200
     return render(request, "tickets/new.html", {"form": form, "follow_up": follow_up}, status=status)

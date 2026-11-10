@@ -193,6 +193,11 @@ SITE_URL = os.environ.get("SITE_URL", "http://localhost:8000").rstrip("/")
 HELPDESK_MAILBOX = os.environ.get("HELPDESK_MAILBOX", "").strip()
 DEFAULT_FROM_EMAIL = HELPDESK_MAILBOX or "inh-ticketing@localhost"
 
+# Who to contact when the app can't help: shown under "Can't sign in?" and on
+# the error pages, e.g. "Call IT on ext. 1234, or post in IT Help in Teams."
+# Blank = "Email IT at HELPDESK_MAILBOX", or "Contact IT." if that's blank too.
+HELP_CONTACT = os.environ.get("HELP_CONTACT", "").strip()
+
 # Optional: where "new ticket" and unassigned-reply alerts for IT go
 # (a distribution list, or a Teams channel's email address). Blank = none.
 IT_NOTIFY_EMAIL = os.environ.get("IT_NOTIFY_EMAIL", "").strip()

@@ -31,7 +31,7 @@
         </li>
         <li class="step {% if s == 'new' %}is-upcoming{% elif s == 'open' or s == 'in_progress' %}is-current{% else %}is-done{% endif %}"{% if s == 'open' or s == 'in_progress' %} aria-current="step"{% endif %}>
           <span class="step-dot" aria-hidden="true">{% icon "check" %}</span>
-          <span class="step-label">With IT</span>
+          <span class="step-label">Being worked on</span>
           <span class="visually-hidden">{% if s == 'new' %}(not yet){% elif s == 'open' or s == 'in_progress' %}(current step){% else %}(done){% endif %}</span>
         </li>
         <li class="step {% if s == 'waiting' %}is-current{% elif s == 'resolved' or s == 'closed' %}is-done{% else %}is-upcoming{% endif %}"{% if s == 'waiting' %} aria-current="step"{% endif %}>
@@ -47,7 +47,7 @@
       </ol>
     {% endwith %}
     {% if ticket.status == "new" %}
-      <div class="callout">{% icon "clock" %}<div><p class="callout-title">We've received your request.</p><p class="callout-text">Someone from IT will pick it up soon.</p></div></div>
+      <div class="callout">{% icon "clock" %}<div><p class="callout-title">We've received your request.</p><p class="callout-text">Someone will pick it up soon.</p></div></div>
     {% elif ticket.status == "open" or ticket.status == "in_progress" %}
       <div class="callout">{% icon "user" %}<div><p class="callout-title">{{ who }} is working on this.</p><p class="callout-text">Replies from IT will appear below.</p></div></div>
     {% elif ticket.status == "waiting" %}
@@ -101,7 +101,7 @@
       </form>
       <form class="resolve-row" method="post" action="{% url 'tickets:resolve' ticket.number %}">
         {% csrf_token %}
-        <div><p class="resolve-q">Fixed it yourself, or no longer needed?</p><p class="resolve-sub">Let IT know so they can close it.</p></div>
+        <div><p class="resolve-q">Fixed it yourself, or no longer needed?</p><p class="resolve-sub">Let the team know so they can close it.</p></div>
         <button type="submit" class="btn">{% icon "check" %}Mark as resolved</button>
       </form>
     {% endif %}

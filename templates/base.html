@@ -4,6 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ APP_NAME }}{% endblock %} · {{ APP_NAME }}</title>
+  {# An internal app: never in search results (robots.txt says the same). #}
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="{% static 'icons/icon.svg' %}" type="image/svg+xml">
+  <link rel="icon" href="{% static 'icons/icon-32.png' %}" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="{% static 'icons/apple-touch-icon.png' %}">
+  <link rel="manifest" href="{% static 'icons/site.webmanifest' %}">
+  <meta name="theme-color" content="#0e7c72">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
   {# Not deferred: app.js adds the "js" class before first paint, then waits for the DOM itself. #}
   <script src="{% static 'js/app.js' %}"></script>
@@ -59,7 +66,7 @@
 </main>
 
 {% block footer %}
-<footer class="app-footer">{{ APP_NAME }} v{{ APP_VERSION }}</footer>
+<footer class="app-footer">{{ APP_NAME }} v{{ APP_VERSION }} · <a href="{% url 'core:about' %}">Usage and privacy</a></footer>
 {% endblock %}
 </body>
 </html>

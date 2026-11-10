@@ -123,6 +123,20 @@ Decided 2026-11-06:
       after the 2026-11-10 review. The New request page's notice already
       names them.
 
+## v0.8.2 (released 2026-11-09: the site basics)
+
+Priorities and reasons are in [roadmap.md](roadmap.md), Site basics.
+
+- [x] New Not found page: next steps first, and open a ticket by its number.
+- [x] Help contact (`HELP_CONTACT`) under "Can't sign in?" and on the error pages.
+- [x] Sending state, and no double sends from a double click.
+- [x] Wording for every team, not just IT.
+- [x] Usage and privacy page (`/about/`), linked from the footer and sign-in.
+- [x] Favicon set and web manifest.
+- [x] robots.txt and noindex on every page.
+- [ ] Set `HELP_CONTACT` on the server (`.env`), e.g. IT's extension and Teams channel.
+- [ ] A fuller privacy notice before licensing to other companies.
+
 ## v0.9.0 (pilot fixes, by 2026-11-12)
 
 Filled from the pilot, which starts 2026-11-10. Report what you find as a

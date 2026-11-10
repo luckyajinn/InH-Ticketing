@@ -34,7 +34,8 @@ Nov 9 is a Monday.
 | ✅ Mon Nov 9 | Server | Live on the internal server (16 cores, 32 GB RAM) and tested | — |
 | ✅ Mon Nov 9 | **v0.7.0** | The new look, the password check with its audit trail, folded email signatures | — |
 | ✅ Mon Nov 9 | **v0.8.0** | Mechanics and Cleaning & sanitization requests, with common requests | — |
-| **Tue Nov 10** | Demo, pilot starts | CFO demo of v0.8.0. Pilot with one other tester, trying to break it ([pilot-testing.md](pilot-testing.md)). Risk assessment for the new teams with Ruben Martinez | v0.8.0 installed on the server |
+| ✅ Mon Nov 9 | **v0.8.2** | The site basics (below): new Not found page, help contact, no double-sent requests, wording for every team, usage and privacy page, favicon, kept out of search engines | — |
+| **Tue Nov 10** | Demo, pilot starts | CFO demo of v0.8.2. Pilot with one other tester, trying to break it ([pilot-testing.md](pilot-testing.md)). Risk assessment for the new teams with Ruben Martinez | v0.8.2 installed on the server |
 | Nov 10–12 | v0.8.x | Fixes as the pilot finds them, released as small updates | Pilot findings |
 | **Wed–Thu Nov 11–12** | **v0.9.0** | Pilot fixes, the pasted-password removal tool (a before-go-live compliance item), the closed-ticket decision | Pilot findings, decisions |
 | **Fri Nov 13** (or Mon Nov 16) | **v1.0.0** | **Everything for IT finalized:** final checks on the server, docs and release done | Your side (below) |
@@ -48,7 +49,7 @@ Nov 9 is a Monday.
 
 | By | Task | Unlocks |
 |---|---|---|
-| **Tue Nov 10, morning** | Install v0.8.0 on the server ([deployment.md](deployment.md), section 10; the migrations run when it starts). Check ticket #1071's signature is folded, and that Mechanics and Cleaning & sanitization are on the New request form | Demo, pilot |
+| **Tue Nov 10, morning** | Install v0.8.2 on the server ([deployment.md](deployment.md), section 10; the migrations run when it starts). Set `HELP_CONTACT` in `.env` first. Check ticket #1071's signature is folded, and that Mechanics and Cleaning & sanitization are on the New request form | Demo, pilot |
 | Tue Nov 10 | Start the pilot with one tester; report findings as tickets with "Pilot:" in the subject | v0.8.x fixes |
 | Tue Nov 10 | Risk assessment for Mechanics and Cleaning & sanitization with Ruben Martinez; then update [usage-rules.md](usage-rules.md) | v1.2.0 |
 | Thu Nov 12 | Decide what happens to closed tickets | v0.9.0 |
@@ -59,6 +60,28 @@ Nov 9 is a Monday.
 | Mon Nov 16 | Teams: a webhook or permission for IT alerts | v1.1.0 |
 | Mon Nov 16 | Entra app roles for the Mechanics and Cleaning & sanitization teams; the common requests you're gathering from them | v1.2.0 |
 | **Fri Nov 20** | Go / no-go; set the go-live date and the live-mailbox cut-over; draft the all-staff announcement | Go-live |
+
+## Site basics (checklist, 2026-11-09)
+
+From a review of common website basics against what an internal, sign-in-only
+app needs. The ones it needed and didn't have all shipped in v0.8.2, most
+important first:
+
+| Priority | Item | Why it matters | Status |
+|---|---|---|---|
+| 1 | **Help contact** | Someone who can't sign in, or hits an error, had only "Contact IT", with no way to do it | ✅ v0.8.2 (`HELP_CONTACT`) |
+| 2 | **Sending state, no double sends** | A double click could create two tickets or two replies | ✅ v0.8.2 |
+| 3 | **Wording for every team** | "IT will pick it up soon" told Mechanics and C&S requesters the wrong team | ✅ v0.8.2 |
+| 4 | **Usage and privacy page** | Says what's kept and who sees it; needed before go-live, and a fuller notice before licensing | ✅ v0.8.2 (`/about/`) |
+| 5 | **Favicon set** | Find the tab among many; an icon on phone home screens | ✅ v0.8.2 |
+| 6 | **robots.txt and noindex** | Insurance in case the server is ever reachable from outside | ✅ v0.8.2 |
+
+Already in place: CTA above the fold, a title per page, alt text (the app has
+no content images), mobile layouts, form error states. Decided against, as
+bloat for an internal app: per-page meta descriptions, Open Graph images, a
+sitemap, a sticky mobile CTA, a separate thank-you page, a terms page (the
+usage rules are the terms), a cookie banner (only necessary cookies), and
+third-party analytics (v1.1.0's reporting answers the same questions).
 
 ## If things slip
 
