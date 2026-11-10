@@ -35,7 +35,8 @@ Nov 9 is a Monday.
 | ✅ Mon Nov 9 | **v0.7.0** | The new look, the password check with its audit trail, folded email signatures | — |
 | ✅ Mon Nov 9 | **v0.8.0** | Mechanics and Cleaning & sanitization requests, with common requests | — |
 | ✅ Mon Nov 9 | **v0.8.2** | The site basics (below): new Not found page, help contact, no double-sent requests, wording for every team, usage and privacy page, favicon, kept out of search engines | — |
-| **Tue Nov 10** | Demo, pilot starts | CFO demo of v0.8.2. Pilot with one other tester, trying to break it ([pilot-testing.md](pilot-testing.md)). Risk assessment for the new teams with Ruben Martinez | v0.8.2 installed on the server |
+| ✅ Tue Nov 10 | **v0.8.3** | Fixes from the pre-pilot review (three reviews and an attack test): side panel, unsent replies, password check false alarms, signature folding, odd characters | — |
+| **Tue Nov 10** | Demo, pilot starts | CFO demo of v0.8.3. Pilot with one other tester, trying to break it ([pilot-testing.md](pilot-testing.md)). Risk assessment for the new teams with Ruben Martinez | v0.8.3 installed on the server |
 | Nov 10–12 | v0.8.x | Fixes as the pilot finds them, released as small updates | Pilot findings |
 | **Wed–Thu Nov 11–12** | **v0.9.0** | Pilot fixes, the pasted-password removal tool (a before-go-live compliance item), the closed-ticket decision | Pilot findings, decisions |
 | **Fri Nov 13** (or Mon Nov 16) | **v1.0.0** | **Everything for IT finalized,** plus **a mailbox per department**: email to Mechanics' or C&S's mailbox becomes a ticket for that department, answered from the same mailbox. Final checks on the server, docs and release done | Your side (below); the mailbox decision |
@@ -49,7 +50,7 @@ Nov 9 is a Monday.
 
 | By | Task | Unlocks |
 |---|---|---|
-| **Tue Nov 10, morning** | Install v0.8.2 on the server ([deployment.md](deployment.md), section 10; the migrations run when it starts). Set `HELP_CONTACT` in `.env` first. Check ticket #1071's signature is folded, and that Mechanics and Cleaning & sanitization are on the New request form | Demo, pilot |
+| **Tue Nov 10, morning** | Install v0.8.3 on the server ([deployment.md](deployment.md), section 10; the migrations run when it starts). Set `HELP_CONTACT` in `.env` first. Check ticket #1071's signature is folded, and that Mechanics and Cleaning & sanitization are on the New request form | Demo, pilot |
 | Tue Nov 10 | Start the pilot with one tester; report findings as tickets with "Pilot:" in the subject | v0.8.x fixes |
 | Tue Nov 10 | Risk assessment for Mechanics and Cleaning & sanitization with Ruben Martinez; then update [usage-rules.md](usage-rules.md) | v1.2.0 |
 | Thu Nov 12 | Decide what happens to closed tickets | v0.9.0 |

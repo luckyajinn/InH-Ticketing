@@ -16,10 +16,43 @@
   }
 
   ready(function () {
+    // A reply being typed survives the side panel saving (which reloads the
+    // page): it's set aside just before the save and put back afterwards.
+    var DRAFT_KEY = "inh-draft:" + window.location.pathname;
+    var composerText = document.getElementById("composer-text");
+
+    function keepDraft() {
+      if (!composerText || !composerText.value.trim()) return;
+      var mode = document.querySelector("input[name=visibility]:checked");
+      try {
+        window.sessionStorage.setItem(DRAFT_KEY, JSON.stringify({
+          body: composerText.value, visibility: mode ? mode.value : "public"
+        }));
+      } catch (e) { /* private browsing: nothing to keep it in */ }
+    }
+
+    if (composerText) {
+      var saved = null;
+      try {
+        saved = JSON.parse(window.sessionStorage.getItem(DRAFT_KEY) || "null");
+        window.sessionStorage.removeItem(DRAFT_KEY);
+      } catch (e) { saved = null; }
+      if (saved && saved.body && !composerText.value.trim()) {
+        composerText.value = saved.body;
+        var radio = document.querySelector('input[name=visibility][value="' + (saved.visibility === "internal" ? "internal" : "public") + '"]');
+        if (radio && !radio.checked) {
+          radio.checked = true;
+          radio.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+      }
+    }
+
     // Forms marked data-autosubmit save as soon as a field changes
     // (the side panel on a ticket). Without JS, a Save button is shown instead.
     document.querySelectorAll("form[data-autosubmit]").forEach(function (form) {
+      form.addEventListener("submit", keepDraft); // "Assign to me" and the no-JS Save button
       form.addEventListener("change", function () {
+        keepDraft();
         form.classList.add("is-saving");
         var hint = form.querySelector(".props-hint");
         if (hint) hint.textContent = "Saving\u2026";

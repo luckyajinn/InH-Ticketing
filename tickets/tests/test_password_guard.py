@@ -46,6 +46,9 @@ CAUGHT = [
     "Tr0ub4dor&3",
     "token Xq7RfT2mN9pLw4ZsK8vB3cH6jD1gY5aE",
     "My password expired so I set it to Dana1987",
+    # v0.8.3: lock combinations.
+    "the combination is 12-34-56",
+    "lock combo 2580",
 ]
 
 NOT_CAUGHT = [
@@ -78,6 +81,18 @@ NOT_CAUGHT = [
     "[cid:image001.png@01DB2A3B.4C5D6E70]",
     "See the attached Report_Q3-2024v2.xlsx",
     "Screenshot 2026-11-09 InvoiceV2.png",
+    # v0.8.3: everyday Mechanics, Cleaning & sanitization and sign-in error wording.
+    "The locating pin is bent on the capper",
+    "Hinge pin is loose on the door",
+    "The pins are worn on the conveyor",
+    "My pass is broken, can't get in the lab",
+    "Lot code 23081 smells off",
+    "Batch code 240815 on the filler",
+    "Charge it to cost code 6100",
+    "QR code 1234 won't scan",
+    "Part code 5521 for the gasket",
+    "Timestamp: 2026-11-10T15:42:07.844Z",
+    "Request Id: 3f2a9c1e-8b7d-4e6f-9a0b-1c2d3e4f5a6b Timestamp: 2026-11-10 15:42:07Z",
 ]
 
 

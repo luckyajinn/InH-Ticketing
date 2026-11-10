@@ -17,8 +17,12 @@ NEXT_KEY = "entra_next"
 
 
 def _safe_next(request, candidate: str | None) -> str:
-    """Only allow redirects back into this site, never to another domain."""
-    if candidate and url_has_allowed_host_and_scheme(
+    """
+    Only allow redirects back into this site, never to another domain, and
+    only to a path ("/tickets/1042/"). Anything else, like a bare word, would
+    be mistaken for a page name when redirecting, and fail.
+    """
+    if candidate and candidate.startswith("/") and url_has_allowed_host_and_scheme(
         candidate, allowed_hosts={request.get_host()}, require_https=request.is_secure()
     ):
         return candidate

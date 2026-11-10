@@ -31,7 +31,7 @@
         <span class="ticket-meta">
           {{ t.category }} &middot;
           {% if t.is_open %}
-            {% if t.assignee %}With {{ t.assignee }}{% else %}Waiting for IT to pick it up{% endif %}
+            {% if t.assignee %}With {{ t.assignee }}{% else %}Waiting for someone to pick it up{% endif %}
           {% else %}
             {% if t.assignee %}Handled by {{ t.assignee }}{% else %}Closed{% endif %}
           {% endif %}
@@ -53,7 +53,7 @@
       <circle class="ea-dot" cx="22" cy="28" r="2.2"/>
     </svg>
     <p class="empty-title">No {{ show }} requests.</p>
-    <p class="empty-text">{% if show == "open" %}Nothing is waiting on IT right now. If something isn't working, we're happy to help.{% else %}Requests you're finished with will show up here.{% endif %}</p>
+    <p class="empty-text">{% if show == "open" %}You have no open requests. If something isn't working, we're happy to help.{% else %}Requests you're finished with will show up here.{% endif %}</p>
     <p><a href="{% url 'tickets:new' %}">Start a new request</a></p>
   </li>
   {% endfor %}

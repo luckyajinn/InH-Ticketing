@@ -4,6 +4,7 @@ One page per version, each with screenshots of what changed. Newest first.
 
 | Version | What | Notes |
 |---|---|---|
+| v0.8.3 | Pre-pilot fixes: side panel, unsent replies, password check, signatures, odd characters | [v0.8.3.md](v0.8.3.md) |
 | v0.8.2 | The basics: Not found page, help contact, no double-sent requests, usage and privacy, favicon | [v0.8.2.md](v0.8.2.md) |
 | v0.8.0 | Mechanics and Cleaning & sanitization requests, with common requests | [v0.8.0.md](v0.8.0.md) |
 | v0.7.0 | The new look, the password check with its audit trail, folded email signatures | [v0.7.0.md](v0.7.0.md) |

@@ -1,7 +1,7 @@
 # InH-Ticketing: overview
 
 What the system is, where it stands, and how each feature and system works.
-Written 2026-11-10 for v0.8.2. Each section is meant to work as one slide.
+Written 2026-11-10 for v0.8.3. Each section is meant to work as one slide.
 
 ## 1. In one paragraph
 
@@ -16,13 +16,13 @@ It runs on McKenna Labs' own server, inside the company network.
 
 | | |
 |---|---|
-| Version | **v0.8.2**, released 2026-11-09 |
-| Built | v0.1.0 to v0.8.2 between 2026-11-05 and 2026-11-09, each release tested and documented with screenshots |
+| Version | **v0.8.3**, released 2026-11-10 |
+| Built | v0.1.0 to v0.8.3 between 2026-11-05 and 2026-11-10, each release tested and documented with screenshots |
 | Server | Live on the internal server (16 cores, 32 GB RAM) at `helpdesk.mckennalabs.com` |
 | Pilot | Starts 2026-11-10 with one other tester, trying to break it |
 | Compliance | Intended-use and risk assessment passed (Ruben Martinez); internal setup approved (Michael Rocovitz). A risk assessment for the Mechanics and C&S use is on 2026-11-10 |
 | Target | Everything finalized by **Friday 2026-11-20**; go-live date set then (earliest Monday 2026-11-30) |
-| Quality | 260 automated tests, all passing |
+| Quality | 283 automated tests, all passing, including an attack test (SQL, shell and template injection in every input) |
 
 ## 3. Who uses it
 
@@ -83,7 +83,8 @@ Every change is written to the ticket's history: who, what, when.
 - If so, a warning shows where (with the password itself masked). The person
   takes it out, or ticks "It isn't a password, or I need to send it anyway".
 - It leans towards false alarms on purpose, but stays quiet on everyday
-  wording ("my password expired", "error code 1603", file names).
+  wording ("my password expired", "error code 1603", file names, "the pin
+  is bent", lot and part codes, pasted timestamps).
 - **Audit trail:** every "sent anyway", every password taken out after a
   warning, and every email that looks like it has one is recorded: who,
   where, which check. Never the text itself. Read-only in the admin site.
@@ -98,7 +99,8 @@ Every change is written to the ticket's history: who, what, when.
   lines), a reply box that switches between public reply and internal note,
   "Send and set Waiting on User" and "Send and resolve" buttons, and a side
   panel for status, priority, assignee and category that saves as you change
-  it. Also the requester's other tickets and any linked tickets.
+  it. It saves only the field you changed, so an old page never undoes
+  someone else's change, and a reply you were typing is kept. Also the requester's other tickets and any linked tickets.
 
 ### The IT queue
 - Views: Unassigned, Assigned to me, All open, Waiting on user, Recently
@@ -127,7 +129,8 @@ Every change is written to the ticket's history: who, what, when.
   outside the company, and emails it has already seen. Quoted earlier emails
   are trimmed off; attachments are kept within the same limits.
 - **Signatures:** the CodeTwo signature folds under "Show email signature",
-  so the request comes first and the phone number is still there.
+  so the request comes first and the phone number is still there. It folds
+  only when it finds a name, a sign-off or signature boilerplate.
 - Processed emails move to a "Processed by InH-Ticketing" folder.
 
 ### Automations
@@ -219,30 +222,35 @@ folder in the existing ones); what happens to closed tickets; the go-live date.
 
 ## 10. Ready for the demo?
 
-**Yes: go**, from three independent reviews of v0.8.2 on 2026-11-10
-(security and privacy, feature logic, deployment and readiness). All 260
-tests pass, every page was checked on desktop and phone in light and dark
-mode, the production settings check is clean, and no reviewer found a way
-for staff to see anyone else's tickets, notes or files.
+**Yes: go.** Three independent reviews of v0.8.2 on 2026-11-10 (security and
+privacy, feature logic, deployment and readiness) found no way for staff to
+see anyone else's tickets, notes or files. Every page was checked on desktop
+and phone in light and dark mode, and the production settings check is clean.
+
+**v0.8.3 fixes what they found for the pilot:**
+
+- The side panel saves only the field you changed (an old page could put
+  back someone else's assignment or reopen a resolved ticket).
+- A reply you're typing is kept when the side panel saves.
+- The password check no longer warns on "pin is bent", "pass is broken",
+  lot, batch, cost or part codes, or pasted timestamps, and now catches lock
+  combinations.
+- Short lists at the end of an email no longer fold as a signature.
+- Superscript digits ("²") and odd sign-in links no longer show an error page.
+- The last "IT"-only wording staff of other teams saw.
+- The deployment guide has the help contact and a rollback that keeps
+  tickets; the restore script prints the right start command; the pilot
+  checklist covers v0.8.
+
+An attack test also tried SQL, shell and template injection in every input
+(forms, replies, notes, search, ticket numbers, sign-in links, file names,
+email): nothing ran, nothing broke, and the text is stored exactly as typed.
 
 **One thing first:** set `HELP_CONTACT` in the server's `.env` before the
 update (put the value in quotes if it contains `#`). Left blank, the sign-in
 page would show the test mailbox's address.
 
-**Known issues, with a workaround for the demo:**
-
-| Issue | Workaround today |
-|---|---|
-| The ticket's side panel can put back old values if someone else changed the ticket after you opened it | Reload the ticket before using the side panel |
-| Changing a side-panel field reloads the page and loses a reply you were typing | Set the side-panel fields first, then type the reply |
-| The password check warns on some everyday Mechanics and C&S wording ("pin is bent", "pass is broken", "lot code 23081") and on the timestamp in pasted sign-in errors | Demo with wording like "the filler is leaking oil" |
-| A short list of rooms, units or links at the end of an email can fold as if it were a signature (one click shows it) | Expect it only on emailed tickets |
-| A superscript digit ("²") typed into the ticket-number box or queue search shows an error page | Type ordinary digits |
-| If the update ever had to be rolled back, the restore script prints a start command without `--build` | Follow deployment.md section 10, not the script's message |
-
-**Fixing this week:** the six issues above, plus a check that emails
-claiming to be from IT really are (anti-spoofing), protection for shared PCs
-(pages not cached after sign-out, sign-in ending when the browser closes),
-the worker waiting for database updates on start-up, the help contact in the
-deployment guide, an updated pilot checklist, and the last "IT"-only wording
-staff of other teams see.
+**Still to do before v1.0.0** (none needed for the demo or pilot): a check
+that emails claiming to be from IT really are (anti-spoofing), protection for
+shared PCs (pages not cached after sign-out, sign-in ending when the browser
+closes), and the worker waiting for database updates on start-up.

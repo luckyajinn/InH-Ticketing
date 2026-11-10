@@ -24,6 +24,8 @@ from tickets.models import Attachment, Category, Comment, Ticket, TicketEvent
 
 Status = Ticket.Status
 _UNSET = object()
+# Pass as update_ticket(assignee=UNCHANGED) to leave the assignee alone.
+UNCHANGED = _UNSET
 STATUS_FIELDS = ["status", "resolved_at", "closed_at"]
 
 

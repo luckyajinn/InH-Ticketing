@@ -33,9 +33,9 @@ _STRONG_LABEL = (
     r"pass[\s-]?words?|pas+w(?:o|e)?r?ds?|passowrds?|pswds?|pwds?|pw|p/w|pwords?"
     r"|pass[\s-]?codes?|pass[\s-]?phrases?"
 )
-# Ordinary words too ("pass it on"), so they need a separator such as ":" or
-# "is" straight after them, or a next word that looks like a password.
-_WEAK_LABEL = r"pass|pins?|pin[\s-]?codes?|secrets?"
+# Ordinary words too ("pass it on", "the pin is bent"), so the value after
+# them must have a digit or a symbol ("pin: 4821", "pass: abc123").
+_WEAK_LABEL = r"pass|pins?|pin[\s-]?codes?|secrets?|combinations?|combos?"
 # Usually followed by a username, so the value must look like a password too.
 _LOGIN_LABEL = r"log[\s-]?ins?|sign[\s-]?ins?|credentials?|creds"
 
@@ -72,13 +72,19 @@ default
 # "code", "PIN" and friends followed by 4 to 8 digits.
 _CODE_RE = re.compile(
     r"(?<![\w-])(?:(?P<pre>[A-Za-z]+)\s+)?"
-    r"(?:codes?|otp|pins?|pin[\s-]?codes?|recovery[\s-]?keys?|backup[\s-]?codes?"
+    r"(?:codes?|otp|pins?|pin[\s-]?codes?|recovery[\s-]?keys?|backup[\s-]?codes?|combinations?|combos?"
     r"|one[\s-]?time[\s-]?(?:code|passcode|password)s?|verification|authenticator|mfa|2fa|two[\s-]?factor)"
     r"\b[^\d\n]{0,18}?(?<![\d.])(?P<value>\d{4,8}|\d{3}[\s-]\d{3})(?![\d.])",
     re.I,
 )
-# Codes that are just numbers people quote: "error code 1603", "zip code 90210".
-_CODE_NOT_AFTER = {"error", "exit", "status", "zip", "postal", "area", "product", "promo", "discount", "country", "dial", "event", "return"}
+# Codes that are just numbers people quote: "error code 1603", "zip code 90210",
+# and the lot, batch, cost and part codes of manufacturing and maintenance work.
+_CODE_NOT_AFTER = {
+    "error", "exit", "status", "zip", "postal", "area", "product", "promo", "discount", "country", "dial",
+    "event", "return", "lot", "batch", "cost", "room", "project", "qr", "bar", "barcode", "part", "order",
+    "item", "sku", "job", "ticket", "case", "ref", "reference", "model", "serial", "asset", "invoice", "po",
+    "tracking", "building", "bldg", "line", "gl", "shipping", "purchase", "vendor", "fault", "alarm",
+}
 
 _TOKEN_RE = re.compile(r"\S+")
 _WRAPPERS = "\"'“”‘’()[]{}<>`*"
@@ -99,6 +105,12 @@ _COMMON_STEMS = re.compile(
 )
 _GUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I)
 _HEX_RE = re.compile(r"^(?:0x)?[0-9a-f]+$", re.I)
+_TIMESTAMP_RE = re.compile(
+    r"^(?:\d{4}-\d{2}-\d{2}(?:[T ]?\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?)?"  # 2026-11-10T15:42:07.844Z
+    r"|\d{1,2}:\d{2}(?::\d{2}(?:\.\d+)?)?)"                              # 15:42:07Z on its own
+    r"(?:Z|[+-]\d{2}:?\d{2}|am|pm)?$",
+    re.I,
+)
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[a-z]{2,}$", re.I)
 # File names ("Report_Q3-2024v2.xlsx"), including the logo placeholders mail
 # apps leave in signatures ("[cid:image001.png@01DB2A3B.4C5D6E70]").
@@ -153,6 +165,8 @@ def _labelled(text: str) -> list[Finding]:
             value = _VALUE_RE.match(text, sep.end())
             if login and value and not _looks_secret(value.group("value")):
                 value = None  # "login: jdoe" is a username
+            elif label.group("weak") and value and not _looks_secret(value.group("value"), need_digit_or_symbol=True):
+                value = None  # "the pin is bent", "my pass is broken"
         elif label.group("weak"):
             value = _next_word_if_secret(text, pos, need_digit_or_symbol=True)
         elif strong:
@@ -211,6 +225,8 @@ def _token_is_password(token: str) -> bool:
         return False  # file names and signature logo placeholders
     if _EMAIL_RE.match(token) or _GUID_RE.match(token) or _HEX_RE.match(token):
         return False  # email addresses, IDs from error messages, hex codes
+    if _TIMESTAMP_RE.match(token):
+        return False  # "2026-11-10T15:42:07.844Z" from a pasted sign-in error
     if token.isdigit() or (token.startswith("#") and token[1:].isdigit()):
         return False  # numbers and ticket references
     lower = any(c.islower() for c in token)

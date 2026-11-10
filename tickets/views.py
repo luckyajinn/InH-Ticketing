@@ -82,7 +82,7 @@ def _follow_up_target(request) -> Ticket | None:
     without a word, so the page never reveals whether a ticket exists.
     """
     raw = request.POST.get("follow_up") or request.GET.get("follow_up") or ""
-    if not raw.isdigit():
+    if not raw.isdecimal():
         return None
     ticket = Ticket.objects.filter(pk=Ticket.pk_from_number(int(raw))).first()
     return ticket if ticket and selectors.can_view(request.user, ticket) else None
@@ -123,7 +123,7 @@ def go_to_ticket(request):
     """
     raw = request.GET.get("number", "").strip().lstrip("#").strip()
     # Ticket numbers are short; a huge number would only ever be not found.
-    if raw.isdigit() and len(raw) <= 9:
+    if raw.isdecimal() and len(raw) <= 9:
         return redirect("tickets:detail", number=int(raw))
     messages.error(request, "Enter a ticket number, like 1042.")
     return redirect("tickets:mine")
@@ -217,6 +217,17 @@ def check_text(request):
     return JsonResponse({"found": bool(found), "hints": password_guard.hints(found)})
 
 
+def _changed_here(request, name: str, value) -> bool:
+    """
+    Did the person change this side-panel field? The panel also sends what it
+    showed when the page loaded (shown_status, ...), so a page left open can't
+    put back a value someone else has changed since. A page from before this
+    check sends no shown_ values, and every field counts as changed, as before.
+    """
+    shown = request.POST.get(f"shown_{name}")
+    return shown is None or str("" if value is None else value) != shown
+
+
 @agent_required
 @require_POST
 def update_properties(request, number: int):
@@ -224,13 +235,16 @@ def update_properties(request, number: int):
     form = TicketPropertiesForm(request.POST, ticket=ticket, me=request.user)
     if not form.is_valid():
         return _render_detail(request, ticket, props_form=form, status=400)
+    data = form.cleaned_data
+    assignee = data["assignee"]
     changes = services.update_ticket(
         ticket=ticket,
         actor=request.user,
-        status=form.cleaned_data["status"],
-        priority=form.cleaned_data["priority"],
-        assignee=form.cleaned_data["assignee"],
-        category=form.cleaned_data["category"],
+        status=data["status"] if _changed_here(request, "status", data["status"]) else None,
+        priority=data["priority"] if _changed_here(request, "priority", data["priority"]) else None,
+        assignee=(assignee if _changed_here(request, "assignee", assignee.pk if assignee else None)
+                  else services.UNCHANGED),
+        category=data["category"] if _changed_here(request, "category", data["category"].pk) else None,
     )
     if changes:
         messages.success(request, "Saved: " + ", ".join(changes) + ".")
@@ -253,7 +267,7 @@ def resolve(request, number: int):
     if ticket.requester_id != request.user.pk:
         raise PermissionDenied
     if services.resolve_by_requester(ticket=ticket, user=request.user):
-        messages.success(request, "Marked as resolved. Thanks for letting IT know.")
+        messages.success(request, "Marked as resolved. Thanks for letting us know.")
     return redirect(ticket)
 
 
@@ -264,7 +278,7 @@ def reopen(request, number: int):
     if ticket.requester_id != request.user.pk:
         raise PermissionDenied
     if services.reopen_by_requester(ticket=ticket, user=request.user):
-        messages.info(request, "Request reopened. Tell IT what's still wrong.")
+        messages.info(request, "Request reopened. Say what's still wrong below.")
         return redirect(ticket.get_absolute_url() + "?reopened=1#reply")
     return redirect(ticket)
 
@@ -340,12 +354,12 @@ def queue(request):
             | Q(requester__display_name__icontains=term)
             | Q(requester__email__icontains=term)
         )
-        if term.isdigit():
+        if term.isdecimal():
             match |= Q(pk=Ticket.pk_from_number(int(term)))
         tickets = tickets.filter(match)
-    if category.isdigit():
+    if category.isdecimal():
         tickets = tickets.filter(category_id=int(category))
-    if priority.isdigit():
+    if priority.isdecimal():
         tickets = tickets.filter(priority=int(priority))
 
     if view_id == "resolved":

@@ -87,6 +87,11 @@
       <h2 class="panel-title">Properties</h2>
       <form method="post" action="{% url 'tickets:update' ticket.number %}" data-autosubmit>
         {% csrf_token %}
+        {# What the panel showed when the page loaded, so saving only applies what was changed here. #}
+        <input type="hidden" name="shown_status" value="{{ ticket.status }}">
+        <input type="hidden" name="shown_priority" value="{{ ticket.priority }}">
+        <input type="hidden" name="shown_assignee" value="{{ ticket.assignee_id|default_if_none:'' }}">
+        <input type="hidden" name="shown_category" value="{{ ticket.category_id }}">
         {% with f=props_form %}
         <div class="prop-field"><label for="{{ f.status.id_for_label }}">Status</label>{{ f.status }}</div>
         <div class="prop-field"><label for="{{ f.priority.id_for_label }}">Priority</label>{{ f.priority }}</div>

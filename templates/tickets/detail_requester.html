@@ -6,7 +6,7 @@
 
 {% block content %}
 {# Requester view. The server only sends public replies here: no internal notes, no history. #}
-{% with who=ticket.assignee|default:"IT" %}
+{% with who=ticket.assignee|default:"the team" %}
 <a class="back-link" href="{% url 'tickets:mine' %}">{% icon "arrow-left" %}{% if user.is_agent %}My requests{% else %}My tickets{% endif %}</a>
 <header class="detail-head">
   <p class="eyebrow">#{{ ticket.number }}</p>
@@ -49,9 +49,9 @@
     {% if ticket.status == "new" %}
       <div class="callout">{% icon "clock" %}<div><p class="callout-title">We've received your request.</p><p class="callout-text">Someone will pick it up soon.</p></div></div>
     {% elif ticket.status == "open" or ticket.status == "in_progress" %}
-      <div class="callout">{% icon "user" %}<div><p class="callout-title">{{ who }} is working on this.</p><p class="callout-text">Replies from IT will appear below.</p></div></div>
+      <div class="callout">{% icon "user" %}<div><p class="callout-title">{{ who|capfirst }} is working on this.</p><p class="callout-text">Replies will appear below.</p></div></div>
     {% elif ticket.status == "waiting" %}
-      <div class="callout callout-waiting">{% icon "reply" %}<div><p class="callout-title">{{ who }} is waiting for your reply.</p><p class="callout-text">This request is paused until you answer. Reply below.</p></div></div>
+      <div class="callout callout-waiting">{% icon "reply" %}<div><p class="callout-title">{{ who|capfirst }} is waiting for your reply.</p><p class="callout-text">This request is paused until you answer. Reply below.</p></div></div>
     {% elif ticket.status == "resolved" %}
       <div class="callout callout-resolved">{% icon "check-circle" %}<div>
         <p class="callout-title">{% if resolved_event.actor_id == user.pk %}You{% else %}{{ resolved_event.actor|default:who }}{% endif %} marked this as resolved{% if resolved_event %} on {{ resolved_event.created_at|date:"M j" }}{% endif %}.</p>
@@ -87,7 +87,7 @@
       <form class="reply-card" id="reply" method="post" action="{% url 'tickets:reply' ticket.number %}" enctype="multipart/form-data" novalidate
             data-password-check="{% url 'tickets:check_text' %}" data-password-fields="body">
         {% csrf_token %}
-        <label for="reply-text" class="reply-label">{% if reopened %}Tell IT what's still not working{% elif ticket.status == "waiting" %}Reply to {{ who }}{% else %}Add a reply{% endif %}</label>
+        <label for="reply-text" class="reply-label">{% if reopened %}Say what's still not working{% elif ticket.status == "waiting" %}Reply to {{ who }}{% else %}Add a reply{% endif %}</label>
         <textarea id="reply-text" name="body" class="textarea" rows="4"{% if reopened or reply_form.errors %} autofocus{% endif %}
                   aria-describedby="reply-hint{% if reply_form.body.errors %} reply-error{% endif %}"{% if reply_form.body.errors %} aria-invalid="true"{% endif %}>{{ reply_form.body.value|default:'' }}</textarea>
         {% if reply_form.body.errors %}<p class="field-error" id="reply-error">{% icon "alert" %}{{ reply_form.body.errors.0 }}</p>{% endif %}

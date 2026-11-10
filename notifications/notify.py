@@ -97,7 +97,7 @@ def request_received(ticket) -> None:
         _queue(
             kind="received", ticket=ticket, to=requester.email,
             heading="We've received your request",
-            intro=f"Thanks, {requester}. Request #{ticket.number} is with IT, and someone will pick it up soon.",
+            intro=f"Thanks, {requester}. We've got request #{ticket.number}, and someone will pick it up soon.",
             message=ticket.description, message_author="You wrote",
             reason="you raised this request",
         )

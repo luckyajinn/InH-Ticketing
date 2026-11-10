@@ -1,8 +1,8 @@
 # Pilot testing: try to break it
 
-From **2026-11-10**, two testers try to break InH-Ticketing before everything
-is finalized on **2026-11-20** (see [roadmap.md](roadmap.md)). Fixes ship as
-small v0.7.x updates during the week, and as v0.8.0 on Nov 18.
+From **2026-11-10**, two testers try to break InH-Ticketing (v0.8.3) before
+everything is finalized on **2026-11-20** (see [roadmap.md](roadmap.md)).
+Fixes ship as small v0.8.x updates during the week, and as v0.9.0 on Nov 11–12.
 
 **Report each finding as a ticket in the app**, subject starting `Pilot:`,
 category Other. Say what you did, what you expected, what happened, and on
@@ -29,7 +29,7 @@ then swap. Use the test shared mailbox for email.
 ## 2. The password check
 
 - [ ] Made-up passwords in every place: subject, description, reply, internal note ("my password is ...", "pw: ...", a PIN, a 6-digit code, "Summer2024!"). Each should warn.
-- [ ] Ordinary IT wording should **not** warn ("my password expired", "error code 1603", "Office365 won't open"). Report every false alarm and every miss.
+- [ ] Ordinary IT, Mechanics and cleaning wording should **not** warn ("my password expired", "error code 1603", "Office365 won't open", "the pin is bent", "lot code 23081"). Report every false alarm and every miss.
 - [ ] Tick "send anyway": IT sees *Possible password* in the history, and Admin, *Password warnings* has a row. The requester sees neither.
 - [ ] Take the password out after a warning and send: the row says *Removed before sending*.
 - [ ] Attach a file, trigger the warning, then send: the file is still attached.
@@ -45,8 +45,9 @@ then swap. Use the test shared mailbox for email.
 
 ## 4. Ticket rules
 
-- [ ] Walk one ticket through everything: New, Open, Waiting on User, the requester replies (back to Open), "Send and resolve", "This is still a problem", Resolved again, then closed automatically. To close now instead of waiting 7 days: `docker compose -f compose.yaml -f compose.prod.yaml exec web python manage.py close_resolved` (only closes tickets resolved over 7 days ago).
-- [ ] Two IT people change the same ticket at once, in two browsers.
+- [ ] Walk one ticket through everything: New, Open, Waiting on User, the requester replies (back to Open), "Send and resolve", "This is still a problem", Resolved again. Automatic closing happens 7 days after resolving and can't be sped up during the pilot, so check the close date shown on the ticket and in the email instead.
+- [ ] Two IT people change the same ticket at once, in two browsers: each person's change sticks, and nobody's change is undone by the other's older page.
+- [ ] Start typing a reply as IT, then change a side-panel field: the page saves and your reply is still there.
 - [ ] Assign, unassign, "Assign to me", priority, category.
 - [ ] "Start a follow-up" from a closed ticket links both tickets.
 
@@ -56,20 +57,30 @@ then swap. Use the test shared mailbox for email.
 - [ ] Text like `<script>alert(1)</script>` or `<b>bold</b>`: it shows as plain text and never runs.
 - [ ] An empty form, only spaces, and double-clicking Send (does it make two?).
 - [ ] File names with spaces, accents or symbols.
+- [ ] Odd characters ("²", letters, `' OR '1'='1`) in the ticket-number box on the Not found page and in the queue search: a message or no results, never an error page.
 
-## 6. Devices and display
+## 6. New in v0.8
+
+- [ ] **Common requests:** pick one on New request: the subject and category fill in. Change the subject or the category afterwards: your choice wins.
+- [ ] **Mechanics and Cleaning & sanitization:** both are offered on New request, and the queue's category filter shows just their tickets.
+- [ ] **Not found page:** open a made-up address. "Go to my tickets" (or "Go to the queue" for IT) and "New request" work; your own ticket number in the box opens it; someone else's shows Not found.
+- [ ] **Help contact:** the sign-in page and the error pages say who to contact, with the right extension or channel.
+- [ ] **Usage and privacy:** the footer link opens it, signed in or not.
+- [ ] **Icon:** the browser tab shows the app's ticket icon; "Add to home screen" on a phone uses it too.
+
+## 7. Devices and display
 
 - [ ] A phone, a tablet and a small laptop; Edge and Chrome.
 - [ ] Dark mode, 200% zoom, keyboard only (Tab through every form), "reduce motion" turned on.
 - [ ] A slow connection (a phone hotspot).
 
-## 7. Sign-in and roles
+## 8. Sign-in and roles
 
 - [ ] Someone who isn't assigned to the app in Entra can't get in, and is told why.
 - [ ] Change a person's role in Entra (Requester to Agent and back): it applies at their next sign-in.
 - [ ] Signed in on two devices at once.
 
-## 8. Server and recovery (IT)
+## 9. Server and recovery (IT)
 
 - [ ] `https://helpdesk.mckennalabs.com/healthz` answers.
 - [ ] Restart the app mid-use (`docker compose -f compose.yaml -f compose.prod.yaml restart`): nothing is lost, and queued emails still go out.

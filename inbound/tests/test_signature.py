@@ -51,9 +51,20 @@ class SplitSignatureTests(SimpleTestCase):
             "Can you call me back?\nMobile: 555 010 0100",          # one sign only
             "The error says:\nwww.example.com is not reachable",
             "Thanks,\nDana",
+            # v0.8.3: two contact-looking lines that are the request itself.
+            "Please clean these:\nRestroom on floor 2\nBreak room in Unit 4",
+            "Can these two have access?\njane.doe@example.com\njohn.roe@example.com",
+            "Both crash on start:\nOffice 2019 on PC-12\nOffice 365 on PC-14",
+            "The two links:\nhttps://example.sharepoint.com/a\nhttps://example.sharepoint.com/b",
+            "Printer status page:\n--\n" + "\n".join(f"Tray {i}: OK" for i in range(1, 20)),
         ]:
             with self.subTest(text=text):
                 self.assertEqual(split_signature(text), (text, ""))
+
+    def test_contact_lines_after_a_sign_off_still_fold(self):
+        message, signature = split_signature("Line 2 is down.\n\nThanks,\nT: 555 010 0100\nF: 555 010 0101")
+        self.assertEqual(message, "Line 2 is down.\n\nThanks,")
+        self.assertEqual(signature, "T: 555 010 0100\nF: 555 010 0101")
 
     def test_never_folds_everything(self):
         self.assertEqual(split_signature(CODETWO), (CODETWO, ""))

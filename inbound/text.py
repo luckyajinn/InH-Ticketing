@@ -68,6 +68,7 @@ def strip_quoted(text: str) -> str:
 # ---------------------------------------------------------------------------
 
 _SIG_DELIMITER = re.compile(r"^--\s*$")
+_MAX_SIGNATURE_LINES = 15
 _SIGN_OFF = re.compile(
     r"^(thanks|thank you|many thanks|thanks again|thx|regards|best regards|kind regards|warm regards"
     r"|best wishes|best|cheers|sincerely|respectfully|all the best|have a (great|good|nice) (day|week|weekend))"
@@ -141,12 +142,18 @@ def split_signature(text: str) -> tuple[str, str]:
     text = (text or "").replace("\r\n", "\n")
     lines = text.split("\n")
 
-    delimiter = next((i for i, line in enumerate(lines) if i > 0 and _SIG_DELIMITER.match(line)), None)
+    # A "--" line starts a signature only near the end; earlier, it's more
+    # likely part of pasted output (a printer's status page, say).
+    delimiter = next(
+        (i for i, line in enumerate(lines) if i > 0 and len(lines) - i <= _MAX_SIGNATURE_LINES and _SIG_DELIMITER.match(line)),
+        None,
+    )
     if delimiter is not None:
         start = delimiter
     else:
         boiler = _paragraphs_with_boilerplate(lines)
         start, signals, names = None, 0, 0
+        named = boilerplate = signed_off = False
         i = len(lines) - 1
         while i >= 0:
             line = lines[i].strip()
@@ -155,17 +162,23 @@ def split_signature(text: str) -> tuple[str, str]:
                 continue
             if i in boiler or _CONTACT.search(line):
                 signals += 1
+                boilerplate = boilerplate or i in boiler
                 names = 0
                 start = i
             elif _SIGN_OFF.match(line):
+                signed_off = True
                 break  # "Thanks," stays with the message
             elif start is not None and names < 4 and _looks_like_name_line(line):
                 names += 1
+                named = True
                 start = i
             else:
                 break
             i -= 1
-        if start is None or signals < 2:
+        # Two contact-looking lines alone ("Restroom on floor 2", "Unit 4"; two
+        # links; a list of emails) are often the request itself. A signature
+        # also has a name, a sign-off above it, or mail-app boilerplate.
+        if start is None or signals < 2 or not (named or boilerplate or signed_off):
             return text.strip(), ""
 
     message = "\n".join(lines[:start]).strip()

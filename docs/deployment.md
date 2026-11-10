@@ -4,11 +4,11 @@ How to install InH-Ticketing on the server at `https://helpdesk.mckennalabs.com`
 keep it backed up, update it, and get it back if something goes wrong. What
 the server itself needs is in [server-requirements.md](server-requirements.md).
 
-> **Status: released in v0.6.0, not yet installed on the real server.** On
-> 2026-11-09 the same Docker setup ran on a Debian 13 test VM for a load test
-> (the `stress-test` branch: fake data, a self-signed certificate, no
-> Microsoft 365, no email). Expect to correct details on the first real
-> install, and please fix this guide as you go.
+> **Status: in use.** First written for v0.6.0 and installed on the internal
+> server on 2026-11-09. Before that, the same Docker setup ran on a Debian 13
+> test VM for a load test (the `stress-test` branch: fake data, a self-signed
+> certificate, no Microsoft 365, no email). Please fix this guide wherever it
+> doesn't match what you see.
 
 What has been checked, and what hasn't:
 
@@ -350,11 +350,13 @@ SITE_URL=https://helpdesk.mckennalabs.com
 # The TEST shared mailbox until the pilot ends (docs/email-setup.md).
 HELPDESK_MAILBOX=helpdesk-test@mckennalabs.com
 IT_NOTIFY_EMAIL=
+# Shown under "Can't sign in?" and on error pages. Keep the quotes if it has a #.
+HELP_CONTACT="Call IT on ext. 1234, or post in IT Help in Teams."
 INBOUND_EMAIL=graph
 INBOUND_ALLOWED_DOMAINS=mckennalabs.com
 EOF
 chmod 600 .env
-nano .env       # fill in the three ENTRA_ values, and IT_NOTIFY_EMAIL if wanted
+nano .env       # fill in the three ENTRA_ values, HELP_CONTACT, and IT_NOTIFY_EMAIL if wanted
 ls -l .env      # -rw------- 1 inhadmin inhadmin ...
 ```
 
@@ -373,6 +375,7 @@ ls -l .env      # -rw------- 1 inhadmin inhadmin ...
 | `EMAIL_BACKEND` | `graph` | Really send email |
 | `SITE_URL` | `https://helpdesk.mckennalabs.com` | Links in emails |
 | `HELPDESK_MAILBOX` | The test shared mailbox during the pilot | |
+| `HELP_CONTACT` | How to reach IT, e.g. `"Call IT on ext. 1234, or post in IT Help in Teams."` | Shown under "Can't sign in?" and on error pages. Blank shows "Email IT at" the mailbox above, which is the test mailbox during the pilot. Quote it if it contains `#`, or everything after the `#` is dropped |
 | `INBOUND_EMAIL` | `graph` | Read the mailbox |
 
 Things to know:
@@ -627,7 +630,21 @@ Now and then, clear out old images: `docker image prune -f`.
   docker compose -f compose.yaml -f compose.prod.yaml up -d --build
   ```
   Everything done in the app since the update is lost: tell people. See the
-  notes at the end of section 9 about emails.
+  notes at the end of section 9 about emails. Always finish with `up -d
+  --build` as above: plain `up -d` would start the new version's images on
+  the restored database, and they would re-apply the new migrations.
+- **From v0.7.0 or later back to v0.6.0, keeping the tickets made since:**
+  v0.7.0 and v0.8.0 add migrations `tickets` 0004 (the password audit trail)
+  and 0005 (common requests and the Mechanics and Cleaning & sanitization
+  categories). Undo them *before* checking out the old version, then rebuild:
+  ```bash
+  ./scripts/backup.sh before-rollback
+  docker compose -f compose.yaml -f compose.prod.yaml exec web python manage.py migrate tickets 0003
+  git checkout v0.6.0
+  docker compose -f compose.yaml -f compose.prod.yaml up -d --build
+  ```
+  This drops the password audit trail and the common requests. Tickets in
+  the Mechanics or Cleaning & sanitization categories keep their category.
 
 ## 11. Routine checks
 

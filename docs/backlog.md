@@ -137,6 +137,41 @@ Priorities and reasons are in [roadmap.md](roadmap.md), Site basics.
 - [ ] Set `HELP_CONTACT` on the server (`.env`), e.g. IT's extension and Teams channel.
 - [ ] A fuller privacy notice before licensing to other companies.
 
+## v0.8.3 (released 2026-11-10: pre-pilot review fixes)
+
+From three reviews of v0.8.2 (security and privacy, feature logic,
+deployment) and an attack test, all on 2026-11-10.
+
+- [x] Side panel applies only the fields the person changed (an old page
+      could undo someone else's assignment or reopen a resolved ticket).
+- [x] A reply being typed survives the side panel saving.
+- [x] Password check: no false alarms on "pin is bent", "pass is broken",
+      lot / batch / cost / part codes, or pasted timestamps; catches lock
+      combinations.
+- [x] Signatures fold only with a name, a sign-off or boilerplate.
+- [x] No error pages from superscript digits (six places) or odd sign-in links.
+- [x] The last "IT"-only wording staff of other teams saw.
+- [x] Attack test: SQL, shell and template injection in every input.
+- [x] Docs: `HELP_CONTACT` in deployment.md, a rollback that keeps tickets,
+      `restore.sh` start command, pilot checklist for v0.8.x.
+
+Still from the review, before v1.0.0:
+
+- [ ] **Email spoofing:** an email that only *claims* to be from IT becomes
+      a public IT reply. Check `Authentication-Results` (`dmarc=pass` or
+      `compauth=pass`), and keep anything else as an internal note. Also
+      send one spoofed test email to the pilot mailbox to confirm Exchange
+      junks it.
+- [ ] **Shared PCs:** mark signed-in pages and downloads `Cache-Control:
+      private, no-store`, and end the sign-in when the browser closes.
+- [ ] **Start-up order:** the worker should wait for the web container's
+      database updates (`depends_on: web: condition: service_healthy`).
+- [ ] The web manifest's content type (`application/manifest+json`).
+- [ ] *(Later)* A Content-Security-Policy header; password hints that never
+      show an earlier password; matching first sign-ins on
+      `preferred_username`; a length limit on descriptions and replies;
+      rolling back 0005 shouldn't delete an admin's own "Mechanics" category.
+
 ## v0.9.0 (pilot fixes, by 2026-11-12)
 
 Filled from the pilot, which starts 2026-11-10. Report what you find as a

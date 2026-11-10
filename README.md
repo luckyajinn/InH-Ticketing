@@ -3,7 +3,7 @@
 An in-house IT help desk for McKenna Labs. Staff send IT a request; IT works
 it through to resolution. People sign in with their Microsoft 365 work account.
 
-**Status:** v0.8.2: the basics (a new Not found page, a help contact, no double-sent requests, a usage and privacy page, a favicon), on top of v0.8.0's Mechanics and Cleaning & sanitization requests and v0.7.0's new look, password check and folded email signatures. Live on the internal server; the pilot starts 2026-11-10, and the target is to have everything finalized by Friday 2026-11-20 (see [docs/roadmap.md](docs/roadmap.md)). This is a test build, approved for internal setup.
+**Status:** v0.8.3: fixes from the pre-pilot review, on top of v0.8.2's basics (a new Not found page, a help contact, no double-sent requests, a usage and privacy page, a favicon), v0.8.0's Mechanics and Cleaning & sanitization requests and v0.7.0's new look, password check and folded email signatures. Live on the internal server; the pilot starts 2026-11-10, and the target is to have everything finalized by Friday 2026-11-20 (see [docs/roadmap.md](docs/roadmap.md)). This is a test build, approved for internal setup.
 See the [release notes with screenshots](docs/releases/README.md) for how it looks and what changed in each version.
 
 ## What works today

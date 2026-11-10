@@ -32,7 +32,7 @@ set -eu
 umask 077
 
 BACKUP_DIR=${BACKUP_DIR:-/srv/inh-ticketing/backups}
-START_CMD="docker compose -f compose.yaml -f compose.prod.yaml up -d"
+START_CMD="docker compose -f compose.yaml -f compose.prod.yaml up -d --build"
 
 log() { printf '%s %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"; }
 die() { log "RESTORE FAILED: $*" >&2; exit 1; }

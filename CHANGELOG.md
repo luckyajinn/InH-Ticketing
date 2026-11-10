@@ -3,6 +3,59 @@
 All notable changes to InH-Ticketing. Versions follow [Semantic Versioning](https://semver.org).
 Each version also has illustrated release notes in [docs/releases](docs/releases/README.md).
 
+## [0.8.3] - 2026-11-10
+
+Fixes from the pre-pilot review: three independent reviews of v0.8.2
+(security and privacy, feature logic, deployment) and an attack test.
+[Release notes](docs/releases/v0.8.3.md).
+
+### Fixed
+- **The side panel no longer puts back old values.** It also sends what it
+  showed when the page loaded, and saving applies only the fields the person
+  changed. Before, a page left open could undo someone else's assignment, or
+  reopen a ticket the requester had just resolved.
+- **A reply being typed survives the side panel saving** (and "Assign to me"):
+  it's set aside before the page reloads and put back afterwards.
+- **Fewer false alarms from the password check** on everyday Mechanics and
+  Cleaning & sanitization wording: "the pin is bent", "my pass is broken"
+  (after "pin" or "pass" the value now needs a digit or symbol), lot, batch,
+  cost, part and order codes, and the timestamps in pasted sign-in errors.
+  It now also catches lock combinations ("combination is 12-34-56", "lock
+  combo 2580").
+- **Signatures fold only when they look like one:** two contact-looking lines
+  at the end (rooms, units, links, a list of emails) no longer fold unless
+  there's also a name, a sign-off or mail-app boilerplate. A `--` line only
+  starts a signature near the end of an email.
+- **No error pages from odd characters:** superscript digits ("²") in the
+  ticket-number box, the queue search and filters, `?follow_up=` and common
+  requests used to cause an error page (six places).
+- **Sign-in:** a signed-in person opening the sign-in page with an odd `next=`
+  link got an error page; now they go home. Only real page paths are followed.
+- **Wording for every team:** "Replies will appear below", "Waiting for
+  someone to pick it up", "Thanks for letting us know", and the receipt email.
+- **Common requests:** a category the person chooses after picking a common
+  request now wins over the pick's own category.
+
+### Added
+- An attack test (`tickets/tests/test_injection.py`): SQL injection, shell
+  command and template injection strings in every input (forms, replies,
+  notes, search, filters, the side panel, the ticket-number box, sign-in
+  links, file names, emails coming in). All are stored and shown as plain
+  text; nothing runs, the database stays intact, nothing errors.
+
+### Docs
+- deployment.md: `HELP_CONTACT` in the `.env` template and settings table
+  (quote it if it contains `#`); a rollback that keeps tickets made since
+  v0.7.0 (`migrate tickets 0003` first); the status banner.
+- `scripts/restore.sh` now prints the start command with `--build`, so a
+  restore can't start the newer version's images on the restored database.
+- pilot-testing.md: updated for v0.8.x, with checks for the new features.
+
+### Upgrading
+- No database changes since v0.8.0. From v0.6.0 or v0.7.0, migrations
+  `tickets` 0004 and 0005 run when the `web` container starts.
+- Set `HELP_CONTACT` in `.env` first.
+
 ## [0.8.2] - 2026-11-09
 
 The basics: a new Not found page, who to contact when the app can't help,
@@ -264,6 +317,7 @@ Milestone 1: skeleton and Microsoft 365 sign-in. [Release notes with screenshots
 - `/healthz` endpoint, Dockerfile and Docker Compose with PostgreSQL 17.
 - Entra setup guide (`docs/entra-setup.md`) and the UI mockup (`mockups/`).
 
+[0.8.3]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.8.3
 [0.8.2]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.8.2
 [0.8.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.8.0
 [0.7.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.7.0

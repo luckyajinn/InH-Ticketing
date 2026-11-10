@@ -140,7 +140,7 @@ class NewTicketForm(PasswordCheckMixin, forms.Form):
     def _picked(self, value: str) -> tuple[Category, str] | None:
         """The (category, subject) a quick-pick value stands for, if it's a real, active one."""
         category_id, _, index = (value or "").partition(":")
-        if not (category_id.isdigit() and index.isdigit()):
+        if not (category_id.isdecimal() and index.isdecimal()):
             return None
         category = self.fields["category"].queryset.filter(pk=int(category_id)).first()
         if category is None or int(index) >= len(category.subject_choices):
@@ -152,11 +152,14 @@ class NewTicketForm(PasswordCheckMixin, forms.Form):
         picked = self._picked(cleaned.get("subject_pick"))
         # The pick counts when the subject is empty or still the picked text;
         # a subject typed over it wins, with whatever category was chosen.
+        # A category the person chose themselves also wins: the pick's
+        # category is used only when none was chosen (as without JavaScript).
         if picked and cleaned.get("subject") in ("", None, picked[1]):
             category, text = picked
             cleaned["subject"] = text
-            cleaned["category"] = category
-            self.errors.pop("category", None)
+            if not cleaned.get("category"):
+                cleaned["category"] = category
+                self.errors.pop("category", None)
         if not cleaned.get("subject"):
             self.add_error("subject", "Enter a subject.")
         self.check_for_passwords(cleaned)
