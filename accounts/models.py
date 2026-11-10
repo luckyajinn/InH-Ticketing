@@ -41,6 +41,11 @@ class User(AbstractUser):
         return self.role in {self.Role.AGENT, self.Role.ADMIN}
 
     @property
+    def is_admin(self) -> bool:
+        """Admins also get the admin site and Reports."""
+        return self.role == self.Role.ADMIN
+
+    @property
     def avatar_variant(self) -> int:
         """One of six avatar colours, stable per person."""
         return (self.pk or 0) % 6 + 1

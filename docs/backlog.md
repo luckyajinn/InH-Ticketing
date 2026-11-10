@@ -179,7 +179,14 @@ Still from the review, before v1.0.0:
 - [x] A chosen common request is the subject: the typed subject greys out,
       with a note that it won't be used.
 
-## v0.9.0 (pilot fixes, by 2026-11-12)
+## v0.9.0 (released 2026-11-10: Reports)
+
+- [x] Reports for admins (`/reports/`), built early from v1.1.0: see v1.1.0's
+      Reporting item below and [releases/v0.9.0.md](releases/v0.9.0.md).
+
+## v0.9.x (pilot fixes, after the pilot's testing)
+
+Paused until the pilot's testing is done (2026-11-10).
 
 Filled from the pilot, which starts 2026-11-10. Report what you find as a
 ticket, subject starting "Pilot:", so it's tracked in the app itself.
@@ -214,7 +221,20 @@ ticket, subject starting "Pilot:", so it's tracked in the app itself.
   - Exchange, per mailbox: allow the app to send as it and read it
     ([email-setup.md](email-setup.md) 3c and 4b), set internal senders only,
     and record `Test-ServicePrincipalAuthorization` for it.
-- [ ] Everything in v0.9.0, plus the server and Microsoft 365 tasks in the
+- [ ] From the reports research (2026-11-10):
+  - [ ] Admins can hard-delete a ticket and its history in the admin site,
+        against the usage rules ("never delete it"): turn off delete for
+        tickets, as categories and the password audit trail already are.
+  - [ ] The closed-ticket decision (v0.9.x) must keep a closed ticket's row
+        and history, with the content stripped if needed, or the reports
+        lose their trends.
+  - [ ] A worker heartbeat (last round, last inbox read, last auto-close),
+        so Reports can say for sure that the worker is running. Today it
+        infers it from emails waiting to be sent.
+  - [ ] Usage and privacy page: say that ignored emails are logged with
+        their sender and subject, and that the emails the app sends are
+        kept.
+- [ ] Everything in v0.9.x, plus the server and Microsoft 365 tasks in the
       roadmap's "Your side" list (restore drill, the server's own Entra
       secret, the permission-check record, DMARC, an off-server backup).
 
@@ -222,7 +242,16 @@ ticket, subject starting "Pilot:", so it's tracked in the app itself.
 
 - [ ] **Reply templates:** saved answers for common requests (password resets, new starters).
 - [ ] **Response targets:** how long tickets wait, by priority, with overdue highlighting.
-- [ ] **Reporting:** tickets per week, time to resolve, busiest categories.
+- [x] **Reporting:** tickets per week, time to resolve, busiest categories.
+      *(Built early, in v0.9.0 (2026-11-10): the Reports page at `/reports/`, admins only.
+      Per team, never per person: new requests, first response, time to
+      resolve not counting waiting on the requester, blocking share, requests
+      over time, open tickets by age, top categories and common requests,
+      email and password-check health, and a CSV download. Chosen from three
+      research passes: IT operations, compliance and privacy, management.)*
+  - [ ] Later: response targets per priority (the "% within target" tile),
+        requests by the requester's own department (needs Entra's
+        `department` claim stored), and a monthly summary email.
 - [ ] **Teams alerts** for IT, alongside email. *(Needs a Teams webhook or permission.)*
 
 ## v1.2.0 (stretch: the other teams, by 2026-11-19)

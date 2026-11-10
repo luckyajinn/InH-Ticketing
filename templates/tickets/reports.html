@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+{% load ticket_tags %}
+
+{% block title %}Reports{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="eyebrow">Admin</p>
+    <h1>Reports</h1>
+    <p class="page-sub">How the help desk is doing, by team. Counts and times only, never figures for one person.</p>
+  </div>
+</div>
+
+{# One filter row above everything it scopes. #}
+<form class="filters report-filters" method="get" aria-label="Report period and team">
+  <label for="r-period" class="visually-hidden">Period</label>
+  <select id="r-period" name="period" class="select">
+    {% for key, label in periods %}<option value="{{ key }}"{% if key == period %} selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  <label for="r-team" class="visually-hidden">Team</label>
+  <select id="r-team" name="team" class="select">
+    <option value="">All teams</option>
+    {% for key, label in teams %}<option value="{{ key }}"{% if key == team %} selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  <button type="submit" class="btn">Show</button>
+  <a class="btn btn-ghost" href="{% url 'tickets:reports_csv' %}?period={{ period }}{% if team %}&amp;team={{ team }}{% endif %}">Download CSV</a>
+</form>
+
+<section class="report-tiles" aria-label="Summary, {{ window.label|lower }}">
+  {% for t in tiles %}
+  <div class="stat-tile">
+    <p class="stat-label">{{ t.label }}</p>
+    <p class="stat-value">{{ t.value }}</p>
+    <p class="stat-detail">{{ t.detail }}</p>
+    {% if t.delta %}<p class="stat-delta tone-{{ t.tone }}">{{ t.delta }}</p>{% endif %}
+  </div>
+  {% endfor %}
+</section>
+
+<section class="card report-card" aria-labelledby="r-over-time">
+  <div class="report-card-head">
+    <div>
+      <h2 class="report-title" id="r-over-time">Requests over time</h2>
+      <p class="report-sub">{{ window.label }}, per {{ window.bucket }}{% if series|length > 1 %}, by team{% else %}, {{ team_label }}{% endif %}</p>
+    </div>
+    {% if series|length > 1 %}
+    <ul class="chart-legend" aria-label="Teams">
+      {% for key, label, slot in series %}<li><svg class="swatch" viewBox="0 0 10 10" aria-hidden="true" focusable="false"><rect class="series-{{ slot }}" width="10" height="10" rx="2"/></svg>{{ label }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+  <div class="chart" data-chart>
+    <div class="chart-scroll">
+    <svg class="column-chart" viewBox="0 0 {{ chart.width }} {{ chart.height }}" role="group" aria-label="New requests per {{ window.bucket }}. The numbers are in the table below.">
+      {% for g in chart.grid %}
+      <line class="grid{% if forloop.first %} baseline{% endif %}" x1="{{ chart.left }}" x2="{{ chart.right }}" y1="{{ g.y|floatformat:1 }}" y2="{{ g.y|floatformat:1 }}"/>
+      <text class="tick" x="{{ chart.left|add:-8 }}" y="{{ g.y|floatformat:1 }}" dy="0.32em" text-anchor="end">{{ g.label }}</text>
+      {% endfor %}
+      {% for c in chart.columns %}
+      <g class="column">
+        {% for s in c.segments %}<path class="series-{{ s.slot }}" d="{{ s.d }}"/>{% endfor %}
+        {% if c.label %}<text class="cap" x="{{ c.label_x|floatformat:1 }}" y="{{ c.label_y|floatformat:1 }}" text-anchor="middle">{{ c.total }}</text>{% endif %}
+        <rect class="hit" x="{{ c.hit_x|floatformat:1 }}" y="{{ chart.top }}" width="{{ c.hit_w|floatformat:1 }}" height="{{ chart.plot_h }}"
+              tabindex="0" role="img" aria-label="{{ c.long }}: {{ c.total }} request{{ c.total|pluralize }}"
+              data-tip-title="{{ c.long }}" data-tip-rows="{{ c.tip_rows }}"/>
+      </g>
+      {% endfor %}
+      {% for c in chart.x_labels %}<text class="tick" x="{{ c.center|floatformat:1 }}" y="{{ chart.height|add:-6 }}" text-anchor="middle">{{ c.short }}</text>{% endfor %}
+    </svg>
+    </div>
+    <div class="chart-tip" role="presentation" hidden></div>
+  </div>
+  <details class="chart-table">
+    <summary>Show the numbers</summary>
+    <div class="table-wrap">
+      <table class="report-table">
+        <thead><tr>
+          <th scope="col">{{ window.bucket|capfirst }}</th>
+          {% for key, label, slot in series %}<th scope="col" class="num">{{ label }}</th>{% endfor %}
+          {% if series|length > 1 %}<th scope="col" class="num">Total</th>{% endif %}
+        </tr></thead>
+        <tbody>
+          {% for row in chart_rows %}<tr>
+            <th scope="row">{{ row.long }}</th>
+            {% for v in row.values %}<td class="num">{{ v }}</td>{% endfor %}
+            {% if series|length > 1 %}<td class="num">{{ row.total }}</td>{% endif %}
+          </tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </details>
+</section>
+
+<section class="card report-card" aria-labelledby="r-by-team">
+  <h2 class="report-title" id="r-by-team">By team</h2>
+  <p class="report-sub">{{ window.label }}. Open now is as of today.</p>
+  <div class="table-wrap" role="region" aria-labelledby="r-by-team" tabindex="0">
+    <table class="report-table">
+      <thead><tr>
+        <th scope="col">Team</th>
+        <th scope="col" class="num">New</th>
+        <th scope="col" class="num">Resolved</th>
+        <th scope="col" class="num">Open now</th>
+        <th scope="col" class="num">First response</th>
+        <th scope="col" class="num">Time to resolve</th>
+        <th scope="col" class="num">Blocking</th>
+        <th scope="col" class="num">Reopened</th>
+      </tr></thead>
+      <tbody>
+        {% for r in team_rows %}<tr>
+          <th scope="row"><svg class="swatch" viewBox="0 0 10 10" aria-hidden="true" focusable="false"><rect class="series-{{ r.slot }}" width="10" height="10" rx="2"/></svg>{{ r.label }}</th>
+          <td class="num">{{ r.new }}</td>
+          <td class="num">{{ r.resolved }}</td>
+          <td class="num">{{ r.open }}</td>
+          <td class="num">{{ r.first }}</td>
+          <td class="num">{{ r.resolve }}</td>
+          <td class="num">{{ r.blocking }}</td>
+          <td class="num">{{ r.reopened }}</td>
+        </tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="report-grid">
+  <section class="card report-card" aria-labelledby="r-open">
+    <h2 class="report-title" id="r-open">Open now</h2>
+    <p class="report-sub">{{ open_count }} open{% if team %} for {{ team_label }}{% endif %}: {{ unassigned }} unassigned, {{ waiting_long }} waiting on the requester for over a week.</p>
+    <table class="bar-table">
+      <caption class="visually-hidden">Open requests by how long ago they were made</caption>
+      <tbody>
+        {% for b in age_bars %}<tr>
+          <th scope="row">{{ b.name }}</th>
+          <td class="bar-cell"><svg class="hbar" width="100%" height="10" aria-hidden="true" focusable="false">{% if b.count %}<rect class="age-{{ b.step }}" width="{{ b.pct }}%" height="10" rx="4"/>{% if b.pct >= 3 %}<rect class="age-{{ b.step }}" width="4" height="10"/>{% endif %}{% endif %}</svg></td>
+          <td class="num">{{ b.count }}</td>
+        </tr>{% endfor %}
+      </tbody>
+    </table>
+    <h3 class="report-subtitle">Oldest open</h3>
+    <ol class="oldest-list">
+      {% for t in oldest %}
+      <li><a href="{% url 'tickets:detail' t.number %}">#{{ t.number }} {{ t.subject }}</a><span class="muted small">{{ t.team }} · {{ t.status }} · {{ t.age }} old</span></li>
+      {% empty %}
+      <li class="muted">Nothing open.</li>
+      {% endfor %}
+    </ol>
+  </section>
+
+  <div class="report-stack">
+    <section class="card report-card" aria-labelledby="r-categories">
+      <h2 class="report-title" id="r-categories">Most common categories</h2>
+      <p class="report-sub">New requests, {{ window.label|lower }}</p>
+      {% if categories %}
+      <table class="bar-table">
+        <caption class="visually-hidden">New requests per category</caption>
+        <tbody>
+          {% for c in categories %}<tr>
+            <th scope="row">{{ c.name }}</th>
+            <td class="bar-cell"><svg class="hbar" width="100%" height="10" aria-hidden="true" focusable="false"><rect class="series-1" width="{{ c.pct }}%" height="10" rx="4"/>{% if c.pct >= 3 %}<rect class="series-1" width="4" height="10"/>{% endif %}</svg></td>
+            <td class="num">{{ c.count }}</td>
+          </tr>{% endfor %}
+        </tbody>
+      </table>
+      {% else %}<p class="muted small">No requests in this period.</p>{% endif %}
+    </section>
+
+    <section class="card report-card" aria-labelledby="r-picks">
+      <h2 class="report-title" id="r-picks">Most picked common requests</h2>
+      <p class="report-sub">From the New request form's quick picks</p>
+      {% if common_requests %}
+      <table class="bar-table">
+        <caption class="visually-hidden">New requests per common request</caption>
+        <tbody>
+          {% for c in common_requests %}<tr>
+            <th scope="row">{{ c.name }}</th>
+            <td class="bar-cell"><svg class="hbar" width="100%" height="10" aria-hidden="true" focusable="false"><rect class="series-1" width="{{ c.pct }}%" height="10" rx="4"/>{% if c.pct >= 3 %}<rect class="series-1" width="4" height="10"/>{% endif %}</svg></td>
+            <td class="num">{{ c.count }}</td>
+          </tr>{% endfor %}
+        </tbody>
+      </table>
+      {% else %}<p class="muted small">None picked in this period.</p>{% endif %}
+    </section>
+  </div>
+</div>
+
+<section class="card report-card" aria-labelledby="r-health">
+  <h2 class="report-title" id="r-health">Email and safety checks</h2>
+  <p class="report-sub">{{ window.label }}, all teams</p>
+  <div class="health-grid">
+    <div class="health-item">
+      <h3 class="report-subtitle">Email out</h3>
+      {% if health.worker_late %}
+      <p class="health health-bad">{% icon "alert" %}<span>The email worker may have stopped: an email has been due for {{ health.worker_late }}.</span></p>
+      {% elif health.failed %}
+      <p class="health health-warn">{% icon "alert" %}<span>{{ health.failed }} couldn't be sent. <a href="{% url 'admin:notifications_outboundemail_changelist' %}?status__exact=failed">See them</a></span></p>
+      {% else %}
+      <p class="health health-ok">{% icon "check-circle" %}<span>Sending normally</span></p>
+      {% endif %}
+      <dl class="health-figures">
+        <div><dt>Sent</dt><dd>{{ health.sent }}</dd></div>
+        <div><dt>Couldn't be sent</dt><dd>{{ health.failed }}</dd></div>
+        <div><dt>Waiting to retry</dt><dd>{{ health.retrying }}</dd></div>
+      </dl>
+    </div>
+    <div class="health-item">
+      <h3 class="report-subtitle">Email in</h3>
+      {% if not health.inbound_on %}
+      <p class="health health-off">{% icon "pause" %}<span>Switched off on this server</span></p>
+      {% elif health.in_errors %}
+      <p class="health health-warn">{% icon "alert" %}<span>{{ health.in_errors }} couldn't be read and stay in the Inbox. <a href="{% url 'admin:inbound_inboundemail_changelist' %}?outcome__exact=error">See them</a></span></p>
+      {% else %}
+      <p class="health health-ok">{% icon "check-circle" %}<span>Reading normally</span></p>
+      {% endif %}
+      <dl class="health-figures">
+        <div><dt>New requests</dt><dd>{{ health.in_tickets }}</dd></div>
+        <div><dt>Replies and notes</dt><dd>{{ health.in_replies }}</dd></div>
+        <div><dt>Ignored</dt><dd>{{ health.in_ignored }}</dd></div>
+      </dl>
+    </div>
+    <div class="health-item">
+      <h3 class="report-subtitle">Password check</h3>
+      {% if health.pw_sent or health.pw_emailed %}
+      <p class="health health-warn">{% icon "alert" %}<span>{{ health.pw_sent|add:health.pw_emailed }} may include a password: check them and reset it. <a href="{% url 'admin:tickets_passwordwarning_changelist' %}">See them</a></span></p>
+      {% else %}
+      <p class="health health-ok">{% icon "check-circle" %}<span>Nothing to check</span></p>
+      {% endif %}
+      <dl class="health-figures">
+        <div><dt>Taken out before sending</dt><dd>{{ health.pw_removed }}</dd></div>
+        <div><dt>Sent anyway</dt><dd>{{ health.pw_sent }}</dd></div>
+        <div><dt>Arrived by email</dt><dd>{{ health.pw_emailed }}</dd></div>
+      </dl>
+    </div>
+    <div class="health-item">
+      <h3 class="report-subtitle">Auto-close</h3>
+      <p class="health health-ok">{% icon "check-circle" %}<span>{{ health.auto_closed }} closed after {{ health.auto_close_days }} days without a reply</span></p>
+    </div>
+  </div>
+</section>
+
+<footer class="report-notes">
+  <p><strong>How these are counted.</strong>
+    First response: the first public reply from someone other than the requester, or the request being resolved by someone else.
+    Time to resolve: from the request to its resolution, not counting time waiting on the requester.
+    Both are medians in clock time, nights and weekends included.
+    Reopened: put back to Open by the requester or IT (a reply to a resolved request isn't counted).
+    Blocking: the share of web requests that ticked "This is blocking my work" (emails can't say).
+    Teams come from the category.
+    Pilot feedback ("Pilot:" subjects) is left out{% if reports_from %}, and so is everything before {{ reports_from|date:"M j, Y" }}{% endif %}.
+  </p>
+  <p>Figures read {{ now|date:"M j, Y" }} at {{ now|date:"g:i A" }}.</p>
+</footer>
+{% endblock %}

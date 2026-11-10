@@ -1,8 +1,8 @@
 # Pilot testing: try to break it
 
-From **2026-11-10**, two testers try to break InH-Ticketing (v0.8.3) before
+From **2026-11-10**, two testers try to break InH-Ticketing (now v0.9.0) before
 everything is finalized on **2026-11-20** (see [roadmap.md](roadmap.md)).
-Fixes ship as small v0.8.x updates during the week, and as v0.9.0 on Nov 11–12.
+Fixes ship as v0.9.x updates once the pilot's testing is done.
 
 **Report each finding as a ticket in the app**, subject starting `Pilot:`,
 category Other. Say what you did, what you expected, what happened, and on
@@ -62,6 +62,7 @@ then swap. Use the test shared mailbox for email.
 ## 6. New in v0.8
 
 - [ ] **Common requests:** type a subject, then pick a common request: the subject box greys out, a note says what you typed won't be used, and the category fills in. Send it: the ticket's subject is the common request. Pick "None" again: your typed subject comes back. Change the category after picking: your category wins.
+- [ ] **Reports (admins only):** open Reports from the header. As an agent or a requester, `/reports/` says No access. The numbers match the queue (open now, unassigned), and Download CSV opens in Excel without descriptions or names.
 - [ ] **Mechanics and Cleaning & sanitization:** both are offered on New request, and the queue's category filter shows just their tickets.
 - [ ] **Not found page:** open a made-up address. "Go to my tickets" (or "Go to the queue" for IT) and "New request" work; your own ticket number in the box opens it; someone else's shows Not found.
 - [ ] **Help contact:** the sign-in page and the error pages say who to contact, with the right extension or channel.

@@ -20,4 +20,7 @@ urlpatterns = [
     path("queue/", views.queue, name="queue"),
     path("tickets/<int:number>/update/", views.update_properties, name="update"),
     path("tickets/<int:number>/assign-to-me/", views.assign_to_me, name="assign_to_me"),
+    # Admins
+    path("reports/", views.reports_page, name="reports"),
+    path("reports/requests.csv", views.reports_csv, name="reports_csv"),
 ]

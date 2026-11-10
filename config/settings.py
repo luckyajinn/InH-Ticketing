@@ -198,6 +198,12 @@ DEFAULT_FROM_EMAIL = HELPDESK_MAILBOX or "inh-ticketing@localhost"
 # Blank = "Email IT at HELPDESK_MAILBOX", or "Contact IT." if that's blank too.
 HELP_CONTACT = os.environ.get("HELP_CONTACT", "").strip()
 
+# Reports (/reports/, admins only) count tickets from this date, e.g. the
+# go-live date, so test and pilot tickets before it don't skew them.
+# YYYY-MM-DD; blank = every ticket. Tickets whose subject starts with
+# "Pilot:" (pilot feedback) are always left out.
+REPORTS_FROM = os.environ.get("REPORTS_FROM", "").strip()
+
 # Optional: where "new ticket" and unassigned-reply alerts for IT go
 # (a distribution list, or a Teams channel's email address). Blank = none.
 IT_NOTIFY_EMAIL = os.environ.get("IT_NOTIFY_EMAIL", "").strip()

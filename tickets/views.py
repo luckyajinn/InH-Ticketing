@@ -6,12 +6,13 @@ from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db.models import Max, Q
 from django.db.models.functions import Coalesce
-from django.http import FileResponse, Http404, JsonResponse
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
-from tickets import password_guard, selectors, services
+from tickets import password_guard, reports, selectors, services
 from tickets.forms import NewTicketForm, ReplyForm, TicketPropertiesForm
 from tickets.models import Attachment, Category, PasswordWarning, Ticket
 
@@ -24,6 +25,20 @@ def agent_required(view):
     @login_required
     def wrapper(request, *args, **kwargs):
         if not request.user.is_agent:
+            raise PermissionDenied
+        return view(request, *args, **kwargs)
+
+    wrapper.__name__ = view.__name__
+    wrapper.__doc__ = view.__doc__
+    return wrapper
+
+
+def admin_required(view):
+    """Admin-only pages (Reports). Agents and requesters get a 403."""
+
+    @login_required
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_admin:
             raise PermissionDenied
         return view(request, *args, **kwargs)
 
@@ -386,3 +401,28 @@ def queue(request):
             "sort_label": sort_label,
         },
     )
+
+
+# --- Reports (admins only) ---------------------------------------------------
+
+@admin_required
+@never_cache
+@require_GET
+def reports_page(request):
+    """How the help desk is doing, by team: counts and times, never per person."""
+    data = reports.build(request.GET.get("period", reports.DEFAULT_PERIOD), request.GET.get("team", ""))
+    return render(request, "tickets/reports.html", data)
+
+
+@admin_required
+@never_cache
+@require_GET
+def reports_csv(request):
+    """The requests behind the report, one row each, for a spreadsheet."""
+    period = request.GET.get("period", reports.DEFAULT_PERIOD)
+    team = request.GET.get("team", "")
+    response = HttpResponse(reports.csv_export(period, team), content_type="text/csv; charset=utf-8")
+    window = reports.window_for(period, timezone.now())
+    name = f"inh-requests-{timezone.localtime(window.start):%Y-%m-%d}-to-{timezone.localtime(window.end):%Y-%m-%d}.csv"
+    response["Content-Disposition"] = f'attachment; filename="{name}"'
+    return response

@@ -376,6 +376,7 @@ ls -l .env      # -rw------- 1 inhadmin inhadmin ...
 | `SITE_URL` | `https://helpdesk.mckennalabs.com` | Links in emails |
 | `HELPDESK_MAILBOX` | The test shared mailbox during the pilot | |
 | `HELP_CONTACT` | How to reach IT, e.g. `"Call IT on ext. 1234, or post in IT Help in Teams."` | Shown under "Can't sign in?" and on error pages. Blank shows "Email IT at" the mailbox above, which is the test mailbox during the pilot. Quote it if it contains `#`, or everything after the `#` is dropped |
+| `REPORTS_FROM` | The go-live date, e.g. `2026-11-30` (blank until then) | Reports (`/reports/`, admins only) count tickets from this date, so pilot and test tickets don't skew them. Tickets whose subject starts with "Pilot:" are always left out |
 | `INBOUND_EMAIL` | `graph` | Read the mailbox |
 
 Things to know:

@@ -1,7 +1,7 @@
 # InH-Ticketing: overview
 
 What the system is, where it stands, and how each feature and system works.
-Written 2026-11-10 for v0.8.4. Each section is meant to work as one slide.
+Written 2026-11-10 for v0.9.0. Each section is meant to work as one slide.
 
 ## 1. In one paragraph
 
@@ -16,13 +16,13 @@ It runs on McKenna Labs' own server, inside the company network.
 
 | | |
 |---|---|
-| Version | **v0.8.4**, released 2026-11-10 |
-| Built | v0.1.0 to v0.8.4 between 2026-11-05 and 2026-11-10, each release tested and documented with screenshots |
+| Version | **v0.9.0**, released 2026-11-10 |
+| Built | v0.1.0 to v0.9.0 between 2026-11-05 and 2026-11-10, each release tested and documented with screenshots |
 | Server | Live on the internal server (16 cores, 32 GB RAM) at `helpdesk.mckennalabs.com` |
 | Pilot | Starts 2026-11-10 with one other tester, trying to break it |
 | Compliance | Intended-use and risk assessment passed (Ruben Martinez); internal setup approved (Michael Rocovitz). A risk assessment for the Mechanics and C&S use is on 2026-11-10 |
 | Target | Everything finalized by **Friday 2026-11-20**; go-live date set then (earliest Monday 2026-11-30) |
-| Quality | 291 automated tests, all passing, including an attack test (SQL, shell and template injection in every input) |
+| Quality | 315 automated tests, all passing, including an attack test (SQL, shell and template injection in every input) |
 
 ## 3. Who uses it
 
@@ -30,7 +30,7 @@ It runs on McKenna Labs' own server, inside the company network.
 |---|---|---|
 | **Requester** | Any staff member (~300) | Send requests, follow their own, reply, mark resolved, reopen, start a follow-up |
 | **Agent** | IT staff | Everything a requester can, plus the queue, every ticket, internal notes, history, and setting status, priority, assignee and category |
-| **Admin** | IT admins | Everything an agent can, plus the admin site (categories, common requests, the password audit trail) |
+| **Admin** | IT admins | Everything an agent can, plus Reports and the admin site (categories, common requests, the password audit trail) |
 
 Roles come from Microsoft 365 (Entra app roles), checked at every sign-in.
 Planned for v1.2.0: Mechanics and C&S agents with their own queues, who see
@@ -155,6 +155,15 @@ Every change is written to the ticket's history: who, what, when.
   how long it's kept, and its cookies (only the ones it needs to work; no
   tracking, no analytics). Kept out of search engines.
 
+### Reports (admins only)
+- How the help desk is doing, by team, for the last 7 days, 30 days, 90 days
+  or 12 months: new requests, first response, time to resolve (not counting
+  waiting on the requester), the share of blocking requests, requests over
+  time, open requests by age, the most common categories and common
+  requests, and email and password-check health. A CSV for spreadsheets.
+- Per team, never per person, and only from what the app already keeps:
+  no tracking.
+
 ### Look and feel
 - "Friendly Soft": warm neutrals, one teal accent, rounded cards, chosen from
   three design options. Works on phones, follows dark mode, and turns its
@@ -194,15 +203,17 @@ A load test on 2026-11-09 (app held to 2 CPUs and 4 GB): responses averaged
 - **Files:** always downloaded, never opened in the browser; stored under
   random names.
 - **No tracking:** only necessary cookies; not indexed by search engines.
+- **Reports:** admins only, per team, never figures for one person.
 
 ## 8. What's next (to Friday 2026-11-20)
 
 | When | What |
 |---|---|
 | Tue Nov 10 | Demo, pilot starts, risk assessment for Mechanics and C&S |
-| Wed–Thu Nov 11–12 | v0.9.0: pilot fixes, a tool to remove a pasted password, what happens to closed tickets |
+| Tue Nov 10 | v0.9.0: Reports for admins (done) |
+| After the pilot's testing | v0.9.x: pilot fixes, a tool to remove a pasted password, what happens to closed tickets |
 | Fri Nov 13 (or Mon 16) | v1.0.0: everything for IT finalized, a mailbox per department, server checks (restore drill, off-server backup) |
-| Mon–Tue Nov 16–17 | v1.1.0 (stretch): reply templates, response targets, reporting, Teams alerts |
+| Mon–Tue Nov 16–17 | v1.1.0 (stretch): reply templates, response targets, Teams alerts |
 | Wed–Thu Nov 18–19 | v1.2.0 (stretch): own queues and roles for Mechanics and C&S |
 | Fri Nov 20 | Go / no-go, go-live date set (earliest Mon Nov 30) |
 

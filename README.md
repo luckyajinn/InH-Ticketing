@@ -3,7 +3,7 @@
 An in-house IT help desk for McKenna Labs. Staff send IT a request; IT works
 it through to resolution. People sign in with their Microsoft 365 work account.
 
-**Status:** v0.8.4: the admin site in the app's look, and a chosen common request is always the subject, on top of v0.8.3's fixes from the pre-pilot review, and v0.8.2's basics (a new Not found page, a help contact, no double-sent requests, a usage and privacy page, a favicon), v0.8.0's Mechanics and Cleaning & sanitization requests and v0.7.0's new look, password check and folded email signatures. Live on the internal server; the pilot starts 2026-11-10, and the target is to have everything finalized by Friday 2026-11-20 (see [docs/roadmap.md](docs/roadmap.md)). This is a test build, approved for internal setup.
+**Status:** v0.9.0: Reports for admins, on top of v0.8.4's admin look and common requests as the subject, v0.8.3's fixes from the pre-pilot review, and v0.8.2's basics (a new Not found page, a help contact, no double-sent requests, a usage and privacy page, a favicon), v0.8.0's Mechanics and Cleaning & sanitization requests and v0.7.0's new look, password check and folded email signatures. Live on the internal server; the pilot starts 2026-11-10, and the target is to have everything finalized by Friday 2026-11-20 (see [docs/roadmap.md](docs/roadmap.md)). This is a test build, approved for internal setup.
 See the [release notes with screenshots](docs/releases/README.md) for how it looks and what changed in each version.
 
 ## What works today
@@ -33,6 +33,8 @@ See the [release notes with screenshots](docs/releases/README.md) for how it loo
 - **Common requests:** quick picks on the New request form. A picked one
   becomes the subject (the subject box greys out, with a note) and fills in
   the category; choosing "None" lets people type their own.
+- **Reports** (admins only, `/reports/`): requests, response and resolve times,
+  open tickets by age and email health, per team, never per person; CSV download.
 - **Admins** manage categories and their common requests at `/admin/`.
 
 ### Ticket rules

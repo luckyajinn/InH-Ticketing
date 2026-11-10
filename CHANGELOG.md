@@ -3,6 +3,37 @@
 All notable changes to InH-Ticketing. Versions follow [Semantic Versioning](https://semver.org).
 Each version also has illustrated release notes in [docs/releases](docs/releases/README.md).
 
+## [0.9.0] - 2026-11-10
+
+Reports for admins, built early from v1.1.0. [Release notes](docs/releases/v0.9.0.md).
+
+### Added
+- **Reports** (`/reports/`, admins only; agents and requesters get a 403;
+  never cached), linked in the header and the admin site. Per team, never
+  per person, from records the app already keeps:
+  - **headline numbers** against the period before: new requests, first
+    response, time to resolve (not counting waiting on the requester) and
+    the blocking share
+  - **requests over time**, stacked by team, with a hover readout and a table
+  - **a by-team table**
+  - **open requests** by age, with the five oldest
+  - **the most common categories and common requests**
+  - **email and safety checks**: email out and in, a stopped worker, the
+    password check, auto-close
+  - **a CSV download**: no descriptions or names, formula cells made safe
+- Charts drawn on the server as SVG, no library, in team colours checked
+  for colour-blind separation and contrast in light and dark.
+- `REPORTS_FROM`: count tickets from a date (the go-live date). "Pilot:"
+  tickets are always left out.
+
+### Changed
+- Usage and privacy page: admins see reports per team, never per person.
+- Roadmap: the pilot fixes, the removal tool and the closed-ticket decision
+  wait for the pilot's testing (v0.9.x).
+
+### Upgrading
+- No database changes. Optionally set `REPORTS_FROM` in `.env`.
+
 ## [0.8.4] - 2026-11-10
 
 The admin site in the app's look, and a chosen common request is always the
@@ -339,6 +370,7 @@ Milestone 1: skeleton and Microsoft 365 sign-in. [Release notes with screenshots
 - `/healthz` endpoint, Dockerfile and Docker Compose with PostgreSQL 17.
 - Entra setup guide (`docs/entra-setup.md`) and the UI mockup (`mockups/`).
 
+[0.9.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.9.0
 [0.8.4]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.8.4
 [0.8.3]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.8.3
 [0.8.2]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.8.2

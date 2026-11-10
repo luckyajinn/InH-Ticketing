@@ -113,6 +113,53 @@
       });
     });
 
+    // Reports: a tooltip for each column of the chart, on hover or keyboard
+    // focus. It only repeats what the table under the chart already says.
+    document.querySelectorAll("[data-chart]").forEach(function (chart) {
+      var tip = chart.querySelector(".chart-tip");
+      if (!tip) return;
+      function show(mark) {
+        tip.textContent = "";
+        var title = document.createElement("p");
+        title.className = "chart-tip-title";
+        title.textContent = mark.getAttribute("data-tip-title") || "";
+        tip.appendChild(title);
+        (mark.getAttribute("data-tip-rows") || "").split(";").forEach(function (row) {
+          var parts = row.split("|");
+          if (parts.length < 3) return;
+          var line = document.createElement("p");
+          line.className = "chart-tip-row";
+          var key = document.createElement("span");
+          key.className = "chart-tip-key key-" + parts[2];
+          var value = document.createElement("strong");
+          value.textContent = parts[1];
+          var name = document.createElement("span");
+          name.textContent = parts[0];
+          line.appendChild(key);
+          line.appendChild(value);
+          line.appendChild(name);
+          tip.appendChild(line);
+        });
+        tip.hidden = false;
+        var box = chart.getBoundingClientRect();
+        var hit = mark.getBoundingClientRect();
+        var top = hit.bottom;
+        mark.parentNode.querySelectorAll("path").forEach(function (path) {
+          top = Math.min(top, path.getBoundingClientRect().top);
+        });
+        var left = hit.left - box.left + hit.width / 2 - tip.offsetWidth / 2;
+        tip.style.left = Math.max(0, Math.min(left, box.width - tip.offsetWidth)) + "px";
+        tip.style.top = Math.max(0, top - box.top - tip.offsetHeight - 8) + "px";
+      }
+      function hide() { tip.hidden = true; }
+      chart.querySelectorAll("[data-tip-title]").forEach(function (mark) {
+        mark.addEventListener("pointerenter", function () { show(mark); });
+        mark.addEventListener("focus", function () { show(mark); });
+        mark.addEventListener("pointerleave", hide);
+        mark.addEventListener("blur", hide);
+      });
+    });
+
     // "Common requests" on the New request form: a chosen one is the subject.
     // The subject box greys out (a disabled field isn't sent) and a note says
     // what's typed there won't be used; what was typed stays, in case they
