@@ -1,3 +1,3 @@
 """InH-Ticketing project configuration package."""
 
-__version__ = "0.10.2"
+__version__ = "0.10.3"

@@ -9,6 +9,7 @@ from django.utils import timezone
 
 from accounts.models import User
 from inbound.models import InboundEmail
+from notifications import heartbeat
 from notifications.models import OutboundEmail
 from tickets import reports, services
 from tickets.examples import add_example_departments
@@ -239,6 +240,57 @@ class HealthTests(ReportsTestCase):
         page = self.client.get(reverse("tickets:reports"))
         self.assertContains(page, "The email worker may have stopped")
         self.assertContains(page, "may include a password")
+
+    def page(self):
+        self.client.force_login(self.admin)
+        return self.client.get(reverse("tickets:reports"))
+
+    def test_no_sign_of_the_worker(self):
+        self.assertContains(self.page(), "No sign of the worker yet")
+
+    def test_the_worker_is_running(self):
+        heartbeat.started()
+        heartbeat.round_done()
+        heartbeat.auto_closed(2)
+        page = self.page()
+        self.assertContains(page, "The worker is running: last seen under a minute ago.")
+        self.assertContains(page, "Started ")
+        self.assertContains(page, "<dt>Last run</dt><dd>under a minute ago</dd>", html=True)
+        self.assertNotContains(page, "<dt>Last read</dt>")  # email-in is off
+
+    def test_the_worker_has_stopped(self):
+        heartbeat.record(round_at=timezone.now() - dt.timedelta(hours=3))
+        page = self.page()
+        self.assertContains(page, "The worker may have stopped: last seen 3.0 h ago.")
+        self.assertContains(page, "no emails go out and resolved tickets don't close")
+
+    @override_settings(INBOUND_EMAIL="graph")
+    def test_an_unreadable_mailbox_is_shown(self):
+        heartbeat.round_done()
+        heartbeat.inbox_read(["mech-test@example.invalid: Graph GET returned 403: <denied>"])
+        page = self.page()
+        self.assertContains(page, "no emails go out", count=0)
+        self.assertContains(page, "failed: emails may be waiting in the Inbox. Last read without a problem: not yet.")
+        self.assertContains(page, "mech-test@example.invalid: Graph GET returned 403: &lt;denied&gt;")
+        heartbeat.inbox_read([])
+        page = self.page()
+        self.assertContains(page, "Reading normally")
+        self.assertContains(page, "<dt>Last read</dt><dd>under a minute ago</dd>", html=True)
+
+    def test_a_failed_auto_close_is_shown(self):
+        heartbeat.round_done()
+        heartbeat.auto_closed(error="RuntimeError: database locked")
+        page = self.page()
+        self.assertContains(page, "failed. It tries again within the hour.")
+        self.assertContains(page, "RuntimeError: database locked")
+
+    def test_an_overdue_email_while_the_worker_runs(self):
+        heartbeat.round_done()
+        OutboundEmail.objects.create(kind="x", to="a@example.invalid", subject="s", body_text="b", body_html="b",
+                                     next_attempt_at=timezone.now() - dt.timedelta(minutes=30))
+        page = self.page()
+        self.assertContains(page, "though the worker is running. Check the worker's log.")
+        self.assertNotContains(page, "The email worker may have stopped")
 
     def test_all_quiet(self):
         self.client.force_login(self.admin)

@@ -1,12 +1,12 @@
 # Pilot testing: try to break it
 
-From **2026-11-10**, two testers try to break InH-Ticketing (now v0.10.2) before
+From **2026-11-10**, two testers try to break InH-Ticketing (now v0.10.3) before
 everything is finalized on **2026-11-20** (see [roadmap.md](roadmap.md)).
 Fixes ship as v0.10.x updates once the pilot's testing is done.
 
-Test on the server once it runs v0.10.2: departments, the archive, the
-password removal tool, Reports and the closed email all arrived after the
-pilot started.
+Test on the server once it runs v0.10.3: departments, the archive, the
+password removal tool, Reports, the closed email and the worker's heartbeat
+all arrived after the pilot started.
 
 **Report each finding as a ticket in the app**, subject starting `Pilot:`,
 category Other. Say what you did, what you expected, what happened, and on
@@ -78,7 +78,7 @@ then swap. Use the test shared mailbox for email.
 - [ ] **Usage and privacy:** the footer link opens it, signed in or not.
 - [ ] **Icon:** the browser tab shows the app's ticket icon.
 
-## 7. New in v0.10: departments, category lists, the closed email (admins)
+## 7. New in v0.10: departments, category lists, the closed email, the worker (admins)
 
 - [ ] **After the update:** Admin, Tickets → Departments lists IT, Mechanics and Cleaning & sanitization, with the Entra roles and alert addresses the server had in `.env`. A Mechanics agent still sees only Mechanics tickets. Reports keeps the teams' colours (teal, orange, blue).
 - [ ] **The old settings:** until `ENTRA_ROLE_AGENT_MECHANICS`, `ENTRA_ROLE_AGENT_CLEANING` and `DEPARTMENT_NOTIFY_EMAILS` are removed from `.env`, `docker compose -f compose.yaml -f compose.prod.yaml logs web | grep W001` shows a warning naming them. Remove them and run `docker compose -f compose.yaml -f compose.prod.yaml up -d` (a plain `restart` doesn't re-read `.env`): the warning is gone and nothing else changes.
@@ -88,6 +88,7 @@ then swap. Use the test shared mailbox for email.
 - [ ] **Category lists follow the department (v0.10.1):** in the queue, choose Mechanics: the category filter lists only Mechanics' categories. Back to All departments: they're grouped by department. The same in the admin site's ticket list.
 - [ ] **IT's common requests (v0.10.1):** New request offers printer, password and Wi-Fi requests under Hardware, Access and Network, and none of them sets off the password warning.
 - [ ] **The closed email (v0.10.2):** as an IT agent, set a ticket to Closed in the side panel: the requester gets "Your request is closed and complete". Do the same as an admin on another ticket. Reply to that email: it starts a new request linked to the closed one.
+- [ ] **The worker's heartbeat (v0.10.3, IT):** `docker compose -f compose.yaml -f compose.prod.yaml ps` shows `worker` as `(healthy)`, and Reports → *Email and safety checks* says "The worker is running". Stop it for 6 minutes (`docker compose -f compose.yaml -f compose.prod.yaml stop worker`): Reports says it may have stopped. Start it again (`start worker`): Reports is back to running within a minute, and emails queued meanwhile go out.
 - [ ] **Delete the test department:** it has no categories, agents or notes, so Delete works, and the sign-in page goes back to the three teams.
 
 ## 8. Devices and display

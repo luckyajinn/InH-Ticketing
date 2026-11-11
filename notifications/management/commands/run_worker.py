@@ -15,6 +15,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import close_old_connections
 
+from notifications import heartbeat
 from notifications.sender import send_pending
 from tickets.services import close_resolved_tickets
 
@@ -32,12 +33,17 @@ class Command(BaseCommand):
     def _poll_inbox(self):
         from inbound.graph_inbox import poll  # only needed when email-in is on
 
+        problems: list[str] = []  # one line per mailbox that couldn't be read
         try:
-            handled, failed = poll()
+            handled, failed = poll(problems=problems)
         except Exception as exc:  # Graph unreachable or not set up yet: keep sending
             logger.error("Couldn't read the inbox: %s", exc)
             self.stdout.write(f"Inbox: couldn't read it ({type(exc).__name__}: {exc})")
+            if not any(str(exc) in line for line in problems):  # not one of the mailboxes already listed
+                problems.append(f"{type(exc).__name__}: {exc}")
+            heartbeat.inbox_read(problems)
             return
+        heartbeat.inbox_read(problems)
         if handled or failed:
             self.stdout.write(f"Inbox: {handled} email(s) processed, {failed} failed (will retry)")
 
@@ -47,7 +53,9 @@ class Command(BaseCommand):
         except Exception as exc:  # a failure here must not stop emails going out
             logger.exception("Couldn't auto-close resolved tickets")
             self.stdout.write(f"Auto-close: failed ({type(exc).__name__}: {exc})")
+            heartbeat.auto_closed(error=f"{type(exc).__name__}: {exc}")
             return
+        heartbeat.auto_closed(closed)
         if closed:
             self.stdout.write(f"Auto-close: {closed} resolved ticket(s) closed")
 
@@ -74,6 +82,7 @@ class Command(BaseCommand):
             )
         last_poll = 0.0
         last_auto_close = None  # None = not yet this run, so the first round does it
+        heartbeat.started()
         try:
             while True:
                 close_old_connections()  # don't hold a stale database connection
@@ -89,6 +98,7 @@ class Command(BaseCommand):
                 sent, failed = send_pending()
                 if sent or failed:
                     self.stdout.write(f"Emails: {sent} sent, {failed} failed (will retry)")
+                heartbeat.round_done()  # Reports and Docker's health check read this
                 if once:
                     return
                 time.sleep(interval)

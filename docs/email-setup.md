@@ -303,7 +303,7 @@ says so when it starts, and email to that mailbox becomes an IT ticket.
 
 | Worker prints | Meaning | Fix |
 |---|---|---|
-| `Inbox: couldn't read it (GraphError: Graph GET returned 403 ...)` | The app can't read the mailbox | Step 4b; allow time for the permission to apply |
-| `Email-in: off` | `INBOUND_EMAIL` isn't `graph` | Set it in `.env` and restart the worker |
+| `Inbox: couldn't read it (GraphError: Graph GET returned 403 ...)` | The app can't read the mailbox. Reports → *Email and safety checks* shows it too, with the mailbox's address | Step 4b; allow time for the permission to apply |
+| `Email-in: off` | `INBOUND_EMAIL` isn't `graph` | Set it in `.env`, then `docker compose … up -d` (a restart doesn't read `.env` again) |
 | Emails stay unread, admin shows *Error* | Processing failed | Read the error in **Inbound emails**; it retries 3 times |
 | An email was ignored | It was automatic, or from another domain | The reason is in **Inbound emails** |

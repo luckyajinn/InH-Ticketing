@@ -187,10 +187,24 @@
 <section class="card report-card" aria-labelledby="r-health">
   <h2 class="report-title" id="r-health">Email and safety checks</h2>
   <p class="report-sub">{{ window.label }}, all teams</p>
+  {% with w=health.worker %}
+  <div class="health-worker">
+    {% if w.state == "ok" %}
+    <p class="health health-ok">{% icon "check-circle" %}<span>The worker is running: last seen {{ w.seen_ago }} ago.</span></p>
+    {% elif w.state == "late" %}
+    <p class="health health-bad">{% icon "alert" %}<span>The worker may have stopped: last seen {{ w.seen_ago }} ago. Until it's back, no emails go out{% if health.inbound_on %}, the inbox isn't read{% endif %} and resolved tickets don't close. On the server: <code>docker compose ps</code>.</span></p>
+    {% else %}
+    <p class="health health-bad">{% icon "alert" %}<span>No sign of the worker yet: it hasn't finished a round. On the server: <code>docker compose ps</code>.</span></p>
+    {% endif %}
+    {% if w.started_at %}<p class="muted small">Started {{ w.started_at|date:"M j, g:i A" }}</p>{% endif %}
+  </div>
+  {% endwith %}
   <div class="health-grid">
     <div class="health-item">
       <h3 class="report-subtitle">Email out</h3>
-      {% if health.worker_late %}
+      {% if health.worker_late and health.worker.state == "ok" %}
+      <p class="health health-bad">{% icon "alert" %}<span>An email has been due for {{ health.worker_late }}, though the worker is running. Check the worker's log.</span></p>
+      {% elif health.worker_late %}
       <p class="health health-bad">{% icon "alert" %}<span>The email worker may have stopped: an email has been due for {{ health.worker_late }}.</span></p>
       {% elif health.failed %}
       <p class="health health-warn">{% icon "alert" %}<span>{{ health.failed }} couldn't be sent. <a href="{% url 'admin:notifications_outboundemail_changelist' %}?status__exact=failed">See them</a></span></p>
@@ -207,6 +221,9 @@
       <h3 class="report-subtitle">Email in</h3>
       {% if not health.inbound_on %}
       <p class="health health-off">{% icon "pause" %}<span>Switched off on this server</span></p>
+      {% elif health.worker.inbox_error %}
+      <p class="health health-bad">{% icon "alert" %}<span>The last read, at {{ health.worker.inbox_at|date:"g:i A" }}, failed: emails may be waiting in the Inbox. Last read without a problem: {% if health.worker.inbox_ok_ago %}{{ health.worker.inbox_ok_ago }} ago{% else %}not yet{% endif %}.</span></p>
+      <p class="health-error">{{ health.worker.inbox_error|linebreaksbr }}</p>
       {% elif health.in_errors %}
       <p class="health health-warn">{% icon "alert" %}<span>{{ health.in_errors }} couldn't be read and stay in the Inbox. <a href="{% url 'admin:inbound_inboundemail_changelist' %}?outcome__exact=error">See them</a></span></p>
       {% else %}
@@ -216,6 +233,7 @@
         <div><dt>New requests</dt><dd>{{ health.in_tickets }}</dd></div>
         <div><dt>Replies and notes</dt><dd>{{ health.in_replies }}</dd></div>
         <div><dt>Ignored</dt><dd>{{ health.in_ignored }}</dd></div>
+        {% if health.inbound_on %}<div><dt>Last read</dt><dd>{% if health.worker.inbox_ago %}{{ health.worker.inbox_ago }} ago{% else %}—{% endif %}</dd></div>{% endif %}
       </dl>
     </div>
     <div class="health-item">
@@ -233,7 +251,15 @@
     </div>
     <div class="health-item">
       <h3 class="report-subtitle">Auto-close</h3>
+      {% if health.worker.auto_close_error %}
+      <p class="health health-warn">{% icon "alert" %}<span>The last run, at {{ health.worker.auto_close_at|date:"g:i A" }}, failed. It tries again within the hour.</span></p>
+      <p class="health-error">{{ health.worker.auto_close_error|linebreaksbr }}</p>
+      {% else %}
       <p class="health health-ok">{% icon "check-circle" %}<span>{{ health.auto_closed }} closed after {{ health.auto_close_days }} days without a reply</span></p>
+      {% endif %}
+      <dl class="health-figures">
+        <div><dt>Last run</dt><dd>{% if health.worker.auto_close_ago %}{{ health.worker.auto_close_ago }} ago{% else %}—{% endif %}</dd></div>
+      </dl>
     </div>
   </div>
 </section>

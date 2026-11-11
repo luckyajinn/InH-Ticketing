@@ -130,6 +130,12 @@ class SafetyNetTests(GoLiveTestCase):
         self.assertIn("web:\n        # Healthy", worker)
         self.assertIn("condition: service_healthy\n    command: python manage.py run_worker", worker)
 
+    def test_the_worker_has_its_own_health_check(self):
+        compose = (Path(settings.BASE_DIR) / "compose.yaml").read_text(encoding="utf-8")
+        worker = compose.split("  worker:", 1)[1].split("\nvolumes:", 1)[0]
+        self.assertIn('test: ["CMD", "python", "manage.py", "check_worker"]', worker)
+        self.assertNotIn("disable: true", worker)
+
     def test_the_manifest_has_its_type(self):
         self.assertEqual(settings.WHITENOISE_MIMETYPES[".webmanifest"], "application/manifest+json")
 

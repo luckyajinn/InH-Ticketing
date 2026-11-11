@@ -5,6 +5,23 @@ Each version also has illustrated release notes in [docs/releases](docs/releases
 A letter after a version, such as 0.10.0d, marks a documentation-only update:
 the app is the same as that version.
 
+## [0.10.3] *(unreleased)*
+
+The worker's heartbeat. [Release notes](docs/releases/v0.10.3.md).
+
+### Added
+- The worker records each round, each inbox read and each auto-close run
+  (migration `notifications` 0002). Reports → *Email and safety checks* says
+  whether it's running ("last seen under a minute ago", or "may have
+  stopped" after 5 minutes), names a mailbox that couldn't be read, and shows
+  a failed auto-close, each with its error.
+- `manage.py check_worker`, and a Docker health check for the `worker`
+  container that uses it: `docker compose ps` shows it `(healthy)` or
+  `(unhealthy)`.
+
+### Fixed
+- email-setup.md: a change to `.env` needs `up -d`, not a restart.
+
 ## [0.10.2] *(unreleased)*
 
 An email when staff close a ticket. [Release notes](docs/releases/v0.10.2.md).

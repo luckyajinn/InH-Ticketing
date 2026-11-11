@@ -167,7 +167,9 @@ Every change is written to the ticket's history: who, what, when.
   or 12 months: new requests, first response, time to resolve (not counting
   waiting on the requester), the share of blocking requests, requests over
   time, open requests by age, the most common categories and common
-  requests, and email and password-check health. A CSV for spreadsheets.
+  requests, and email and password-check health: whether the worker is
+  running, and the last inbox read and auto-close, with any error. A CSV for
+  spreadsheets.
 - Per team, never per person, and only from what the app already keeps:
   no tracking.
 
@@ -184,7 +186,7 @@ Every change is written to the ticket's history: who, what, when.
 | System | What it does |
 |---|---|
 | **Web app** (Django 6.1, Python) | The pages, the rules, the privacy filtering. Every rule runs on the server, not in the browser |
-| **Worker** | Sends queued emails, reads the mailbox, closes resolved tickets |
+| **Worker** | Sends queued emails, reads the mailbox, closes resolved tickets. Records a heartbeat each round for Reports and its Docker health check |
 | **Database** (PostgreSQL) | Tickets, replies, notes, history, the password audit trail |
 | **HTTPS proxy** (Caddy) | Serves `https://helpdesk.example.com` with the company's internal certificate; redirects plain HTTP; strict HTTPS for a year |
 | **Docker Compose** | Runs the four parts (proxy, web, worker, database) together on the server; one command to update |
@@ -230,6 +232,7 @@ A load test on 2026-11-09 (app held to 2 CPUs and 4 GB): responses averaged
 | Wed Nov 11 | v0.10.0: departments set up by admins (done) |
 | Wed Nov 11 | v0.10.1: category lists follow the department; IT's common requests (done) |
 | Wed Nov 11 | v0.10.2: an email when staff close a ticket |
+| Wed Nov 11 | v0.10.3: the worker's heartbeat in Reports and Docker |
 | After the pilot's testing | v0.10.x: pilot fixes |
 | Fri Nov 13 (or Mon 16) | v1.0.0: everything for IT finalized, a mailbox per department, server checks (the off-server backup follows after v1.0.0) |
 | Mon–Tue Nov 16–17 | v1.1.0 (stretch): reply templates, response targets, Teams alerts |

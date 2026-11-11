@@ -34,6 +34,7 @@ from django.utils import timezone
 
 from core import departments
 from inbound.models import InboundEmail
+from notifications import heartbeat
 from notifications.models import OutboundEmail
 from tickets.models import Category, Comment, PasswordWarning, Ticket, TicketEvent
 
@@ -533,6 +534,7 @@ def health(window: Window, now: dt.datetime) -> dict:
         "failed": outbound.filter(status=OutboundEmail.Status.FAILED, created_at__gte=start, created_at__lt=end).count(),
         "retrying": outbound.filter(status=OutboundEmail.Status.PENDING, attempts__gt=0).count(),
         "worker_late": format_duration((now - overdue).total_seconds()) if overdue else "",
+        "worker": worker_health(now),
         "in_tickets": inbound[InboundEmail.Outcome.NEW_TICKET],
         "in_replies": inbound[InboundEmail.Outcome.REPLY] + inbound[InboundEmail.Outcome.NOTE],
         "in_ignored": inbound[InboundEmail.Outcome.IGNORED],
@@ -544,6 +546,33 @@ def health(window: Window, now: dt.datetime) -> dict:
             kind=TicketEvent.Kind.STATUS, new_value=Status.CLOSED.label, actor__isnull=True,
             created_at__gte=start, created_at__lt=end,
         ).count(),
+    }
+
+
+def _ago(start: dt.datetime | None, now: dt.datetime) -> str:
+    """'under a minute', '12 min', '3.0 h'; empty if it never happened."""
+    if start is None:
+        return ""
+    seconds = max((now - start).total_seconds(), 0)
+    return "under a minute" if seconds < 60 else format_duration(seconds)
+
+
+def worker_health(now: dt.datetime) -> dict:
+    """What the worker last did, from its heartbeat (notifications.heartbeat)."""
+    beat = heartbeat.latest()
+    if beat is None:
+        return {"state": "never"}
+    return {
+        "state": heartbeat.state(beat, now),
+        "seen_ago": _ago(beat.round_at, now),
+        "started_at": beat.started_at,
+        "inbox_at": beat.inbox_at,
+        "inbox_ago": _ago(beat.inbox_at, now),
+        "inbox_ok_ago": _ago(beat.inbox_ok_at, now),
+        "inbox_error": beat.inbox_error,
+        "auto_close_at": beat.auto_close_at,
+        "auto_close_ago": _ago(beat.auto_close_at, now),
+        "auto_close_error": beat.auto_close_error,
     }
 
 

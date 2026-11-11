@@ -113,8 +113,12 @@ def _move_to_processed(box: str, graph_id: str) -> None:
                json={"destinationId": _processed_folder(box)}, expected=(200, 201))
 
 
-def poll(limit: int = 25) -> tuple[int, int]:
-    """Process up to `limit` unread emails from each mailbox. Returns (handled, failed)."""
+def poll(limit: int = 25, problems: list[str] | None = None) -> tuple[int, int]:
+    """
+    Process up to `limit` unread emails from each mailbox. Returns (handled, failed).
+    Each mailbox that couldn't be read adds a line to `problems`, if given
+    (the worker's heartbeat, shown in Reports).
+    """
     handled = failed = 0
     errors = []
     boxes = graph.mailboxes()
@@ -125,6 +129,8 @@ def poll(limit: int = 25) -> tuple[int, int]:
             # One mailbox not set up yet (permissions, a folder name) mustn't stop the others.
             logger.error("Couldn't read %s: %s", address, exc)
             errors.append(exc)
+            if problems is not None:
+                problems.append(f"{address}: {exc}")
             continue
         handled += done
         failed += broken

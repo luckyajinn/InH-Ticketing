@@ -42,7 +42,7 @@ What has been checked, and what hasn't:
 |---|---|---|
 | `proxy` | Caddy: HTTPS on port 443 with the internal-CA certificate; port 80 redirects to HTTPS | The LAN and VPN |
 | `web` | The Django app (gunicorn). Applies database migrations when it starts | The proxy only |
-| `worker` | Sends queued emails and reads the help-desk mailbox | Nobody (it only calls out) |
+| `worker` | Sends queued emails, reads the help-desk mailbox and closes resolved tickets. Records a heartbeat each round, which its health check and Reports read | Nobody (it only calls out) |
 | `db` | PostgreSQL 17 | `web` and `worker` |
 
 The data lives in two Docker volumes, `inh-ticketing_pgdata` (the database)
@@ -226,7 +226,7 @@ Clone, and check out the release you're installing:
 git clone git@github.com:luckyajinn/InH-Ticketing.git /srv/inh-ticketing/app
 cd /srv/inh-ticketing/app
 git tag --list           # the releases
-git checkout v0.10.2     # the newest release in that list; "detached HEAD" is expected
+git checkout v0.10.3     # the newest release in that list; "detached HEAD" is expected
 file scripts/backup.sh   # "POSIX shell script ... executable", and no "CRLF"
 ```
 
@@ -457,8 +457,8 @@ docker compose -f compose.yaml -f compose.prod.yaml logs --tail 50 web proxy
 ```
 
 Within a minute `web` should show `(healthy)`: it applies the database
-migrations, then starts gunicorn. `db` is `(healthy)`; `worker` and `proxy`
-are `Up`. In the PORTS column, only `proxy` has `0.0.0.0:80->80/tcp` and
+migrations, then starts gunicorn. `db` is `(healthy)`; `worker` starts once
+`web` is healthy and shows `(healthy)` a minute or so later; `proxy` is `Up`. In the PORTS column, only `proxy` has `0.0.0.0:80->80/tcp` and
 `0.0.0.0:443->443/tcp`; `web` shows just `8000/tcp`.
 
 ## 7. Post-install checklist
@@ -468,7 +468,7 @@ the go-live records.
 
 | # | Check | How | Expected |
 |---|---|---|---|
-| 1 | Containers running | `docker compose -f compose.yaml -f compose.prod.yaml ps` | `db` and `web` healthy, `worker` and `proxy` up |
+| 1 | Containers running | `docker compose -f compose.yaml -f compose.prod.yaml ps` | `db`, `web` and `worker` healthy, `proxy` up |
 | 2 | Port 8000 not reachable | `ss -tln \| grep 8000` | Nothing |
 | 3 | HTTPS and health check, from the server | `curl -sS --cacert /srv/inh-ticketing/certs/internal-root.pem https://helpdesk.example.com/healthz` | `ok` |
 | 4 | HTTP redirects to HTTPS | `curl -sSI http://helpdesk.example.com/queue/` | `301`, `Location: https://helpdesk.example.com/queue/` |
@@ -608,7 +608,7 @@ install.)*
    the same emails.
 2. **Build the new server:** sections 1 and 2. Then open the backup's
    `manifest.txt` and check out the tag on its "App version" line (the `git:`
-   part), e.g. `git checkout v0.10.2`.
+   part), e.g. `git checkout v0.10.3`.
 3. **A new certificate** for the same name: section 3. The old private key
    wasn't backed up.
 4. **The `.env`** from the password vault: section 5, with the same
@@ -643,8 +643,8 @@ they say if there are new `.env` settings or anything else to do.
 **Skipping versions** is fine: one update applies every migration in between,
 in order. But read the Upgrading section of **every** release you skip, and do
 each one's "Before installing" steps first. For example, from v0.8.3 to
-v0.10.2, read v0.8.4, v0.9.0, v0.9.1 (Entra roles to create first), v0.10.0,
-v0.10.1 and v0.10.2.
+v0.10.3, read v0.8.4, v0.9.0, v0.9.1 (Entra roles to create first), v0.10.0,
+v0.10.1, v0.10.2 and v0.10.3.
 A version ending in a letter, such as v0.10.0d, changes only the documents:
 there's nothing extra to do for it.
 
@@ -652,7 +652,7 @@ Set `NEW` to the version you're installing, then run the rest as it is:
 
 ```bash
 cd /srv/inh-ticketing/app
-NEW=v0.10.2                                # the version you're installing
+NEW=v0.10.3                                # the version you're installing
 OLD=$(git describe --tags); echo "$OLD"    # the current version: write it down, rolling back needs it
 ./scripts/backup.sh before-$NEW            # always, before updating
 git fetch --tags
@@ -773,6 +773,7 @@ Logs: `docker compose -f compose.yaml -f compose.prod.yaml logs --tail 100 <serv
 | `413` when uploading | Over the 60 MB request limit | Fewer or smaller files per reply (10 MB each, 5 at most) |
 | `web` shows `(unhealthy)` | The health check can't reach the app | `docker inspect --format '{{json .State.Health}}' inh-ticketing-web-1`; `logs web` |
 | `password authentication failed for user "inh"` | `POSTGRES_PASSWORD` was changed after the database was created | Put the old value back, or set the new one in the database: `docker compose … exec db psql -U inh -d inh -c "ALTER USER inh PASSWORD '<new value>'"` |
+| `worker` shows `(unhealthy)` | It hasn't finished a round in 5 minutes: stopped, stuck, or it can't reach the database. Reports says the same | `docker compose … exec worker python manage.py check_worker`; `logs --tail 50 worker`; then `docker compose … restart worker` |
 | Emails not sent | See the worker log | [email-setup.md](email-setup.md), *Troubleshooting* |
 | Emails missing, or turning up in the wrong place | A PC also reads the mailbox | `INBOUND_EMAIL=off` on every PC |
 | `unknown tag !reset`, or web still on port 8000 | Docker Compose older than 2.24 | Update Docker (section 1.5) |

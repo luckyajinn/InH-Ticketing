@@ -255,9 +255,9 @@ from a phone, people email their request. No restore drill is planned.
         against the usage rules ("never delete it"). *(Turned off in v0.9.1.)*
   - [x] The closed-ticket decision keeps a closed ticket's row and history
         (archived), so Reports keeps its trends. *(v0.9.1.)*
-  - [ ] A worker heartbeat (last round, last inbox read, last auto-close),
-        so Reports can say for sure that the worker is running. Today it
-        infers it from emails waiting to be sent.
+  - [x] A worker heartbeat (last round, last inbox read, last auto-close),
+        so Reports can say for sure that the worker is running. *(v0.10.3,
+        with a Docker health check for the worker.)*
   - [x] Usage and privacy page: ignored emails are logged with their sender
         and subject, and the emails the app sends are kept. *(v0.9.1.)*
 - [ ] Everything in v0.9.x, plus the server and Microsoft 365 tasks in the

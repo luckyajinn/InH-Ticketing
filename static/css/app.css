@@ -1592,6 +1592,10 @@ th .swatch { margin-right: 8px; vertical-align: -1px; }
 .health-figures div { display: flex; justify-content: space-between; gap: 12px; }
 .health-figures dt { color: var(--text-muted); }
 .health-figures dd { margin: 0; font-weight: 650; font-variant-numeric: tabular-nums; }
+.health-worker { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; justify-content: space-between;
+  margin-top: var(--sp-4); padding-bottom: var(--sp-4); border-bottom: 1px solid var(--border-soft); }
+.health-worker code { font-size: var(--fs-xs); }
+.health-error { margin: 6px 0 0 24px; color: var(--text-muted); font-size: var(--fs-xs); overflow-wrap: anywhere; }
 
 .report-notes { margin-top: var(--sp-6); color: var(--text-muted); font-size: var(--fs-xs); }
 .report-notes p + p { margin-top: 6px; }
