@@ -225,8 +225,9 @@ A load test on 2026-11-09 (app held to 2 CPUs and 4 GB): responses averaged
 | Tue Nov 10 | Demo, pilot starts, risk assessment for Mechanics and C&S |
 | Tue Nov 10 | v0.9.0: Reports for admins (done) |
 | Tue Nov 10 | v0.9.1: departments, the archive, the removal tool, safety fixes (done) |
-| After the pilot's testing | v0.9.x: pilot fixes |
-| Fri Nov 13 (or Mon 16) | v1.0.0: everything for IT finalized, a mailbox per department, server checks (restore drill, off-server backup) |
+| Wed Nov 11 | v0.10.0: departments set up by admins (done) |
+| After the pilot's testing | v0.10.x: pilot fixes |
+| Fri Nov 13 (or Mon 16) | v1.0.0: everything for IT finalized, a mailbox per department, server checks (restore drill; the off-server backup follows after v1.0.0) |
 | Mon–Tue Nov 16–17 | v1.1.0 (stretch): reply templates, response targets, Teams alerts |
 | Wed–Thu Nov 18–19 | v1.2.0 (stretch): more common requests and a self-fill option for Mechanics and C&S |
 | Fri Nov 20 | Go / no-go, go-live date set (earliest Mon Nov 30) |

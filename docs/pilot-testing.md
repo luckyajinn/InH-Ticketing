@@ -88,7 +88,7 @@ then swap. Use the test shared mailbox for email.
 
 ## 8. Devices and display
 
-- [ ] A phone, a tablet and a small laptop; Edge and Chrome.
+- [ ] A phone, a tablet and a small laptop; Edge and Chrome. Phones on the staff Wi-Fi need the network set up first ([deployment.md](deployment.md), section 1.6).
 - [ ] Dark mode, 200% zoom, keyboard only (Tab through every form), "reduce motion" turned on.
 - [ ] A slow connection (a phone hotspot).
 

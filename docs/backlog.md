@@ -60,6 +60,7 @@ Before go-live (by 2027-01-11):
 - [x] ~~Quarterly review of who holds the Agent and Admin roles.~~ *Not needed (decided 2026-11-09).*
 - [ ] Monthly check of dependencies for security updates.
 - [ ] Off-server backup copy and one tested restore (also under v0.6.0).
+      *(2026-11-11: moved to after v1.0.0; where the copies go is undecided.)*
 
 ## v0.5.0 (milestone 5: automations)
 
@@ -250,7 +251,8 @@ ticket, subject starting "Pilot:", so it's tracked in the app itself.
         and subject, and the emails the app sends are kept. *(v0.9.1.)*
 - [ ] Everything in v0.9.x, plus the server and Microsoft 365 tasks in the
       roadmap's "Your side" list (restore drill, the server's own Entra
-      secret, the permission-check record, DMARC, an off-server backup).
+      secret, the permission-check record, DMARC). The off-server backup moved
+      to after v1.0.0 (2026-11-11).
 
 ## v1.1.0 (stretch: IT improvements, by 2026-11-17)
 

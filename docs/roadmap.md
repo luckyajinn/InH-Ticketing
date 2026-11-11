@@ -61,7 +61,7 @@ Nov 9 is a Monday.
 | Fri Nov 13 | Restore drill on the server, recorded ([deployment.md](deployment.md) section 9) | v1.0.0 |
 | Fri Nov 13 | Entra: confirm the server's redirect URI, and give the server its own client secret or certificate | v1.0.0 |
 | Fri Nov 13 | File the `Test-ServicePrincipalAuthorization` output with the risk assessment; check DMARC on `example.com` | v1.0.0 |
-| Fri Nov 13 | Off-server backup copy (a network share or a second machine) and one tested restore from it | v1.0.0 |
+| After v1.0.0, before go-live | Off-server backup copy and one tested restore from it. Where the copies go is undecided (2026-11-11): a network share or a second machine | Go-live |
 | Mon Nov 16 | Teams: a webhook or permission for IT alerts | v1.1.0 |
 | ✅ Tue Nov 10 | Entra groups for the Mechanics and Cleaning & sanitization teams are live. Still to do: assign each group its app role, `Agent.Mechanics` or `Agent.Cleaning` (safe before v1.2.0; never the plain `Agent` role) | v1.2.0 |
 | Mon Nov 16 | The common requests you're gathering from Mechanics and Cleaning & sanitization | v1.2.0 |
@@ -108,5 +108,9 @@ third-party analytics (v1.1.0's reporting answers the same questions).
 To be prioritised from pilot and live feedback. Reply templates, response
 targets, reporting and Teams alerts are planned for v1.1.0 (above).
 
+- **Backups copied off the server** (moved here from v1.0.0, 2026-11-11), once
+  where they go is decided. Still needed before go-live (the compliance list in
+  [backlog.md](backlog.md)). The steps go in deployment.md section 8, and a
+  restore from the copy is tested.
 - **Merging duplicate tickets.**
 - **Admin screens** beyond the Django admin, if IT outgrows it.
