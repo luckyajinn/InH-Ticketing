@@ -225,11 +225,12 @@ def update_ticket(
             changes.append("status set to Open")
             fields.update(STATUS_FIELDS)
 
-    resolved_now = False
+    resolved_now = closed_now = False
     if status_requested and _set_status(ticket, actor, status):
         changes.append(f"status set to {ticket.get_status_display()}")
         fields.update(STATUS_FIELDS)
         resolved_now = ticket.status == Status.RESOLVED
+        closed_now = ticket.status == Status.CLOSED
 
     if fields:
         _save(ticket, fields)
@@ -237,6 +238,8 @@ def update_ticket(
         notify.assigned(ticket, actor)
     if resolved_now:
         notify.resolved(ticket, actor)
+    if closed_now:
+        notify.closed(ticket, actor)
     return changes
 
 

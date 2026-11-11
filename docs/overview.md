@@ -54,7 +54,8 @@ with the other team first.
    resolved"). The email says when it will close.
 7. **Close.** If nobody replies for 7 days, it closes by itself. "This is
    still a problem" reopens it before then; after it closes, "Start a
-   follow-up" opens a new linked request.
+   follow-up" opens a new linked request. Staff can also close it themselves:
+   the person then gets an email saying it's closed and complete.
 
 Every change is written to the ticket's history: who, what, when.
 
@@ -119,7 +120,8 @@ Every change is written to the ticket's history: who, what, when.
   5 tries) through Microsoft 365, from the help-desk mailbox.
 - Every email about a ticket has the same subject, `[#1042] Subject`, so mail
   apps group them and replies find their way back.
-- **Staff get:** request received, IT replied, resolved (with the close date).
+- **Staff get:** request received, IT replied, resolved (with the close date),
+  closed (when staff close it; closing by itself sends nothing).
 - **IT gets:** new request, the requester replied, assigned to you, an email
   from someone else, reopened.
 
@@ -227,6 +229,7 @@ A load test on 2026-11-09 (app held to 2 CPUs and 4 GB): responses averaged
 | Tue Nov 10 | v0.9.1: departments, the archive, the removal tool, safety fixes (done) |
 | Wed Nov 11 | v0.10.0: departments set up by admins (done) |
 | Wed Nov 11 | v0.10.1: category lists follow the department; IT's common requests (done) |
+| Wed Nov 11 | v0.10.2: an email when staff close a ticket |
 | After the pilot's testing | v0.10.x: pilot fixes |
 | Fri Nov 13 (or Mon 16) | v1.0.0: everything for IT finalized, a mailbox per department, server checks (the off-server backup follows after v1.0.0) |
 | Mon–Tue Nov 16–17 | v1.1.0 (stretch): reply templates, response targets, Teams alerts |

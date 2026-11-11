@@ -225,6 +225,8 @@ from a phone, people email their request. No restore drill is planned.
 - [x] Category lists follow the department: the queue, New request and the
       admin site's ticket list. *(v0.10.1.)*
 - [x] Common requests for IT: printers, passwords, Wi-Fi. *(v0.10.1.)*
+- [x] An email to the requester when staff close a ticket: closed and
+      complete, with how to start a follow-up. Closing by itself sends none. *(v0.10.2.)*
 
 - [x] **A mailbox per department** *(built in v0.9.1, `DEPARTMENT_MAILBOXES`;
       switched on once the addresses are decided. Required before v1.0.0, decided

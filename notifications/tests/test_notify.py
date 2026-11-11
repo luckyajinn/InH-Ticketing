@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.test import override_settings
 
 from accounts.models import User
@@ -74,6 +76,52 @@ class WhoGetsWhatTests(MediaTestCase):
         [email] = queued(kind="resolved")
         self.assertEqual(email.to, self.requester.email)
         self.assertIn("This is still a problem", email.body_text)
+
+    def test_close_by_it_emails_requester(self):
+        services.update_ticket(ticket=self.ticket, actor=self.agent, status=Status.CLOSED)
+        [email] = queued(kind="closed")
+        self.assertEqual(email.to, self.requester.email)
+        self.assertEqual(email.subject, f"[#{self.ticket.number}] Outlook keeps prompting")
+        self.assertIn("Your request is closed and complete", email.body_text)
+        self.assertIn("Sam Patel closed", email.body_text)
+        self.assertIn("Start a follow-up", email.body_text)
+        self.assertIn("Your request is closed and complete", email.body_html)
+
+    def test_close_by_admin_emails_requester(self):
+        admin = make_user("Jo Admin", User.Role.ADMIN)
+        services.update_ticket(ticket=self.ticket, actor=admin, status=Status.CLOSED)
+        [email] = queued(kind="closed")
+        self.assertEqual(email.to, self.requester.email)
+        self.assertIn("Jo Admin closed", email.body_text)
+
+    def test_resolve_then_close_sends_both(self):
+        services.update_ticket(ticket=self.ticket, actor=self.agent, status=Status.RESOLVED)
+        services.update_ticket(ticket=self.ticket, actor=self.agent, status=Status.CLOSED)
+        self.assertEqual([e.kind for e in queued(to=self.requester.email, kind__in=["resolved", "closed"])],
+                         ["resolved", "closed"])
+
+    def test_closing_your_own_ticket_sends_nothing(self):
+        own = make_ticket(self.agent, subject="My own monitor")
+        services.update_ticket(ticket=own, actor=self.agent, status=Status.CLOSED)
+        self.assertFalse(queued(kind="closed"))
+
+    def test_other_changes_on_close_send_no_closed_email(self):
+        services.update_ticket(ticket=self.ticket, actor=self.agent, status=Status.WAITING)
+        services.update_ticket(ticket=self.ticket, actor=self.agent, priority=1)
+        self.assertFalse(queued(kind="closed"))
+
+    @override_settings(INBOUND_EMAIL="graph")
+    def test_closed_email_says_a_reply_starts_a_new_request(self):
+        services.update_ticket(ticket=self.ticket, actor=self.agent, status=Status.CLOSED)
+        [email] = queued(kind="closed")
+        self.assertIn("Replying to this email starts a new request, linked to this one.", email.body_text)
+        self.assertNotIn("Keep [#", email.body_text)
+
+    def test_auto_close_sends_no_closed_email(self):
+        services.update_ticket(ticket=self.ticket, actor=self.agent, status=Status.RESOLVED)
+        Ticket.objects.filter(pk=self.ticket.pk).update(resolved_at=self.ticket.resolved_at - timedelta(days=30))
+        self.assertEqual(services.close_resolved_tickets(), 1)
+        self.assertFalse(queued(kind="closed"))
 
     def test_requester_resolving_their_own_ticket_sends_nothing(self):
         before = OutboundEmail.objects.count()

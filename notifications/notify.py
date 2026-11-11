@@ -9,6 +9,7 @@ transaction as the ticket change, so an email is only queued if the change saved
     Requester replies / reopens   the assignee, or the department's alerts if unassigned
     Ticket assigned               the new assignee (unless they assigned themselves)
     Staff resolve the ticket      the requester
+    Staff close the ticket        the requester (not when it closes by itself)
     Staff ask for a move          every admin
     An admin moves the ticket     the new department's alerts
 
@@ -47,6 +48,8 @@ def _reply_hint(ticket, audience: str) -> str:
     if audience == "it":
         return (f"Replying to this email posts a public reply that {ticket.requester} will see. "
                 "For an internal note, use the ticket page.")
+    if ticket.status == ticket.Status.CLOSED:
+        return "Replying to this email starts a new request, linked to this one."
     return f"Reply to this email to add to your request. Keep [#{ticket.number}] in the subject."
 
 
@@ -218,6 +221,22 @@ def resolved(ticket, actor) -> None:
             f"{actor} marked #{ticket.number} as resolved. If it's still not working, "
             "open the ticket and choose \"This is still a problem\"."
             + _close_notice(ticket)
+        ),
+        action="View your request", reason="you raised this request",
+    )
+
+
+def closed(ticket, actor) -> None:
+    """Staff closed the ticket. Auto-close sends nothing: the resolved email gave its date."""
+    requester = ticket.requester
+    if actor.pk == requester.pk or not _reachable(requester):
+        return
+    _queue(
+        kind="closed", ticket=ticket, to=requester.email,
+        heading="Your request is closed and complete",
+        intro=(
+            f"{actor} closed #{ticket.number}. It can't be changed now. If you need more help "
+            "with it, open the request and choose \"Start a follow-up\"."
         ),
         action="View your request", reason="you raised this request",
     )

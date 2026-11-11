@@ -1,11 +1,12 @@
 # Pilot testing: try to break it
 
-From **2026-11-10**, two testers try to break InH-Ticketing (now v0.10.0) before
+From **2026-11-10**, two testers try to break InH-Ticketing (now v0.10.2) before
 everything is finalized on **2026-11-20** (see [roadmap.md](roadmap.md)).
 Fixes ship as v0.10.x updates once the pilot's testing is done.
 
-Test on the server once it runs v0.10.0: departments, the archive, the
-password removal tool and Reports all arrived after the pilot started.
+Test on the server once it runs v0.10.2: departments, the archive, the
+password removal tool, Reports and the closed email all arrived after the
+pilot started.
 
 **Report each finding as a ticket in the app**, subject starting `Pilot:`,
 category Other. Say what you did, what you expected, what happened, and on
@@ -44,7 +45,7 @@ then swap. Use the test shared mailbox for email.
 - [ ] An out-of-office reply is ignored, with no email loop.
 - [ ] The CodeTwo signature folds under *Show email signature* (check #1071 too), and nothing you needed is folded away.
 - [ ] A file over 10 MB, a `.exe`, and more than 5 files each get a clear message.
-- [ ] An email arrives for each step: received, IT replied, assigned, waiting, resolved (with the close date).
+- [ ] An email arrives for each step: received, IT replied, assigned, waiting, resolved (with the close date), closed by staff.
 - [ ] **Fake "IT" email (IT, once):** from outside the company, send the test mailbox one reply to a ticket (keep `[#1234]` in the subject) with an IT agent's address as the sender. Exchange should reject or junk it. If it arrives anyway, the ticket shows it as an internal note saying Exchange couldn't confirm the sender, never as a reply the requester sees. Then reply to a notification from an IT agent's own mailbox: that arrives as a normal reply.
 
 ## 4. Ticket rules
@@ -77,7 +78,7 @@ then swap. Use the test shared mailbox for email.
 - [ ] **Usage and privacy:** the footer link opens it, signed in or not.
 - [ ] **Icon:** the browser tab shows the app's ticket icon.
 
-## 7. New in v0.10.0: departments in the admin site (admins)
+## 7. New in v0.10: departments, category lists, the closed email (admins)
 
 - [ ] **After the update:** Admin, Tickets → Departments lists IT, Mechanics and Cleaning & sanitization, with the Entra roles and alert addresses the server had in `.env`. A Mechanics agent still sees only Mechanics tickets. Reports keeps the teams' colours (teal, orange, blue).
 - [ ] **The old settings:** until `ENTRA_ROLE_AGENT_MECHANICS`, `ENTRA_ROLE_AGENT_CLEANING` and `DEPARTMENT_NOTIFY_EMAILS` are removed from `.env`, `docker compose -f compose.yaml -f compose.prod.yaml logs web | grep W001` shows a warning naming them. Remove them and run `docker compose -f compose.yaml -f compose.prod.yaml up -d` (a plain `restart` doesn't re-read `.env`): the warning is gone and nothing else changes.
@@ -86,6 +87,7 @@ then swap. Use the test shared mailbox for email.
 - [ ] **A department without categories:** on a ticket, "Wrong department?" and Move don't offer "Pilot test". The sign-in page names it ("Ask IT, Mechanics, Cleaning & sanitization, or Pilot test"), so do this test quickly.
 - [ ] **Category lists follow the department (v0.10.1):** in the queue, choose Mechanics: the category filter lists only Mechanics' categories. Back to All departments: they're grouped by department. The same in the admin site's ticket list.
 - [ ] **IT's common requests (v0.10.1):** New request offers printer, password and Wi-Fi requests under Hardware, Access and Network, and none of them sets off the password warning.
+- [ ] **The closed email (v0.10.2):** as an IT agent, set a ticket to Closed in the side panel: the requester gets "Your request is closed and complete". Do the same as an admin on another ticket. Reply to that email: it starts a new request linked to the closed one.
 - [ ] **Delete the test department:** it has no categories, agents or notes, so Delete works, and the sign-in page goes back to the three teams.
 
 ## 8. Devices and display

@@ -5,6 +5,16 @@ Each version also has illustrated release notes in [docs/releases](docs/releases
 A letter after a version, such as 0.10.0d, marks a documentation-only update:
 the app is the same as that version.
 
+## [0.10.2] *(unreleased)*
+
+An email when staff close a ticket. [Release notes](docs/releases/v0.10.2.md).
+
+### Added
+- When staff (an agent or an admin) set a ticket to Closed, the requester gets
+  "Your request is closed and complete", with how to start a follow-up. If
+  email-in is on, it says a reply starts a new linked request. Closing by
+  itself after 7 days still sends nothing: the resolved email gave the date.
+
 ## [0.10.1] - 2026-11-11
 
 Category lists follow the department, and IT's common requests. [Release notes](docs/releases/v0.10.1.md).
