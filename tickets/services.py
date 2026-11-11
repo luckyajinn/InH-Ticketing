@@ -24,7 +24,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.formats import date_format
 
-from core.departments import Department
+from core import departments
 from notifications import notify
 from tickets.models import Attachment, Category, Comment, Ticket, TicketEvent
 
@@ -264,7 +264,7 @@ def move_ticket(*, ticket: Ticket, actor, category: Category) -> list[str]:
     shared = notes.filter(share_on_move=True).count()
     kept = notes.count() - shared
     ticket.category = category
-    new_department = Department(category.department).label
+    new_department = departments.label(category.department)
     _log(ticket, actor, TicketEvent.Kind.CATEGORY, old_category.name, category.name)
     _log(ticket, actor, TicketEvent.Kind.DEPARTMENT, old_department, new_department,
          f"confirmed with {new_department}; {shared} internal note{'' if shared == 1 else 's'} shared, "
@@ -296,9 +296,9 @@ def request_move(*, ticket: Ticket, actor, department: str, reason: str = "") ->
         raise PermissionDenied("Only staff working this ticket can ask for it to be moved.")
     if ticket.is_archived:
         raise PermissionDenied(ARCHIVED)
-    if department not in Department.values or department == ticket.department:
+    if department not in departments.keys() or department == ticket.department:
         raise PermissionDenied("Choose another department.")
-    label = Department(department).label
+    label = departments.label(department)
     _log(ticket, actor, TicketEvent.Kind.MOVE_REQUEST, ticket.department_label, label, reason.strip())
     _save(ticket, [])
     notify.move_requested(ticket, actor, label, reason.strip())

@@ -14,7 +14,7 @@ from django.utils import timezone
 
 from accounts import entra
 from accounts.models import User
-from core.departments import Department
+from core import departments
 from inbound.models import InboundEmail
 from inbound.processing import IncomingMessage, process, sender_confirmed
 from notifications import graph
@@ -23,7 +23,8 @@ from notifications.models import OutboundEmail
 from notifications.sender import send_pending
 from tickets import services
 from tickets.forms import agent_choices
-from tickets.models import Category, Comment, Ticket, TicketEvent
+from tickets.examples import CLEANING, MECHANICS, add_example_departments
+from tickets.models import Category, Comment, Department, Ticket, TicketEvent
 from tickets.tests.helpers import MediaTestCase, make_ticket, make_user, upload
 
 Status = Ticket.Status
@@ -44,10 +45,10 @@ class GoLiveTestCase(MediaTestCase):
         self.admin = make_user("Ada Admin", User.Role.ADMIN)
         User.objects.filter(pk=self.admin.pk).update(is_staff=True, is_superuser=True)
         self.admin.refresh_from_db()
-        self.mech_agent = self.make_agent("Mo Mechanic", Department.MECHANICS)
-        self.cs_agent = self.make_agent("Cleo Cleaner", Department.CLEANING)
-        self.mechanics = Category.objects.get(name="Mechanics")
-        self.cleaning = Category.objects.get(name="Cleaning & sanitization")
+        examples = add_example_departments()
+        self.mech_agent = self.make_agent("Mo Mechanic", MECHANICS)
+        self.cs_agent = self.make_agent("Cleo Cleaner", CLEANING)
+        self.mechanics, self.cleaning = examples[MECHANICS], examples[CLEANING]
         self.hardware = Category.objects.get(name="Hardware")
 
     def make_agent(self, name, department):
@@ -220,10 +221,10 @@ class ArchiveTests(GoLiveTestCase):
 class EntraRoleTests(GoLiveTestCase):
     def test_roles_and_departments(self):
         cases = [
-            (["Agent"], User.Role.AGENT, Department.IT),
-            (["Agent.Mechanics"], User.Role.AGENT, Department.MECHANICS),
-            (["Agent.Cleaning"], User.Role.AGENT, Department.CLEANING),
-            (["Agent.Mechanics", "Agent"], User.Role.AGENT, Department.IT),
+            (["Agent"], User.Role.AGENT, departments.IT),
+            (["Agent.Mechanics"], User.Role.AGENT, MECHANICS),
+            (["Agent.Cleaning"], User.Role.AGENT, CLEANING),
+            (["Agent.Mechanics", "Agent"], User.Role.AGENT, departments.IT),
             (["Admin", "Agent.Mechanics"], User.Role.ADMIN, ""),
             ([], User.Role.REQUESTER, ""),
         ]
@@ -233,9 +234,9 @@ class EntraRoleTests(GoLiveTestCase):
                 self.assertEqual(entra.department_from_claims(roles), department)
 
     def test_categories_have_departments(self):
-        self.assertEqual(self.mechanics.department, Department.MECHANICS)
-        self.assertEqual(self.cleaning.department, Department.CLEANING)
-        self.assertEqual(self.hardware.department, Department.IT)
+        self.assertEqual(self.mechanics.department, MECHANICS)
+        self.assertEqual(self.cleaning.department, CLEANING)
+        self.assertEqual(self.hardware.department, departments.IT)
 
 
 class DepartmentAccessTests(GoLiveTestCase):
@@ -307,8 +308,8 @@ class DepartmentAccessTests(GoLiveTestCase):
         self.assertNotContains(page, "Properties")
 
     def test_new_request_alerts_go_to_the_department(self):
-        with override_settings(DEPARTMENT_NOTIFY_EMAILS={"mechanics": "mech-team@example.invalid"},
-                               IT_NOTIFY_EMAIL="it-team@example.invalid"):
+        Department.objects.filter(key=MECHANICS).update(alert_email="mech-team@example.invalid")
+        with override_settings(IT_NOTIFY_EMAIL="it-team@example.invalid"):
             make_ticket(self.requester, subject="Belt squeaks", category=self.mechanics)
             make_ticket(self.requester, subject="VPN drops", category=self.hardware)
             make_ticket(self.requester, subject="Bins full", category=self.cleaning)
@@ -365,7 +366,7 @@ class MoveTests(GoLiveTestCase):
 
     def test_notes_record_their_department(self):
         note = self.ticket.comments.filter(is_internal=True).first()
-        self.assertEqual(note.department, Department.IT)
+        self.assertEqual(note.department, departments.IT)
 
 
 # ---------------------------------------------------------------------------
@@ -378,7 +379,10 @@ class DepartmentMailboxSettingsTests(GoLiveTestCase):
         with mock.patch.dict("os.environ", {"X": "mechanics=a@example.invalid; cleaning=b@example.invalid/Requests"}):
             self.assertEqual(env_departments("X"), {"mechanics": "a@example.invalid",
                                                      "cleaning": "b@example.invalid/Requests"})
-        for bad in ("it=c@example.invalid", "plumbing=d@example.invalid", "mechanics="):
+        # Any department's key works (they're set in the admin site), but not IT's, a name, or no address.
+        with mock.patch.dict("os.environ", {"X": "plumbing=d@example.invalid"}):
+            self.assertEqual(env_departments("X"), {"plumbing": "d@example.invalid"})
+        for bad in ("it=c@example.invalid", "Plumbing Team=d@example.invalid", "9lives=e@example.invalid", "mechanics="):
             with self.subTest(bad=bad), mock.patch.dict("os.environ", {"X": bad}):
                 with self.assertRaises(ImproperlyConfigured):
                     env_departments("X")
@@ -390,7 +394,7 @@ class DepartmentMailboxTests(GoLiveTestCase):
     def test_email_to_a_department_mailbox_is_that_departments_ticket(self):
         result = process(email(self.requester.email, subject="Press is leaking", source="command",
                                department="mechanics"))
-        self.assertEqual(result.ticket.category.department, Department.MECHANICS)
+        self.assertEqual(result.ticket.category.department, MECHANICS)
 
     def test_its_own_mailboxes_are_ignored(self):
         result = process(email("mechanics@example.invalid", source="command"))
@@ -444,7 +448,7 @@ class DepartmentMailboxTests(GoLiveTestCase):
 
         with mock.patch.object(graph, "call", side_effect=fake):
             self.assertEqual(graph_inbox.poll(), (1, 0))
-        self.assertEqual(Ticket.objects.get(subject="Bins full").category.department, Department.CLEANING)
+        self.assertEqual(Ticket.objects.get(subject="Bins full").category.department, CLEANING)
 
 
 # ---------------------------------------------------------------------------

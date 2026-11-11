@@ -150,12 +150,19 @@
   --av-5-bg: #d6efea; --av-5-text: #134e47;
   --av-6-bg: #ece6df; --av-6-text: #3d352e;
 
-  /* Charts (Reports). Team colours, in a fixed order that never changes with a
-     filter: IT, Mechanics, Cleaning & sanitization. Checked for colour-blind
-     separation and contrast on the card surface in both modes. */
+  /* Charts (Reports). Team colours: each department keeps its own (Department.colour),
+     given in this order as departments are added, so a filter never repaints one.
+     Checked for colour-blind separation between neighbours (8 slots), and contrast
+     on the card surface, in both modes. Yellow and pink are under 3:1 on white,
+     so Reports always has a legend, totals and a table view. */
   --chart-1: #00897b;
   --chart-2: #eb6834;
   --chart-3: #2a78d6;
+  --chart-4: #eda100;
+  --chart-5: #e87ba4;
+  --chart-6: #008300;
+  --chart-7: #6250d6;
+  --chart-8: #e34948;
   /* Ordered steps (how long a request has been open): one hue, lighter to darker. */
   --age-1: #5fb8ac;
   --age-2: #2a9d8f;
@@ -227,6 +234,11 @@
     --chart-1: #26a69a;
     --chart-2: #d95926;
     --chart-3: #3987e5;
+    --chart-4: #c98500;
+    --chart-5: #d55181;
+    --chart-6: #008300;
+    --chart-7: #9085e9;
+    --chart-8: #e66767;
     --age-1: #2b6e66;
     --age-2: #2f8f84;
     --age-3: #26a69a;
@@ -1493,6 +1505,11 @@ form.is-saving .props-hint { color: var(--accent-soft-text); font-weight: 650; }
 .series-1 { fill: var(--chart-1); }
 .series-2 { fill: var(--chart-2); }
 .series-3 { fill: var(--chart-3); }
+.series-4 { fill: var(--chart-4); }
+.series-5 { fill: var(--chart-5); }
+.series-6 { fill: var(--chart-6); }
+.series-7 { fill: var(--chart-7); }
+.series-8 { fill: var(--chart-8); }
 .age-1 { fill: var(--age-1); }
 .age-2 { fill: var(--age-2); }
 .age-3 { fill: var(--age-3); }
@@ -1528,6 +1545,11 @@ th .swatch { margin-right: 8px; vertical-align: -1px; }
 .chart-tip-key.key-1 { background: var(--chart-1); }
 .chart-tip-key.key-2 { background: var(--chart-2); }
 .chart-tip-key.key-3 { background: var(--chart-3); }
+.chart-tip-key.key-4 { background: var(--chart-4); }
+.chart-tip-key.key-5 { background: var(--chart-5); }
+.chart-tip-key.key-6 { background: var(--chart-6); }
+.chart-tip-key.key-7 { background: var(--chart-7); }
+.chart-tip-key.key-8 { background: var(--chart-8); }
 .chart-table { margin-top: var(--sp-3); font-size: var(--fs-sm); }
 .chart-table summary { color: var(--link); font-weight: 600; cursor: pointer; }
 .chart-table .table-wrap { margin-top: var(--sp-3); }

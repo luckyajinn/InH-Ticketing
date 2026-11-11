@@ -32,17 +32,38 @@ from django.conf import settings
 from django.db.models import F, Max, Min, Q
 from django.utils import timezone
 
-from core.departments import Department
+from core import departments
 from inbound.models import InboundEmail
 from notifications.models import OutboundEmail
 from tickets.models import Category, Comment, PasswordWarning, Ticket, TicketEvent
 
 Status = Ticket.Status
 
-# Teams are the departments: each category belongs to one (Category.department).
-TEAMS = list(Department.choices)
-TEAM_LABELS = dict(TEAMS)
-TEAM_SLOTS = {Department.IT: 1, Department.MECHANICS: 2, Department.CLEANING: 3}  # colour per team, never by rank
+
+class Teams:
+    """
+    The teams are the departments: each category belongs to one. Each keeps its
+    own colour (Department.colour), never one by rank, and they're listed in
+    colour order, the order the colours were checked for telling neighbours apart.
+    """
+
+    def __init__(self):
+        rows = departments.all_departments()
+        self.keys = [d.key for d in rows] or [departments.IT]
+        self.labels = {d.key: d.name for d in rows} or {departments.IT: departments.IT_NAME}
+        self.slots = {d.key: d.colour for d in rows} or {departments.IT: 1}
+
+    def __contains__(self, key) -> bool:
+        return key in self.labels
+
+    def of(self, department: str) -> str:
+        """A ticket's team: its category's department (IT if that's gone)."""
+        return department if department in self.labels else departments.IT
+
+    @property
+    def choices(self) -> list[tuple[str, str]]:
+        return [(key, self.labels[key]) for key in self.keys]
+
 
 PERIODS = {
     "7": (7, "Last 7 days"),
@@ -65,10 +86,6 @@ AGE_BANDS = [
 _PAUSED = {Status.WAITING.label, Status.RESOLVED.label}
 
 
-def team_of(department: str) -> str:
-    return department if department in TEAM_LABELS else Department.IT
-
-
 def _team_q(team: str) -> Q:
     return Q(category__department=team)
 
@@ -88,7 +105,7 @@ def counted_tickets(team: str = ""):
     start = reports_from()
     if start:
         tickets = tickets.filter(created_at__gte=start)
-    if team in TEAM_LABELS:
+    if team:
         tickets = tickets.filter(_team_q(team))
     return tickets
 
@@ -238,8 +255,9 @@ def format_duration(seconds: float | None) -> str:
 # The page
 # ---------------------------------------------------------------------------
 
-def _period_stats(team: str, start: dt.datetime, end: dt.datetime) -> dict:
+def _period_stats(team: str, start: dt.datetime, end: dt.datetime, teams: Teams | None = None) -> dict:
     """Ticket figures for one period: new requests, response and resolve times, per team."""
+    teams = teams or Teams()
     base = counted_tickets(team)
     new = base.filter(created_at__gte=start, created_at__lt=end)
     rows = list(new.values("pk", "created_at", "category__name", "category__department", "is_blocking", "source", "subject"))
@@ -256,9 +274,9 @@ def _period_stats(team: str, start: dt.datetime, end: dt.datetime) -> dict:
     )
 
     per_team = {key: {"new": 0, "web": 0, "blocking": 0, "first": [], "resolve": [], "resolved": 0, "reopened": 0}
-                for key, _ in TEAMS}
+                for key in teams.keys}
     for row in rows:
-        stats = per_team[team_of(row["category__department"])]
+        stats = per_team[teams.of(row["category__department"])]
         stats["new"] += 1
         if row["source"] == Ticket.Source.WEB:
             stats["web"] += 1
@@ -266,11 +284,11 @@ def _period_stats(team: str, start: dt.datetime, end: dt.datetime) -> dict:
         if row["pk"] in first:
             stats["first"].append((first[row["pk"]] - row["created_at"]).total_seconds())
     for pk, seconds in resolve.items():
-        stats = per_team[team_of(resolved_team[pk])]
+        stats = per_team[teams.of(resolved_team[pk])]
         stats["resolved"] += 1
         stats["resolve"].append(seconds)
     for department in reopened:
-        per_team[team_of(department)]["reopened"] += 1
+        per_team[teams.of(department)]["reopened"] += 1
 
     every = {
         "new": len(rows),
@@ -357,8 +375,10 @@ def _rect(x: float, y: float, w: float, h: float) -> str:
     return f"M{x:.1f},{y + h:.1f}V{y:.1f}H{x + w:.1f}V{y + h:.1f}Z"
 
 
-def column_chart(buckets: list[dict], series: list[str], width: int = 720, height: int = 230) -> dict:
+def column_chart(buckets: list[dict], series: list[str], width: int = 720, height: int = 230,
+                 teams: Teams | None = None) -> dict:
     """Stacked columns, one per bucket, as SVG geometry (no inline styles, so a CSP stays strict)."""
+    teams = teams or Teams()
     left, right, top_pad, bottom = 34, 8, 20, 26
     plot_w, plot_h = width - left - right, height - top_pad - bottom
     base = top_pad + plot_h
@@ -382,7 +402,7 @@ def column_chart(buckets: list[dict], series: list[str], width: int = 720, heigh
             last = j == len(parts) - 1
             segments.append({
                 "d": _rounded_top(x, upper, bar_w, h) if last else _rect(x, upper, bar_w, h),
-                "slot": TEAM_SLOTS[key],
+                "slot": teams.slots[key],
             })
         total_y = base - totals[i] / top * plot_h
         columns.append({
@@ -392,7 +412,7 @@ def column_chart(buckets: list[dict], series: list[str], width: int = 720, heigh
             "label_x": x + bar_w / 2, "label_y": total_y - 6,
             "hit_x": left + i * slot, "hit_w": slot,
             "short": bucket["short"], "long": bucket["long"],
-            "tip_rows": ";".join(f"{TEAM_LABELS[s]}|{bucket['values'].get(s, 0)}|{TEAM_SLOTS[s]}" for s in series),
+            "tip_rows": ";".join(f"{teams.labels[s]}|{bucket['values'].get(s, 0)}|{teams.slots[s]}" for s in series),
             "center": left + i * slot + slot / 2,
         })
     every = 1 if len(buckets) <= 14 else 2
@@ -413,32 +433,33 @@ def _ranked(counts: Counter, limit: int) -> list[dict]:
 
 def build(period: str = DEFAULT_PERIOD, team: str = "", now: dt.datetime | None = None) -> dict:
     now = now or timezone.now()
-    team = team if team in TEAM_LABELS else ""
+    teams = Teams()
+    team = team if team in teams else ""
     window = window_for(period, now)
-    cur = _period_stats(team, window.start, window.end)
-    prev = _period_stats(team, window.prev_start, window.start)
-    series = [team] if team else [key for key, _ in TEAMS]
+    cur = _period_stats(team, window.start, window.end, teams)
+    prev = _period_stats(team, window.prev_start, window.start, teams)
+    series = [team] if team else list(teams.keys)
 
     # Requests over time
     by_bucket = defaultdict(Counter)
     for row in cur["rows"]:
-        by_bucket[_bucket_of(row["created_at"], window.bucket)][team_of(row["category__department"])] += 1
+        by_bucket[_bucket_of(row["created_at"], window.bucket)][teams.of(row["category__department"])] += 1
     buckets = []
     for day in _buckets(window):
         short, long = _bucket_labels(day, window.bucket)
         buckets.append({"short": short, "long": long, "values": dict(by_bucket[day])})
-    chart = column_chart(buckets, series)
+    chart = column_chart(buckets, series, teams=teams)
     chart_rows = [{"long": b["long"], "values": [b["values"].get(s, 0) for s in series],
                    "total": sum(b["values"].get(s, 0) for s in series)} for b in buckets]
 
     # By team
     team_rows = []
-    for key, label in TEAMS:
+    for key, label in teams.choices:
         if team and key != team:
             continue
         s = cur["per_team"][key]
         team_rows.append({
-            "key": key, "label": label, "slot": TEAM_SLOTS[key], "new": s["new"], "resolved": s["resolved"],
+            "key": key, "label": label, "slot": teams.slots[key], "new": s["new"], "resolved": s["resolved"],
             "first": format_duration(_median(s["first"])), "resolve": format_duration(_median(s["resolve"])),
             "blocking": "—" if not s["web"] else f"{s['blocking'] / s['web']:.0%}", "reopened": s["reopened"],
         })
@@ -448,7 +469,7 @@ def build(period: str = DEFAULT_PERIOD, team: str = "", now: dt.datetime | None 
     open_rows = list(open_tickets.order_by("created_at").values(
         "pk", "subject", "status", "created_at", "assignee_id", "category__department"))
     for row in team_rows:
-        row["open"] = sum(1 for r in open_rows if team_of(r["category__department"]) == row["key"])
+        row["open"] = sum(1 for r in open_rows if teams.of(r["category__department"]) == row["key"])
     bands = Counter()
     for row in open_rows:
         age = now - row["created_at"]
@@ -466,7 +487,7 @@ def build(period: str = DEFAULT_PERIOD, team: str = "", now: dt.datetime | None 
         .values("ticket_id").annotate(at=Max("created_at")).values_list("ticket_id", "at")
     )
     oldest = [{
-        "number": r["pk"] + settings.TICKET_NUMBER_OFFSET, "subject": r["subject"], "team": TEAM_LABELS[team_of(r["category__department"])],
+        "number": r["pk"] + settings.TICKET_NUMBER_OFFSET, "subject": r["subject"], "team": teams.labels[teams.of(r["category__department"])],
         "status": Status(r["status"]).label, "age": format_duration((now - r["created_at"]).total_seconds()),
     } for r in open_rows[:5]]
 
@@ -477,11 +498,11 @@ def build(period: str = DEFAULT_PERIOD, team: str = "", now: dt.datetime | None 
 
     return {
         "window": window, "period": window.key, "team": team,
-        "team_label": TEAM_LABELS.get(team, "All teams"),
+        "team_label": teams.labels.get(team, "All teams"),
         "periods": [(key, label) for key, (_, label) in PERIODS.items()],
-        "teams": TEAMS,
+        "teams": teams.choices,
         "tiles": _tiles(cur, prev, window),
-        "chart": chart, "chart_rows": chart_rows, "series": [(s, TEAM_LABELS[s], TEAM_SLOTS[s]) for s in series],
+        "chart": chart, "chart_rows": chart_rows, "series": [(s, teams.labels[s], teams.slots[s]) for s in series],
         "team_rows": team_rows,
         "open_count": len(open_rows),
         "unassigned": sum(1 for r in open_rows if r["assignee_id"] is None),
@@ -545,7 +566,8 @@ def _cell(value) -> str:
 def csv_export(period: str = DEFAULT_PERIOD, team: str = "", now: dt.datetime | None = None) -> str:
     """One row per request created in the period. No descriptions, no names."""
     now = now or timezone.now()
-    team = team if team in TEAM_LABELS else ""
+    teams = Teams()
+    team = team if team in teams else ""
     window = window_for(period, now)
     tickets = counted_tickets(team).filter(created_at__gte=window.start, created_at__lt=window.end)
     first = first_responses(tickets)
@@ -557,7 +579,7 @@ def csv_export(period: str = DEFAULT_PERIOD, team: str = "", now: dt.datetime | 
     for t in tickets.select_related("category").order_by("created_at"):
         local = timezone.localtime(t.created_at)
         writer.writerow([_cell(v) for v in [
-            t.number, f"{local:%Y-%m-%d %H:%M}", TEAM_LABELS[team_of(t.category.department)], t.category.name,
+            t.number, f"{local:%Y-%m-%d %H:%M}", teams.labels[teams.of(t.category.department)], t.category.name,
             t.get_priority_display(), t.get_source_display(), t.get_status_display(),
             "Yes" if t.is_blocking else "No",
             f"{(first[t.pk] - t.created_at).total_seconds() / 3600:.1f}" if t.pk in first else "",

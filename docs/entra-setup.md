@@ -45,23 +45,29 @@ When you're done, you'll have four values for `.env`:
 |---|---|---|---|
 | Requester | Users/Groups | `Requester` | Can submit and follow their own tickets |
 | Agent | Users/Groups | `Agent` | IT staff who work IT's tickets |
-| Mechanics Agent | Users/Groups | `Agent.Mechanics` | Mechanics staff who work Mechanics' tickets |
-| C&S Agent | Users/Groups | `Agent.Cleaning` | Cleaning & sanitization staff who work their tickets |
 | Admin | Users/Groups | `Admin` | Sees and works every department's tickets, moves tickets between departments, Reports and the admin site |
 
 Leave **Do you want to enable this app role?** ticked for each.
 
 The **Value** is what appears in the sign-in token and is what the app checks.
-If you use different values, set `ENTRA_ROLE_AGENT`, `ENTRA_ROLE_AGENT_MECHANICS`,
-`ENTRA_ROLE_AGENT_CLEANING` and `ENTRA_ROLE_ADMIN` to match. Anyone with none of
-them is treated as a Requester.
+If you use different values, set `ENTRA_ROLE_AGENT` and `ENTRA_ROLE_ADMIN` to
+match. Anyone with no agent or admin role is treated as a Requester.
 
-**Departments.** An agent sees and works only their own department's tickets
-(each category belongs to a department, set in the admin site); an admin works
-them all. Give the Mechanics and C&S groups their own role. **Never give them
-the plain `Agent` role**, which is IT's. Someone with two agent roles works
-for the first of IT, Mechanics, Cleaning & sanitization. A role change applies
-at the person's next sign-in.
+**Other departments.** IT is built in. An admin adds each other team (say
+Mechanics) in the app's admin site, under **Tickets → Departments**, with the
+value of its Entra app role (say `Agent.Mechanics`). Then create that role
+here, exactly as typed there:
+
+| Display name | Allowed member types | Value | Description |
+|---|---|---|---|
+| Mechanics Agent | Users/Groups | `Agent.Mechanics` | Mechanics staff who work Mechanics' tickets |
+
+and assign the team's group to it (section 5). An agent sees and works only
+their own department's tickets (each category belongs to a department, set in
+the admin site); an admin works them all. **Never give another team the plain
+`Agent` role**, which is IT's. Someone with two agent roles works for IT if
+one is `Agent`, otherwise for the department added first. A role change
+applies at the person's next sign-in.
 
 ## 4. Grant consent (optional, avoids a prompt)
 

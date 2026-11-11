@@ -1,7 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-from core.departments import Department
+from core import departments
 
 
 class User(AbstractUser):
@@ -31,7 +31,7 @@ class User(AbstractUser):
         help_text="Managed in Entra (app roles). Refreshed on every sign-in.",
     )
     department = models.CharField(
-        max_length=16, choices=Department.choices, blank=True,
+        max_length=16, blank=True,
         help_text="The department an agent works for, from their Entra app role. Admins work for all of them.",
     )
 
@@ -56,7 +56,12 @@ class User(AbstractUser):
         """The department an agent works for (IT unless Entra says otherwise); blank for others."""
         if not self.is_agent:
             return ""
-        return self.department or Department.IT
+        return self.department or departments.IT
+
+    @property
+    def department_label(self) -> str:
+        """The name of the department an agent works for ("" for others)."""
+        return departments.label(self.agent_department)
 
     def works_on(self, ticket) -> bool:
         """Can this person work the ticket: see its notes and history, reply as staff, change it?"""

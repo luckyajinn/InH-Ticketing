@@ -64,6 +64,14 @@ class Command(BaseCommand):
             f"Email-in: reading {boxes or '(no mailbox set)'} every {settings.INBOUND_POLL_SECONDS}s."
             if inbox_on else "Email-in: off (INBOUND_EMAIL=off)."
         )
+        from core import departments
+
+        known = set(departments.keys())
+        for key in sorted(set(settings.DEPARTMENT_MAILBOXES) - known):
+            self.stderr.write(
+                f"DEPARTMENT_MAILBOXES: no department with the key {key!r} in the admin site "
+                "(Tickets > Departments). Email to its mailbox becomes an IT ticket."
+            )
         last_poll = 0.0
         last_auto_close = None  # None = not yet this run, so the first round does it
         try:

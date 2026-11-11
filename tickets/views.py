@@ -12,7 +12,7 @@ from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
-from core.departments import Department
+from core import departments
 from tickets import password_guard, reports, selectors, services
 from tickets.forms import MoveForm, MoveRequestForm, NewTicketForm, RemovalForm, ReplyForm, TicketPropertiesForm
 from tickets.models import Attachment, Category, PasswordWarning, Ticket
@@ -169,10 +169,12 @@ def _render_detail(request, ticket, *, reply_form=None, props_form=None, move_fo
             .exclude(pk=ticket.pk).select_related("category")
             .order_by("-created_at")[:5]
         )
+        # Moving needs somewhere to move to: none on an install with IT only.
+        elsewhere = Category.objects.filter(is_active=True).exclude(department=ticket.department).exists()
         if user.is_admin:
-            context["move_form"] = move_form or MoveForm(ticket=ticket)
+            context["move_form"] = move_form or (MoveForm(ticket=ticket) if elsewhere else None)
             context["move_request"] = services.pending_move_request(ticket)
-        else:
+        elif elsewhere:
             context["move_request_form"] = move_request_form or MoveRequestForm(ticket=ticket)
         template = "tickets/detail_agent.html"
     else:
@@ -330,7 +332,7 @@ def ask_to_move(request, number: int):
     department = form.cleaned_data["department"]
     services.request_move(ticket=ticket, actor=request.user, department=department,
                           reason=form.cleaned_data["reason"])
-    messages.success(request, f"Asked an admin to move it to {Department(department).label}. "
+    messages.success(request, f"Asked an admin to move it to {departments.label(department)}. "
                               "Let them know once that team has agreed to take it.")
     return redirect(ticket)
 
@@ -446,7 +448,7 @@ RECENT = timedelta(days=14)
 def _queue_queryset(view_id: str, user, department: str = ""):
     """A queue view's tickets: this person's department's (all of them, or one, for admins)."""
     tickets = Ticket.objects.worked_by(user)
-    if user.is_admin and department in Department.values:
+    if user.is_admin and department in departments.keys():
         tickets = tickets.filter(category__department=department)
     if view_id == "archive":
         return tickets.archived()
@@ -468,7 +470,7 @@ def queue(request):
     view_ids = [v["id"] for v in QUEUE_VIEWS]
     view_id = request.GET.get("view") if request.GET.get("view") in view_ids else "open"
     department = request.GET.get("dept", "") if request.user.is_admin else ""
-    department = department if department in Department.values else ""
+    department = department if department in departments.keys() else ""
     views = [
         {**v, "count": _queue_queryset(v["id"], request.user, department).count(), "current": v["id"] == view_id}
         for v in QUEUE_VIEWS
@@ -521,10 +523,10 @@ def queue(request):
             "categories": (Category.objects.all() if request.user.is_admin
                            else Category.objects.filter(department=request.user.agent_department)),
             "department": department,
-            "departments": Department.choices if request.user.is_admin else [],
-            "department_label": (Department(department).label if department
+            "departments": departments.choices() if request.user.is_admin else [],
+            "department_label": (departments.label(department) if department
                                  else "All departments" if request.user.is_admin
-                                 else Department(request.user.agent_department).label),
+                                 else request.user.department_label),
             "priorities": sorted(Ticket.Priority.choices, reverse=True),
             "sort_label": sort_label,
         },

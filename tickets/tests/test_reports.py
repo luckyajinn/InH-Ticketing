@@ -11,6 +11,7 @@ from accounts.models import User
 from inbound.models import InboundEmail
 from notifications.models import OutboundEmail
 from tickets import reports, services
+from tickets.examples import add_example_departments
 from tickets.models import Category, Comment, PasswordWarning, Ticket, TicketEvent
 from tickets.tests.helpers import MediaTestCase, make_ticket, make_user
 
@@ -48,8 +49,8 @@ class ReportsTestCase(MediaTestCase):
         self.admin = make_user("Ada Admin", User.Role.ADMIN)
         User.objects.filter(pk=self.admin.pk).update(is_staff=True, is_superuser=True)
         self.admin.refresh_from_db()
-        self.mechanics = Category.objects.get(name="Mechanics")
-        self.cleaning = Category.objects.get(name="Cleaning & sanitization")
+        examples = add_example_departments()
+        self.mechanics, self.cleaning = examples["mechanics"], examples["cleaning"]
 
     def ticket(self, created, subject="Printer jammed", category=None, **kwargs):
         t = make_ticket(self.requester, subject=subject, category=category)

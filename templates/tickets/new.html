@@ -9,7 +9,7 @@
 <div class="page-head">
   <div>
     <h1>New request</h1>
-    <p class="page-sub">Tell IT, mechanics or cleaning what's wrong or what you need.</p>
+    <p class="page-sub">Tell {{ DEPARTMENTS_OR }} what's wrong or what you need.</p>
   </div>
 </div>
 
@@ -22,7 +22,7 @@
   {% endif %}
   <div class="hint-box">
     {% icon "alert" %}
-    <p>For IT, mechanics, and cleaning and sanitization requests only. Product complaints or reactions go to QA, not here. Please don't include passwords.</p>
+    <p>For {{ DEPARTMENTS_AND }} requests only. Product complaints or reactions go to QA, not here. Please don't include passwords.</p>
   </div>
   {% for error in form.other_errors %}<p class="field-error" role="alert">{% icon "alert" %}{{ error }}</p>{% endfor %}
 

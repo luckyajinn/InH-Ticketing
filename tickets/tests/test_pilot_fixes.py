@@ -4,6 +4,7 @@ from django.urls import reverse
 
 from accounts.models import User
 from tickets import services
+from tickets.examples import add_example_departments
 from tickets.models import Category, Ticket
 from tickets.tests.helpers import MediaTestCase, make_ticket
 
@@ -101,7 +102,7 @@ class SignInLinkTests(MediaTestCase):
 class QuickPickCategoryTests(MediaTestCase):
     def test_a_category_chosen_after_the_pick_wins(self):
         self.client.force_login(self.requester)
-        mechanics = Category.objects.get(name="Mechanics")
+        mechanics = add_example_departments()["mechanics"]
         hardware = Category.objects.get(name="Hardware")
         self.client.post(reverse("tickets:new"), {
             "subject_pick": f"{mechanics.pk}:0", "subject": mechanics.subject_choices[0],
@@ -112,7 +113,7 @@ class QuickPickCategoryTests(MediaTestCase):
 
 class WordingTests(MediaTestCase):
     def test_requester_pages_name_no_single_team(self):
-        ticket = make_ticket(self.requester, category=Category.objects.get(name="Mechanics"))
+        ticket = make_ticket(self.requester, category=add_example_departments()["mechanics"])
         self.client.force_login(self.requester)
         for url in [ticket.get_absolute_url(), reverse("tickets:mine")]:
             with self.subTest(url=url):

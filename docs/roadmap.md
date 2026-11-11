@@ -37,6 +37,7 @@ Nov 9 is a Monday.
 | ✅ Tue Nov 10 | **v0.8.3** | Fixes from the pre-pilot review (three reviews and an attack test): side panel, unsent replies, password check false alarms, signature folding, odd characters | — |
 | ✅ Tue Nov 10 | **v0.8.4** | The admin site in the app's look; a chosen common request is always the subject | — |
 | ✅ Tue Nov 10 | **v0.9.0** | Reports for admins, built early from v1.1.0: requests, response and resolve times, open tickets by age and email health, per team, never per person; CSV download | — |
+| ✅ Wed Nov 11 | **v0.10.0** | Admins set up the departments in the admin site: IT built in, each other team with its own Entra role, alert address and Reports colour, up to 8. A new install has IT only. The clickable mockup is built from the app's pages | — |
 | ✅ Tue Nov 10 | **v0.9.1** | Before go-live: Mechanics and C&S see and work their own tickets (v1.2.0's queues, built early), closed tickets archived for two years, the pasted-password removal tool, fake "IT" emails, shared PCs, no ticket deletes; department mailboxes ready to switch on | — |
 | **Tue Nov 10** | Demo, pilot starts | CFO demo of v0.8.3. Pilot with one other tester, trying to break it ([pilot-testing.md](pilot-testing.md)). Risk assessment for the new teams with the compliance lead | v0.8.3 installed on the server |
 | **After the pilot's testing** | **v0.9.x** | Paused until the pilot's testing is done. Then: pilot fixes | Pilot findings |

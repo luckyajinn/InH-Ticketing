@@ -8,7 +8,7 @@
 <div class="page-head">
   <div>
     <h1>{% if user.is_agent %}My requests{% else %}My tickets{% endif %}</h1>
-    <p class="page-sub">Requests you've raised with IT, mechanics, or cleaning and sanitization.</p>
+    <p class="page-sub">Requests you've raised with {{ DEPARTMENTS_OR }}.</p>
   </div>
   <a class="btn btn-primary btn-lg" href="{% url 'tickets:new' %}">{% icon "plus" %}New request</a>
 </div>

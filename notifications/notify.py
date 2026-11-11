@@ -12,9 +12,8 @@ transaction as the ticket change, so an email is only queued if the change saved
     Staff ask for a move          every admin
     An admin moves the ticket     the new department's alerts
 
-The department's alerts: IT_NOTIFY_EMAIL for IT. For Mechanics and Cleaning &
-sanitization, their address in DEPARTMENT_NOTIFY_EMAILS, or else each of that
-department's agents.
+The department's alerts: IT_NOTIFY_EMAIL for IT. For any other department,
+its alert address (admin site, Tickets > Departments), or else each of its agents.
 
 Rules that always apply:
   * Internal notes never trigger an email, and never appear in one.
@@ -29,7 +28,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.formats import date_format
 
-from core.departments import Department
+from core import departments
 from notifications.models import OutboundEmail
 
 
@@ -93,11 +92,11 @@ def department_alerts(ticket) -> list[str]:
     from accounts.models import User  # notify is imported by the ticket models' services
 
     department = ticket.department
-    if department == Department.IT:
+    if department == departments.IT:
         return [settings.IT_NOTIFY_EMAIL] if settings.IT_NOTIFY_EMAIL else []
-    address = settings.DEPARTMENT_NOTIFY_EMAILS.get(department)
-    if address:
-        return [address]
+    row = departments.get(department)
+    if row and row.alert_email:
+        return [row.alert_email]
     agents = User.objects.filter(role=User.Role.AGENT, department=department, is_active=True).exclude(email="")
     return sorted({agent.email for agent in agents})
 

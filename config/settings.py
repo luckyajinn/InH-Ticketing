@@ -7,6 +7,7 @@ those live in a `.env` file next to manage.py; see `.env.example`.
 """
 
 import os
+import re
 from pathlib import Path
 
 import dj_database_url
@@ -26,20 +27,24 @@ def env_bool(name: str, default: bool = False) -> bool:
     return os.environ.get(name, str(default)).strip().lower() in {"1", "true", "yes", "on"}
 
 
-_OTHER_DEPARTMENTS = ("mechanics", "cleaning")
+_DEPARTMENT_KEY = re.compile(r"[a-z][a-z0-9-]{0,15}")
 
 
 def env_departments(name: str) -> dict[str, str]:
-    """"mechanics=a@example.com, cleaning=b@example.com" -> {"mechanics": "a@example.com", ...}"""
+    """"mechanics=a@example.com, cleaning=b@example.com" -> {"mechanics": "a@example.com", ...}
+
+    The keys are departments' keys, as shown in the admin site (Tickets > Departments).
+    IT isn't one: its mailbox is HELPDESK_MAILBOX."""
     result = {}
     for part in os.environ.get(name, "").replace(";", ",").split(","):
         key, _, value = part.partition("=")
         key, value = key.strip().lower(), value.strip()
         if not key and not value:
             continue
-        if key not in _OTHER_DEPARTMENTS or not value:
+        if not _DEPARTMENT_KEY.fullmatch(key) or key == "it" or not value:
             raise ImproperlyConfigured(
-                f"{name}: use department=address pairs, with department one of {', '.join(_OTHER_DEPARTMENTS)}."
+                f"{name}: use department=address pairs, with each department's key from the admin site "
+                "(Tickets > Departments), e.g. mechanics=mechanics@example.com. IT's is HELPDESK_MAILBOX."
             )
         result[key] = value
     return result
@@ -159,9 +164,8 @@ ENTRA_REDIRECT_URI = os.environ.get(
 # The *values* (not display names) of the app roles defined on the registration.
 ENTRA_ROLE_AGENT = os.environ.get("ENTRA_ROLE_AGENT", "Agent").strip()
 ENTRA_ROLE_ADMIN = os.environ.get("ENTRA_ROLE_ADMIN", "Admin").strip()
-# Agents for the other departments: they see and work only their department's tickets.
-ENTRA_ROLE_AGENT_MECHANICS = os.environ.get("ENTRA_ROLE_AGENT_MECHANICS", "Agent.Mechanics").strip()
-ENTRA_ROLE_AGENT_CLEANING = os.environ.get("ENTRA_ROLE_AGENT_CLEANING", "Agent.Cleaning").strip()
+# ENTRA_ROLE_AGENT is IT's agents. Each other department's role is set in the
+# admin site (Tickets > Departments); its agents see and work only its tickets.
 
 # --------------------------------------------------------------------------
 # Internationalisation
@@ -246,10 +250,8 @@ REPORTS_FROM = os.environ.get("REPORTS_FROM", "").strip()
 # Optional: where "new ticket" and unassigned-reply alerts for IT go
 # (a distribution list, or a Teams channel's email address). Blank = none.
 IT_NOTIFY_EMAIL = os.environ.get("IT_NOTIFY_EMAIL", "").strip()
-# The same for the other departments, e.g. "mechanics=mech-team@..., cleaning=cs-team@...".
-# A department without one gets its alerts sent to each of its agents.
-# Never a mailbox listed in DEPARTMENT_MAILBOXES (the app would read its own alerts).
-DEPARTMENT_NOTIFY_EMAILS = env_departments("DEPARTMENT_NOTIFY_EMAILS")
+# Each other department's alert address is set in the admin site (Tickets >
+# Departments); without one, its alerts go to each of its agents.
 
 # How emails leave the app:
 #   file    - written to tmp/emails/ for you to open (default; nothing is sent)
@@ -274,7 +276,8 @@ EMAIL_MAX_ATTEMPTS = 5
 #   off   - don't read the mailbox (default)
 #   graph - the worker reads the inbox through Microsoft Graph
 INBOUND_EMAIL = os.environ.get("INBOUND_EMAIL", "off").strip().lower() or "off"
-# A mailbox per department (besides HELPDESK_MAILBOX, which is IT's):
+# A mailbox per department (besides HELPDESK_MAILBOX, which is IT's), by the
+# department's key from the admin site (Tickets > Departments):
 # "mechanics=mechanics@example.com, cleaning=cs@example.com/Requests".
 # Email to it becomes a ticket for that department, and that department's
 # tickets are emailed from it, so replies come back to the right team. After

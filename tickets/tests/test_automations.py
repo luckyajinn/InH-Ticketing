@@ -15,7 +15,7 @@ from tickets.models import Ticket, TicketEvent
 from tickets.tests.helpers import MediaTestCase, make_ticket
 
 Status = Ticket.Status
-NOTICE = ("For IT, mechanics, and cleaning and sanitization requests only. Product complaints "
+NOTICE = ("For IT requests only. Product complaints "
           "or reactions go to QA, not here. Please don't include passwords.")
 
 

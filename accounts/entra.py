@@ -22,7 +22,7 @@ from django.conf import settings
 from django.db import transaction
 
 from accounts.models import User
-from core.departments import Department
+from core import departments
 
 logger = logging.getLogger(__name__)
 
@@ -132,12 +132,8 @@ def finish_flow(flow: dict, auth_response: dict) -> dict:
 
 
 def _agent_roles() -> list[tuple[str, str]]:
-    """Entra role value -> department, in order of precedence (IT first)."""
-    return [
-        (settings.ENTRA_ROLE_AGENT, Department.IT),
-        (settings.ENTRA_ROLE_AGENT_MECHANICS, Department.MECHANICS),
-        (settings.ENTRA_ROLE_AGENT_CLEANING, Department.CLEANING),
-    ]
+    """Entra role value -> department, in order of precedence (IT first, then as added)."""
+    return departments.agent_roles()
 
 
 def role_from_claims(roles: list[str] | None) -> str:

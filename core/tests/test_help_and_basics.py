@@ -7,7 +7,7 @@ from django.test import RequestFactory, SimpleTestCase, override_settings
 from django.urls import reverse
 
 from core.views import server_error
-from tickets.models import Category
+from tickets.examples import add_example_departments
 from tickets.tests.helpers import MediaTestCase
 
 CONTACT = "Call IT on ext. 1234, or post in IT Help in Teams."
@@ -87,7 +87,7 @@ class BasicsTests(MediaTestCase):
     def test_request_sent_message_doesnt_name_one_team(self):
         self.client.force_login(self.requester)
         response = self.client.post(reverse("tickets:new"), {
-            "subject": "Leak on line 2", "category": Category.objects.get(name="Mechanics").pk,
+            "subject": "Leak on line 2", "category": add_example_departments()["mechanics"].pk,
             "description": "Dripping under the filler.",
         }, follow=True)
         self.assertContains(response, "sent. You&#x27;ll get an email when there&#x27;s an update.")

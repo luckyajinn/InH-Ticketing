@@ -1,9 +1,10 @@
-"""Common requests ("quick picks") on the New request form, and the Mechanics and C&S categories."""
+"""Common requests ("quick picks") on the New request form, and the example departments' categories."""
 
 from django.test import SimpleTestCase
 from django.urls import reverse
 
-from tickets.models import Category, Ticket
+from tickets.examples import add_example_departments
+from tickets.models import Category, Department, Ticket
 from tickets.tests.helpers import MediaTestCase
 
 
@@ -21,14 +22,21 @@ class SubjectChoicesTests(SimpleTestCase):
 
 
 class NewCategoriesTests(MediaTestCase):
-    def test_mechanics_and_cleaning_exist_with_three_requests_each(self):
-        for name in ("Mechanics", "Cleaning & sanitization"):
-            with self.subTest(name=name):
-                category = Category.objects.get(name=name)
+    def test_a_new_install_has_it_only(self):
+        self.assertEqual(list(Department.objects.values_list("key", flat=True)), ["it"])
+        self.assertFalse(Category.objects.exclude(department="it").exists())
+
+    def test_the_examples_have_three_requests_each(self):
+        for key, category in add_example_departments().items():
+            with self.subTest(key=key):
                 self.assertTrue(category.is_active)
+                self.assertEqual(category.department, key)
                 self.assertEqual(len(category.subject_choices), 3)
+        add_example_departments()  # a second time adds nothing
+        self.assertEqual(Department.objects.count(), 3)
 
     def test_they_sit_before_other(self):
+        add_example_departments()
         names = list(Category.objects.filter(is_active=True).values_list("name", flat=True))
         self.assertLess(names.index("Mechanics"), names.index("Other"))
         self.assertLess(names.index("Cleaning & sanitization"), names.index("Other"))
@@ -39,8 +47,8 @@ class QuickPickFormTests(MediaTestCase):
         super().setUp()
         self.client.force_login(self.requester)
         self.url = reverse("tickets:new")
-        self.mechanics = Category.objects.get(name="Mechanics")
-        self.cleaning = Category.objects.get(name="Cleaning & sanitization")
+        examples = add_example_departments()
+        self.mechanics, self.cleaning = examples["mechanics"], examples["cleaning"]
 
     def post(self, **data):
         data.setdefault("description", "Line 2 stopped after lunch.")

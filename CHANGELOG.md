@@ -3,9 +3,35 @@
 All notable changes to InH-Ticketing. Versions follow [Semantic Versioning](https://semver.org).
 Each version also has illustrated release notes in [docs/releases](docs/releases/README.md).
 
-## [Unreleased]
+## [0.10.0] - 2026-11-11
+
+Departments set up by admins. [Release notes](docs/releases/v0.10.0.md).
+
+### Added
+- **Departments in the admin site** (Tickets > Departments). IT is built in;
+  admins add the other teams, each with a name, a fixed key, its own Entra
+  app role and an alert address, and give them categories. Its colour in
+  Reports is given in the order departments are added, up to 8.
+  - IT can't be renamed or deleted; its role, alerts and mailbox stay in
+    `.env`. A department can be deleted only while nothing uses it.
+  - Checks: each department needs its own Entra role (not IT's or the
+    admins'), and its alert address can't be one of the app's own mailboxes
+    or outside the organisation's domains.
+  - The admin site's department filters (categories, tickets, people) show
+    names.
+- **Reports: eight team colours**, checked for colour-blind separation and
+  contrast in light and dark. The first three are unchanged.
 
 ### Changed
+- **A new install has IT only.** Migration `tickets` 0005 no longer adds the
+  Mechanics and Cleaning & sanitization categories; the demo data adds them,
+  as example departments (`tickets/examples.py`).
+- **Pages name the departments there are:** sign-in, New request, My tickets
+  and Usage and privacy used to list IT, mechanics, and cleaning and
+  sanitization.
+- `DEPARTMENT_MAILBOXES` takes any department's key.
+- **With IT only, tickets have no move boxes** ("Wrong department?", "Move to
+  another department"); they list only departments with an active category.
 - **The clickable mockup** (`mockups/ui-mockup.html`) is now built from the
   app's own pages with the demo data (`python manage.py build_mockup`), so it
   matches the current version: requester, IT agent, Mechanics agent and admin
@@ -13,6 +39,17 @@ Each version also has illustrated release notes in [docs/releases](docs/releases
   it replaces is in git history.
 - **Demo data** (`seed_demo`) adds a Mechanics agent, a Cleaning & sanitization
   agent, an admin, and a ticket with a request to move it to Mechanics.
+
+### Removed
+- The settings `ENTRA_ROLE_AGENT_MECHANICS`, `ENTRA_ROLE_AGENT_CLEANING` and
+  `DEPARTMENT_NOTIFY_EMAILS`: each department's role and alert address are in
+  the admin site. The upgrade copies their values there, and start-up warns
+  (`core.W001`) while they're still in `.env`.
+
+### Upgrading
+- Migrations `tickets` 0008 and `accounts` 0003. IT, Mechanics and Cleaning &
+  sanitization become departments with the same keys and colours, so nothing
+  changes for people. Then remove the three settings from `.env`.
 
 ## [0.9.1] - 2026-11-10
 
@@ -428,6 +465,7 @@ Milestone 1: skeleton and Microsoft 365 sign-in. [Release notes with screenshots
 - `/healthz` endpoint, Dockerfile and Docker Compose with PostgreSQL 17.
 - Entra setup guide (`docs/entra-setup.md`) and the UI mockup (`mockups/`).
 
+[0.10.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.10.0
 [0.9.1]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.9.1
 [0.9.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.9.0
 [0.8.4]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.8.4

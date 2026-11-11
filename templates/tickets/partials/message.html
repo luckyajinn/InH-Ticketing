@@ -5,13 +5,13 @@
   <span class="avatar av-{{ author.avatar_variant }} tl-avatar" aria-hidden="true">{{ author.initials }}{% if internal %}<span class="avatar-lock">{% icon "lock" %}</span>{% endif %}</span>
   <article class="comment{% if internal %} is-note{% endif %}"
            aria-label="{% if internal %}Internal note{% elif author.pk == ticket.requester_id %}Message{% else %}Public reply{% endif %} from {{ author }}">
-    {% if internal %}<div class="note-band">{% icon "lock" %}<span>Internal note, {% if note.department %}{{ note.get_department_display }}{% else %}{{ ticket.department_label }}{% endif %} only{% if note.share_on_move %} · shared if the ticket moves{% endif %}</span></div>{% endif %}
+    {% if internal %}<div class="note-band">{% icon "lock" %}<span>Internal note, {% if note.department %}{{ note.department_label }}{% else %}{{ ticket.department_label }}{% endif %} only{% if note.share_on_move %} · shared if the ticket moves{% endif %}</span></div>{% endif %}
     <header class="comment-head">
       <span class="comment-author">{% if not user.is_agent and author.pk == user.pk %}You{% else %}{{ author }}{% endif %}</span>
       {% if author.pk == ticket.requester_id %}
         {% if user.is_agent %}<span class="role-tag">Requester</span>{% endif %}
       {% elif author.is_agent %}
-        <span class="role-tag role-it">{% if author.is_admin %}Admin{% else %}{{ author.get_department_display|default:"IT" }}{% endif %}</span>
+        <span class="role-tag role-it">{% if author.is_admin %}Admin{% else %}{{ author.department_label|default:"IT" }}{% endif %}</span>
         {% if user.is_agent and not internal %}<span class="chip">{% icon "globe" %}Public reply</span>{% endif %}
       {% endif %}
       {% if source == "email" %}<span class="chip">{% icon "mail" %}via email</span>{% endif %}

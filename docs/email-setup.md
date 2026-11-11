@@ -237,8 +237,9 @@ queue, and you get a receipt.
 
 ### 4d. A mailbox per department (optional)
 
-Mechanics and Cleaning & sanitization can have their own mailbox. Email to it
-becomes a ticket for that department, and that department's tickets are
+Any department other than IT (they're set up in the admin site, under
+Tickets → Departments) can have its own mailbox. Email to it becomes a ticket
+for that department, and that department's tickets are
 emailed from it, so replies come back to the right team. Replies are matched
 by the `[#1042]` in the subject, whichever mailbox they land in.
 
@@ -251,7 +252,8 @@ marked read and moves to "Processed by InH-Ticketing". So either:
   folder, at the top of the mailbox or inside the Inbox. The team's everyday
   email stays where it is.
 
-In `.env` (a `/` and a folder name for the second option):
+In `.env`, by each department's **key** from the admin site (a `/` and a
+folder name for the second option):
 
 ```
 DEPARTMENT_MAILBOXES=mechanics=mechanics-requests@example.com, cleaning=cs@example.com/Requests
@@ -274,9 +276,10 @@ mailbox, and file the `Test-ServicePrincipalAuthorization` output with the
 risk assessment. The worker prints every mailbox it reads when it starts. If
 one isn't set up yet, the others still work and the log says which one failed.
 
-New-request alerts for a department go to its address in
-`DEPARTMENT_NOTIFY_EMAILS` (a team list, never one of these mailboxes), or to
-each of its agents if it has none.
+New-request alerts for a department go to its alert address in the admin site
+(a team list, never one of these mailboxes), or to each of its agents if it
+has none. If `DEPARTMENT_MAILBOXES` names a key with no department, the worker
+says so when it starts, and email to that mailbox becomes an IT ticket.
 
 ### Things to know
 

@@ -7,6 +7,10 @@ Fill a development database with fictional people and tickets.
 Demo people have usernames starting with "demo-" and can't sign in. To try
 the app as them, sign in yourself: as an Agent/Admin you'll see their tickets
 in the queue.
+
+It also adds two example departments, Mechanics and Cleaning & sanitization,
+with a category each, if they aren't there (tickets/examples.py). --clear
+leaves them, as an admin may have started using them.
 """
 
 from datetime import timedelta
@@ -17,8 +21,8 @@ from django.db import transaction
 from django.utils import timezone
 
 from accounts.models import User
-from core.departments import Department
 from tickets import services
+from tickets.examples import CLEANING, MECHANICS, add_example_departments
 from tickets.models import Category, Comment, Ticket, TicketEvent
 
 PREFIX = "demo-"
@@ -27,8 +31,8 @@ PREFIX = "demo-"
 PEOPLE = {
     "sam": ("Sam Patel", "sam.patel", User.Role.AGENT, ""),
     "alex": ("Alex Morgan", "alex.morgan", User.Role.AGENT, ""),
-    "mo": ("Mo Okafor", "mo.okafor", User.Role.AGENT, Department.MECHANICS),
-    "grace": ("Grace Liu", "grace.liu", User.Role.AGENT, Department.CLEANING),
+    "mo": ("Mo Okafor", "mo.okafor", User.Role.AGENT, MECHANICS),
+    "grace": ("Grace Liu", "grace.liu", User.Role.AGENT, CLEANING),
     "riley": ("Riley Chen", "riley.chen", User.Role.ADMIN, ""),
     "dana": ("Dana Whitfield", "dana.whitfield", User.Role.REQUESTER, ""),
     "tom": ("Tom Reyes", "tom.reyes", User.Role.REQUESTER, ""),
@@ -144,6 +148,7 @@ class Command(BaseCommand):
             people[key].set_unusable_password()
             people[key].save()
 
+        add_example_departments()
         categories = {c.name: c for c in Category.objects.all()}
         now = timezone.now()
         created = []
@@ -229,7 +234,7 @@ class Command(BaseCommand):
                              body="On my way with the spill kit. Please keep people out of aisle 4 until it's dry.")
         # Logged as IT's, but it's the conveyor: Alex asks an admin to move it to Mechanics.
         services.update_ticket(ticket=conveyor, actor=alex, assignee=alex)
-        services.request_move(ticket=conveyor, actor=alex, department=Department.MECHANICS,
+        services.request_move(ticket=conveyor, actor=alex, department=MECHANICS,
                               reason="The screen is fine; it's the conveyor's controller restarting. That's Mechanics.")
 
         # A closed ticket with a follow-up linked to it.

@@ -1,43 +1,13 @@
 """
-Quick-pick subjects for categories ("common requests"), and two categories for
-other teams: Mechanics, and Cleaning & sanitization, with three common
-requests each. Admins can edit the lists, add more, or untick Active.
+Quick-pick subjects for categories ("common requests").
+
+Until v0.10.0 this also added two categories for other teams, Mechanics and
+Cleaning & sanitization. Databases that ran it then keep them (0008 turns them
+into departments). A new install starts with IT only, and an admin adds its own
+departments; the demo data adds those two as examples (tickets/examples.py).
 """
 
 from django.db import migrations, models
-
-NEW_CATEGORIES = [
-    (
-        "Mechanics", "machines, equipment, facility repairs", 44,
-        [
-            "Equipment down: a machine won't start or has stopped",
-            "Leak, unusual noise or vibration on equipment",
-            "Facility repair: door, lighting, plumbing or HVAC",
-        ],
-    ),
-    (
-        "Cleaning & sanitization", "spills, rooms, cleaning supplies", 46,
-        [
-            "Spill or mess that needs cleaning up",
-            "Room or area needs cleaning and sanitizing",
-            "Cleaning or sanitizing supplies running low",
-        ],
-    ),
-]
-
-
-def add_categories(apps, schema_editor):
-    Category = apps.get_model("tickets", "Category")
-    for name, hint, order, subjects in NEW_CATEGORIES:
-        Category.objects.get_or_create(
-            name=name,
-            defaults={"hint": hint, "sort_order": order, "subject_options": "\n".join(subjects)},
-        )
-
-
-def remove_categories(apps, schema_editor):
-    Category = apps.get_model("tickets", "Category")
-    Category.objects.filter(name__in=[c[0] for c in NEW_CATEGORIES], tickets__isnull=True).delete()
 
 
 class Migration(migrations.Migration):
@@ -54,5 +24,4 @@ class Migration(migrations.Migration):
                 verbose_name="common requests",
             ),
         ),
-        migrations.RunPython(add_categories, remove_categories),
     ]

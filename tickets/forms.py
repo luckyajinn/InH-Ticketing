@@ -6,7 +6,7 @@ from django.db.models import Q
 from django.template.defaultfilters import filesizeformat
 
 from accounts.models import User
-from core.departments import Department
+from core import departments
 from tickets import password_guard
 from tickets.models import Category, Ticket
 
@@ -236,7 +236,7 @@ def agent_choices(ticket: Ticket | None = None):
     agents = Q(role=User.Role.AGENT)
     if ticket is not None:
         department = ticket.department
-        agents &= Q(department=department) | (Q(department="") if department == Department.IT else Q(pk__in=[]))
+        agents &= Q(department=department) | (Q(department="") if department == departments.IT else Q(pk__in=[]))
     query = (agents | Q(role=User.Role.ADMIN)) & Q(is_active=True)
     if ticket and ticket.assignee_id:
         query |= Q(pk=ticket.assignee_id)  # keep the current assignee selectable
@@ -332,8 +332,9 @@ class MoveForm(forms.Form):
         self.fields["category"].queryset = Category.objects.filter(is_active=True).exclude(
             department=ticket.category.department
         )
+        names = dict(departments.choices())
         self.fields["category"].label_from_instance = (
-            lambda c: f"{Department(c.department).label}: {c.name}"
+            lambda c: f"{names.get(c.department, c.department)}: {c.name}"
         )
 
 
@@ -348,6 +349,9 @@ class MoveRequestForm(forms.Form):
 
     def __init__(self, *args, ticket: Ticket, **kwargs):
         super().__init__(*args, **kwargs)
+        # Only departments a ticket can go to: with at least one active category.
+        open_to = set(Category.objects.filter(is_active=True).values_list("department", flat=True))
         self.fields["department"].choices = [
-            (value, label) for value, label in Department.choices if value != ticket.category.department
+            (value, label) for value, label in departments.choices()
+            if value != ticket.category.department and value in open_to
         ]

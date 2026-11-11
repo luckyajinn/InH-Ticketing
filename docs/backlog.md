@@ -311,6 +311,10 @@ companies, each with its own logo, look and needs. *(Raised 2026-11-09.)*
       the first company. Every fix lands on `main` first and is merged into
       each company's branch.* (A brand pack chosen by a setting such as
       `BRAND=<company>` is still an option inside a branch.)
+- [x] Each company sets up its own departments. *(v0.10.0: in the admin site,
+      Tickets > Departments. IT is built in; a new install has IT only, and
+      the first company's Mechanics and Cleaning & sanitization carried over
+      on upgrade.)*
 - [ ] Brand pack contents: logo, favicon and app icons, colours (the `:root`
       variables in `static/css/app.css`), company and app name, and the
       email header image.

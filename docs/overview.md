@@ -29,8 +29,8 @@ It runs on the company's own server, inside the company network.
 | Role | Who | What they can do |
 |---|---|---|
 | **Requester** | Any staff member (~300) | Send requests, follow their own, reply, mark resolved, reopen, start a follow-up |
-| **Agent** | IT, Mechanics or C&S staff (Entra roles `Agent`, `Agent.Mechanics`, `Agent.Cleaning`) | Everything a requester can, plus their own department's queue and tickets: internal notes, history, and setting status, priority, assignee and category within the department |
-| **Admin** | IT admins | Every department's tickets, moving a ticket between departments, removing a pasted password or file, Reports and the admin site (categories, common requests, the password audit trail) |
+| **Agent** | IT staff (Entra role `Agent`), or another department's staff (its own role, set with the department in the admin site) | Everything a requester can, plus their own department's queue and tickets: internal notes, history, and setting status, priority, assignee and category within the department |
+| **Admin** | IT admins | Every department's tickets, moving a ticket between departments, removing a pasted password or file, Reports and the admin site (departments, categories, common requests, the password audit trail) |
 
 Roles come from Microsoft 365 (Entra app roles), checked at every sign-in.
 An agent never sees another department's tickets or internal notes. Staff ask

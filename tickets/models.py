@@ -1,6 +1,7 @@
 """
 Ticket data model.
 
+    Department     The teams that work tickets: IT (built in), and any an admin adds
     Category       Admin-editable list: Hardware, Software, ..., each in one department
     Ticket         One request from one person
     Comment        A public reply or an internal note (is_internal) on a ticket
@@ -14,11 +15,93 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import Q
 from django.urls import reverse
 
-from core.departments import Department
+from core import departments
+
+
+class Department(models.Model):
+    """
+    A team that works tickets. IT is built in; an admin adds the others in the
+    admin site. Each category belongs to one, and each agent works for one, from
+    their Entra app role. Tickets, notes and people store the key, so it never changes.
+    """
+
+    # Reports' team colours, in this order: checked for colour-blind separation
+    # between neighbours, and contrast, in light and dark (static/css/app.css).
+    COLOURS = [(1, "Teal"), (2, "Orange"), (3, "Blue"), (4, "Yellow"), (5, "Pink"), (6, "Green"),
+               (7, "Violet"), (8, "Red")]
+
+    key = models.CharField(
+        max_length=16, unique=True,
+        validators=[RegexValidator(r"^[a-z][a-z0-9-]*\Z", "Lower-case letters, digits and hyphens, starting with a letter.")],
+        help_text='A short name, e.g. "mechanics", used in settings such as DEPARTMENT_MAILBOXES. '
+                  "It can't be changed later.",
+    )
+    name = models.CharField(max_length=40, unique=True, help_text='As people see it, e.g. "Mechanics".')
+    entra_role = models.CharField(
+        "Entra app role", max_length=100, blank=True,
+        help_text='The value of the Entra app role that makes someone this department\'s agent, e.g. '
+                  '"Agent.Mechanics". Create the role in Entra with exactly this value.',
+    )
+    alert_email = models.EmailField(
+        "alert address", blank=True,
+        help_text="Where its new-request and unassigned-reply alerts go: a team list, or a Teams "
+                  "channel's email address. Blank: to each of its agents.",
+    )
+    colour = models.PositiveSmallIntegerField(
+        choices=COLOURS, unique=True, editable=False,
+        help_text="Its colour in Reports, given in the order departments are added.",
+    )
+
+    class Meta:
+        ordering = ["colour"]
+
+    def __str__(self) -> str:
+        return self.name
+
+    @property
+    def is_it(self) -> bool:
+        return self.key == departments.IT
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        if self.is_it:
+            return
+        if not self.pk and self.colour is None and Department.objects.count() >= len(self.COLOURS):
+            raise ValidationError(f"There can be up to {len(self.COLOURS)} departments.")
+        role = self.entra_role.strip()
+        if not role:
+            errors["entra_role"] = "Every department other than IT needs its own Entra app role."
+        elif role.lower() in {settings.ENTRA_ROLE_AGENT.lower(), settings.ENTRA_ROLE_ADMIN.lower()}:
+            errors["entra_role"] = f'"{role}" is IT\'s or the admins\' role. Give this department its own.'
+        elif Department.objects.exclude(pk=self.pk).filter(entra_role__iexact=role).exists():
+            errors["entra_role"] = "Another department already uses that role."
+        email = self.alert_email.strip().lower()
+        if email:
+            from notifications.graph import own_addresses  # the app's own mailboxes
+
+            domain = email.rsplit("@", 1)[-1]
+            if email in own_addresses():
+                errors["alert_email"] = "Not one of the app's own mailboxes: it would read its own alerts."
+            elif settings.INBOUND_ALLOWED_DOMAINS and domain not in settings.INBOUND_ALLOWED_DOMAINS:
+                errors["alert_email"] = "Use an address in the organisation: " + ", ".join(settings.INBOUND_ALLOWED_DOMAINS)
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.entra_role = self.entra_role.strip()
+        if self.colour is None:
+            taken = set(Department.objects.values_list("colour", flat=True))
+            self.colour = next((value for value, _ in self.COLOURS if value not in taken), None)
+            if self.colour is None:
+                raise ValidationError(f"There can be up to {len(self.COLOURS)} departments.")
+        super().save(*args, **kwargs)
 
 
 class Category(models.Model):
@@ -32,7 +115,7 @@ class Category(models.Model):
     )
     sort_order = models.PositiveSmallIntegerField(default=0)
     department = models.CharField(
-        max_length=16, choices=Department.choices, default=Department.IT,
+        max_length=16, default=departments.IT,
         help_text="Which department works these requests. Only admins move a ticket to another department.",
     )
     subject_options = models.TextField(
@@ -190,7 +273,7 @@ class Ticket(models.Model):
 
     @property
     def department_label(self) -> str:
-        return Department(self.category.department).label
+        return departments.label(self.category.department)
 
     @property
     def auto_close_at(self) -> datetime | None:
@@ -224,7 +307,7 @@ class Comment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     # Internal notes belong to the department that wrote them. If an admin moves
     # the ticket, only notes marked share_on_move go with it to the new department.
-    department = models.CharField(max_length=16, choices=Department.choices, blank=True)
+    department = models.CharField(max_length=16, blank=True)
     share_on_move = models.BooleanField(
         "share with the new department if this ticket moves", default=False,
     )
@@ -235,6 +318,11 @@ class Comment(models.Model):
     def __str__(self) -> str:
         kind = "Internal note" if self.is_internal else "Reply"
         return f"{kind} on #{self.ticket.number} by {self.author}"
+
+    @property
+    def department_label(self) -> str:
+        """The department an internal note belongs to ("" for a reply)."""
+        return departments.label(self.department)
 
 
 class TicketEvent(models.Model):

@@ -33,7 +33,7 @@ from django.utils import timezone
 
 from accounts.models import User
 from core.context_processors import app_info
-from core.departments import Department
+from core import departments
 from tickets.models import Ticket
 
 APP_NAME = app_info(None)["APP_NAME"]
@@ -49,8 +49,7 @@ PEOPLE = [
     ("admin", "Admin", "demo-riley", "an admin"),
 ]
 STAFF = {"it", "mechanics", "admin"}
-# Pages reached only through a form (the queue's department filter), so not found by following links.
-FORM_PAGES = {"admin": [f"/queue/?dept={d}" for d in Department.values]}
+ADMIN_PAGES = ("/reports/", "/admin/", "/admin/tickets/department/", "/admin/tickets/department/add/")
 
 TICKET_PAGE = re.compile(r"/tickets/(\d+)/")
 REMOVE_PAGE = re.compile(r"/tickets/(\d+)/remove/")
@@ -91,7 +90,7 @@ class Command(BaseCommand):
         pages, aliases, roles = {}, {}, []
         for role, label, username, described in PEOPLE:
             user = users.get(role)
-            start = [s["url"] for s in screens[role]] + [normalize(u) for u in FORM_PAGES.get(role, [])]
+            start = [s["url"] for s in screens[role]] + self._form_pages(role)
             crawled, redirects = self._crawl(role, user, start)
             missing = [s["url"] for s in screens[role] if self._resolve(s["url"], crawled, redirects) is None]
             if missing:
@@ -170,9 +169,16 @@ class Command(BaseCommand):
                        "password out of a ticket and the app's copies of its emails. The history says "
                        "something was removed, never what."),
                 screen("Reports", "/reports/", "Totals for each team, never for one person."),
+                screen("Departments", "/admin/tickets/department/", "Admins add the teams that work tickets: "
+                       "IT is built in, and each other department has its own Entra role, categories and colour."),
                 screen("Admin site", "/admin/", "Categories, people and settings, in the app's look."),
             ],
         }
+
+    @staticmethod
+    def _form_pages(role: str) -> list[str]:
+        """Pages reached only through a form (the queue's department filter), so not found by following links."""
+        return [normalize(f"/queue/?dept={key}") for key in departments.keys()] if role == "admin" else []
 
     def _allowed(self, role: str, url: str) -> bool:
         """Pages worth having in the mockup: no searches, downloads or side effects."""
@@ -188,7 +194,7 @@ class Command(BaseCommand):
             return not keys
         if path == "/tickets/new/":
             return keys <= {"follow_up"}
-        if path in ("/reports/", "/admin/"):
+        if path in ADMIN_PAGES:
             return role == "admin" and not keys
         if match := REMOVE_PAGE.fullmatch(path):
             return role == "admin" and int(match[1]) == self.remove_ticket and keys == {"part"}
@@ -262,7 +268,12 @@ class Command(BaseCommand):
             src = attrs.get("src")
             if not src:
                 return match[0]  # an inline script: kept as it is
-            return f'<script data-mockup-asset="{self._asset(src, "js")}"></script>' if self._static(src) else ""
+            name = self._static(src)
+            # The admin site's own scripts (jQuery and the form helpers) do nothing useful in a
+            # mockup and would double its size; its theme script is the one kept.
+            if not name or (name.startswith("admin/js/") and name != "admin/js/theme.js"):
+                return ""
+            return f'<script data-mockup-asset="{self._asset(src, "js")}"></script>'
         src = attrs.get("src", "")
         return match[0].replace(f'src="{src}"', f'src="{self._data_uri(self._static(src))}"') if self._static(src) else match[0]
 

@@ -41,7 +41,7 @@
     <div class="user-chip">
       <span class="avatar av-{{ user.avatar_variant }}" aria-hidden="true">{{ user.initials }}</span>
       <span class="user-name">{{ user }}</span>
-      <span class="role-tag{% if user.is_agent %} role-it{% endif %}"><span class="visually-hidden">Role: </span>{% if user.role == "agent" and user.agent_department != "it" %}{{ user.get_department_display }} agent{% else %}{{ user.get_role_display }}{% endif %}</span>
+      <span class="role-tag{% if user.is_agent %} role-it{% endif %}"><span class="visually-hidden">Role: </span>{% if user.role == "agent" and user.agent_department != "it" %}{{ user.department_label }} agent{% else %}{{ user.get_role_display }}{% endif %}</span>
       <form class="signout-form" method="post" action="{% url 'accounts:signout' %}">
         {% csrf_token %}
         <button class="signout" type="submit">

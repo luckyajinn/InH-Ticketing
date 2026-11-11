@@ -379,8 +379,7 @@ ls -l .env      # -rw------- 1 inhadmin inhadmin ...
 | `REPORTS_FROM` | The go-live date, e.g. `2026-11-30` (blank until then) | Reports (`/reports/`, admins only) count tickets from this date, so pilot and test tickets don't skew them. Tickets whose subject starts with "Pilot:" are always left out |
 | `INBOUND_EMAIL` | `graph` | Read the mailbox |
 | `DEPARTMENT_MAILBOXES` | Blank until the department mailboxes are decided | e.g. `mechanics=mechanics-requests@example.com, cleaning=cs@example.com/Requests`. Each needs the Exchange steps in [email-setup.md](email-setup.md), 4d |
-| `DEPARTMENT_NOTIFY_EMAILS` | Optional | Where Mechanics' and C&S's new-request alerts go; blank sends them to each of that department's agents |
-| `ENTRA_ROLE_AGENT_MECHANICS`, `ENTRA_ROLE_AGENT_CLEANING` | Leave out (defaults `Agent.Mechanics`, `Agent.Cleaning`) | Only if the app roles in Entra use other values |
+| `DEPARTMENT_NOTIFY_EMAILS`, `ENTRA_ROLE_AGENT_MECHANICS`, `ENTRA_ROLE_AGENT_CLEANING` | Remove (from v0.10.0) | Each department's alert address and Entra role are set in the admin site (Tickets > Departments). The upgrade to v0.10.0 copied these values there, and the logs warn while they're still in `.env` |
 | `ARCHIVE_KEEP_DAYS` | Leave out (default 730, two years) | How long an archived ticket is kept; shown on the ticket |
 | `INBOUND_VERIFY_IT_SENDERS` | Leave out (default on) | Emails that only claim to be from IT become internal notes |
 
@@ -639,6 +638,15 @@ Now and then, clear out old images: `docker image prune -f`.
   notes at the end of section 9 about emails. Always finish with `up -d
   --build` as above: plain `up -d` would start the new version's images on
   the restored database, and they would re-apply the new migrations.
+- **From v0.10.0 back to v0.9.1:** v0.10.0 adds migrations `tickets` 0008
+  (the departments table) and `accounts` 0003. If no department was added
+  besides IT, Mechanics and Cleaning & sanitization, undo them, then check
+  out and rebuild:
+  `docker compose -f compose.yaml -f compose.prod.yaml exec web python manage.py migrate tickets 0007`,
+  then the same with `migrate accounts 0002`. Tickets and notes keep their
+  department. Put back `DEPARTMENT_NOTIFY_EMAILS` (and the two role settings,
+  if they weren't the defaults) from the admin site's values. If another
+  department was added, v0.9.1 can't show it: restore the backup instead.
 - **From v0.9.1 back to v0.9.0:** v0.9.1 adds migrations `tickets` 0007 and
   `accounts` 0002 (departments and the archive). Restore the backup taken
   before the update, with v0.9.0 checked out, as above. Or, to keep the
