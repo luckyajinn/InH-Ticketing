@@ -1,8 +1,11 @@
 # Pilot testing: try to break it
 
-From **2026-11-10**, two testers try to break InH-Ticketing (now v0.9.0) before
+From **2026-11-10**, two testers try to break InH-Ticketing (now v0.10.0) before
 everything is finalized on **2026-11-20** (see [roadmap.md](roadmap.md)).
-Fixes ship as v0.9.x updates once the pilot's testing is done.
+Fixes ship as v0.10.x updates once the pilot's testing is done.
+
+Test on the server once it runs v0.10.0: departments, the archive, the
+password removal tool and Reports all arrived after the pilot started.
 
 **Report each finding as a ticket in the app**, subject starting `Pilot:`,
 category Other. Say what you did, what you expected, what happened, and on
@@ -42,6 +45,7 @@ then swap. Use the test shared mailbox for email.
 - [ ] The CodeTwo signature folds under *Show email signature* (check #1071 too), and nothing you needed is folded away.
 - [ ] A file over 10 MB, a `.exe`, and more than 5 files each get a clear message.
 - [ ] An email arrives for each step: received, IT replied, assigned, waiting, resolved (with the close date).
+- [ ] **Fake "IT" email (IT, once):** from outside the company, send the test mailbox one reply to a ticket (keep `[#1234]` in the subject) with an IT agent's address as the sender. Exchange should reject or junk it. If it arrives anyway, the ticket shows it as an internal note saying Exchange couldn't confirm the sender, never as a reply the requester sees. Then reply to a notification from an IT agent's own mailbox: that arrives as a normal reply.
 
 ## 4. Ticket rules
 
@@ -59,7 +63,7 @@ then swap. Use the test shared mailbox for email.
 - [ ] File names with spaces, accents or symbols.
 - [ ] Odd characters ("²", letters, `' OR '1'='1`) in the ticket-number box on the Not found page and in the queue search: a message or no results, never an error page.
 
-## 6. New in v0.8
+## 6. New in v0.8 and v0.9
 
 - [ ] **Common requests:** type a subject, then pick a common request: the subject box greys out, a note says what you typed won't be used, and the category fills in. Send it: the ticket's subject is the common request. Pick "None" again: your typed subject comes back. Change the category after picking: your category wins.
 - [ ] **Departments:** as a Mechanics agent (`Agent.Mechanics`), the queue shows only Mechanics tickets; an IT ticket's number shows Not found. "Wrong department?" asks an admin; the admin's Move needs "That department has agreed" ticked. An internal note not marked to share isn't visible to the new department.
@@ -73,19 +77,28 @@ then swap. Use the test shared mailbox for email.
 - [ ] **Usage and privacy:** the footer link opens it, signed in or not.
 - [ ] **Icon:** the browser tab shows the app's ticket icon; "Add to home screen" on a phone uses it too.
 
-## 7. Devices and display
+## 7. New in v0.10.0: departments in the admin site (admins)
+
+- [ ] **After the update:** Admin, Tickets → Departments lists IT, Mechanics and Cleaning & sanitization, with the Entra roles and alert addresses the server had in `.env`. A Mechanics agent still sees only Mechanics tickets. Reports keeps the teams' colours (teal, orange, blue).
+- [ ] **The old settings:** until `ENTRA_ROLE_AGENT_MECHANICS`, `ENTRA_ROLE_AGENT_CLEANING` and `DEPARTMENT_NOTIFY_EMAILS` are removed from `.env`, `docker compose -f compose.yaml -f compose.prod.yaml logs web | grep W001` shows a warning naming them. Remove them and run `docker compose -f compose.yaml -f compose.prod.yaml up -d` (a plain `restart` doesn't re-read `.env`): the warning is gone and nothing else changes.
+- [ ] **IT is fixed:** IT's page is read-only, with no Delete. Mechanics has no Delete either, because it has categories.
+- [ ] **Add a test department,** e.g. "Pilot test", key `pilot-test`. These are each refused with a clear message: the role `Agent`, `Admin` or `Agent.Mechanics`; a key with capitals or spaces; an alert address outside the company, or the help-desk mailbox. Then save it with the role `Agent.PilotTest` and no alert address: it gets the next colour (yellow). The Add page lists the steps to finish setting one up.
+- [ ] **A department without categories:** on a ticket, "Wrong department?" and Move don't offer "Pilot test". The sign-in page names it ("Ask IT, Mechanics, Cleaning & sanitization, or Pilot test"), so do this test quickly.
+- [ ] **Delete the test department:** it has no categories, agents or notes, so Delete works, and the sign-in page goes back to the three teams.
+
+## 8. Devices and display
 
 - [ ] A phone, a tablet and a small laptop; Edge and Chrome.
 - [ ] Dark mode, 200% zoom, keyboard only (Tab through every form), "reduce motion" turned on.
 - [ ] A slow connection (a phone hotspot).
 
-## 8. Sign-in and roles
+## 9. Sign-in and roles
 
 - [ ] Someone who isn't assigned to the app in Entra can't get in, and is told why.
 - [ ] Change a person's role in Entra (Requester to Agent and back): it applies at their next sign-in.
 - [ ] Signed in on two devices at once.
 
-## 9. Server and recovery (IT)
+## 10. Server and recovery (IT)
 
 - [ ] `https://helpdesk.example.com/healthz` answers.
 - [ ] Restart the app mid-use (`docker compose -f compose.yaml -f compose.prod.yaml restart`): nothing is lost, and queued emails still go out.

@@ -599,6 +599,11 @@ Signature:
 Read the release notes first (`docs/releases/vX.Y.Z.md` in the new version):
 they say if there are new `.env` settings or anything else to do.
 
+**Skipping versions** is fine: one update applies every migration in between,
+in order. But read the Upgrading section of **every** release you skip, and do
+each one's "Before installing" steps first. For example, from v0.8.3 to
+v0.10.0, read v0.8.4, v0.9.0, v0.9.1 (Entra roles to create first) and v0.10.0.
+
 ```bash
 cd /srv/inh-ticketing/app
 ./scripts/backup.sh before-v0.7.0          # always, before updating
@@ -617,6 +622,11 @@ downtime. If the diff showed changes under `deploy/`, also
 repeat checks 1, 3, 7 and 11 from section 7.
 
 Now and then, clear out old images: `docker image prune -f`.
+
+**Changing a setting in `.env`** (no new version): save the file, then run
+`docker compose -f compose.yaml -f compose.prod.yaml up -d`, which recreates
+the containers whose settings changed. A plain `restart` keeps the old
+settings.
 
 ### Rolling back
 

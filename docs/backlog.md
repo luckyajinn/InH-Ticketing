@@ -124,7 +124,8 @@ Decided 2026-11-06:
       involved; a risk assessment to confirm that is planned for 2026-11-10.)*
 - [ ] Update `usage-rules.md` and the risk assessment for Mechanics and C&S,
       after the 2026-11-10 review. The New request page's notice already
-      names them.
+      names them. *(2026-11-11: usage-rules.md drafted, waiting on the
+      compliance lead's review; record it in its Reviews table.)*
 
 ## v0.8.2 (released 2026-11-09: the site basics)
 

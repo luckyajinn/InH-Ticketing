@@ -50,6 +50,7 @@ Departments set up by admins. [Release notes](docs/releases/v0.10.0.md).
 - Migrations `tickets` 0008 and `accounts` 0003. IT, Mechanics and Cleaning &
   sanitization become departments with the same keys and colours, so nothing
   changes for people. Then remove the three settings from `.env`.
+- `HELPDESK_HOSTNAME` must be set in `.env`: it no longer has a default.
 
 ## [0.9.1] - 2026-11-10
 
