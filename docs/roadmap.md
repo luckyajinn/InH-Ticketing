@@ -41,6 +41,7 @@ Nov 9 is a Monday.
 | ✅ Tue Nov 10 | **v0.9.0** | Reports for admins, built early from v1.1.0: requests, response and resolve times, open tickets by age and email health, per team, never per person; CSV download | — |
 | ✅ Tue Nov 10 | **v0.9.1** | Before go-live: Mechanics and C&S see and work their own tickets (v1.2.0's queues, built early), closed tickets archived for two years, the pasted-password removal tool, fake "IT" emails, shared PCs, no ticket deletes; department mailboxes ready to switch on | — |
 | ✅ Wed Nov 11 | **v0.10.0** | Admins set up the departments in the admin site: IT built in, each other team with its own Entra role, alert address and Reports colour, up to 8. A new install has IT only. The clickable mockup is built from the app's pages | — |
+| ✅ Wed Nov 11 | **v0.10.1** | Category lists follow the department (queue, New request, admin site); IT's common requests for printers, passwords and Wi-Fi. Decided: no phones (they email in), no restore drill | — |
 | **Tue Nov 10** | Demo, pilot starts | CFO demo of v0.8.3. Pilot with one other tester, trying to break it ([pilot-testing.md](pilot-testing.md)). Risk assessment for the new teams with the compliance lead | v0.8.3 installed on the server |
 | **After the pilot's testing** | **v0.10.x** | Paused until the pilot's testing is done, on v0.10.0. Then: pilot fixes | Pilot findings |
 | **Fri Nov 13** (or Mon Nov 16) | **v1.0.0** | **Everything for IT finalized,** plus **a mailbox per department**: email to Mechanics' or C&S's mailbox becomes a ticket for that department, answered from the same mailbox. Final checks on the server, docs and release done | Your side (below); the mailbox decision |
@@ -60,10 +61,9 @@ Nov 9 is a Monday.
 | ✅ Tue Nov 10 | Closed tickets: archived for two years, then deleted (archiving built in v0.9.1) | v0.9.1 |
 | **Before installing v0.9.1** | In Entra, create the `Agent.Mechanics` and `Agent.Cleaning` app roles and assign each team's group to its own (never plain `Agent`) | v0.9.1 |
 | Thu Nov 12 | Department mailboxes (no confirmation yet of a shared mailbox for each, Nov 10): decide new request-only mailboxes or a "Requests" folder in the existing ones (see [backlog.md](backlog.md), v1.0.0); send the addresses; in Exchange, allow the app to send as and read each one, set internal senders only, and record `Test-ServicePrincipalAuthorization` for each | v1.0.0 |
-| Fri Nov 13 | Restore drill on the server, recorded ([deployment.md](deployment.md) section 9) | v1.0.0 |
 | Fri Nov 13 | Entra: confirm the server's redirect URI, and give the server its own client secret or certificate | v1.0.0 |
 | Fri Nov 13 | File the `Test-ServicePrincipalAuthorization` output with the risk assessment; check DMARC on `example.com` | v1.0.0 |
-| After v1.0.0, before go-live | Off-server backup copy and one tested restore from it. Where the copies go is undecided (2026-11-11): a network share or a second machine | Go-live |
+| After v1.0.0, before go-live | Off-server backup copy. Where the copies go is undecided (2026-11-11): a network share or a second machine | Go-live |
 | Mon Nov 16 | Teams: a webhook or permission for IT alerts | v1.1.0 |
 | ✅ Tue Nov 10 | Entra groups for the Mechanics and Cleaning & sanitization teams are live. Still to do: assign each group its app role, `Agent.Mechanics` or `Agent.Cleaning` (safe before v1.2.0; never the plain `Agent` role) | v1.2.0 |
 | Mon Nov 16 | The common requests you're gathering from Mechanics and Cleaning & sanitization | v1.2.0 |
@@ -112,7 +112,6 @@ targets, reporting and Teams alerts are planned for v1.1.0 (above).
 
 - **Backups copied off the server** (moved here from v1.0.0, 2026-11-11), once
   where they go is decided. Still needed before go-live (the compliance list in
-  [backlog.md](backlog.md)). The steps go in deployment.md section 8, and a
-  restore from the copy is tested.
+  [backlog.md](backlog.md)). The steps go in deployment.md section 8.
 - **Merging duplicate tickets.**
 - **Admin screens** beyond the Django admin, if IT outgrows it.

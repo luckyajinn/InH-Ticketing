@@ -5,6 +5,24 @@ Each version also has illustrated release notes in [docs/releases](docs/releases
 A letter after a version, such as 0.10.0d, marks a documentation-only update:
 the app is the same as that version.
 
+## [0.10.1] - 2026-11-11
+
+Category lists follow the department, and IT's common requests. [Release notes](docs/releases/v0.10.1.md).
+
+### Added
+- Common requests for IT: printers (Hardware), passwords (Access) and Wi-Fi
+  (Network). Migration `tickets` 0009 adds them where a list is empty.
+
+### Fixed
+- With a department chosen, only its categories are offered: the queue's
+  category filter (admins), New request after picking a common request, and
+  the admin site's ticket list. All departments groups them by department.
+  The server holds to the same rule on New request.
+
+### Changed
+- Documentation: phones aren't supported (people email from a phone), and no
+  restore drill is planned. Deployment guide section 9 is *Restoring a backup*.
+
 ## [0.10.0d] - 2026-11-11
 
 Documentation only: the app is the same as 0.10.0. [Release notes](docs/releases/v0.10.0d.md).
@@ -480,6 +498,7 @@ Milestone 1: skeleton and Microsoft 365 sign-in. [Release notes with screenshots
 - `/healthz` endpoint, Dockerfile and Docker Compose with PostgreSQL 17.
 - Entra setup guide (`docs/entra-setup.md`) and the UI mockup (`mockups/`).
 
+[0.10.1]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.10.1
 [0.10.0d]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.10.0d
 [0.10.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.10.0
 [0.9.1]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.9.1

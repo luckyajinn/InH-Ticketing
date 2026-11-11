@@ -158,13 +158,16 @@ class NewTicketForm(PasswordCheckMixin, forms.Form):
         cleaned = super().clean()
         picked = self._picked(cleaned.get("subject_pick"))
         # A chosen common request is the subject, over anything typed (the
-        # page says so, and greys the subject out). A category the person
-        # chose themselves still wins: the pick's category is used only when
-        # none was chosen (as without JavaScript).
+        # page says so, and greys the subject out). It also sets the
+        # department: a category the person chose themselves wins only if it's
+        # that department's (the page offers no others once one is picked).
+        # Otherwise, or with none chosen (as without JavaScript), it's the
+        # pick's own category.
         if picked:
             category, text = picked
             cleaned["subject"] = text
-            if not cleaned.get("category"):
+            chosen = cleaned.get("category")
+            if not chosen or chosen.department != category.department:
                 cleaned["category"] = category
                 self.errors.pop("category", None)
         if not cleaned.get("subject"):

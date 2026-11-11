@@ -37,7 +37,8 @@
       </div>
       {% if departments %}
       <label for="q-dept" class="visually-hidden">Department</label>
-      <select id="q-dept" name="dept" class="select" onchange="this.form.requestSubmit()">
+      {# A new department starts with all its categories: the one chosen before may be another department's. #}
+      <select id="q-dept" name="dept" class="select" onchange="this.form.elements.category.value = ''; this.form.requestSubmit()">
         <option value="">All departments</option>
         {% for value, label in departments %}<option value="{{ value }}"{% if department == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
       </select>
@@ -45,7 +46,9 @@
       <label for="q-cat" class="visually-hidden">Category</label>
       <select id="q-cat" name="category" class="select" onchange="this.form.requestSubmit()">
         <option value="">All categories</option>
-        {% for c in categories %}<option value="{{ c.pk }}"{% if category == c.pk|stringformat:"s" %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
+        {% for label, group in category_groups %}{% if label %}<optgroup label="{{ label }}">{% endif %}
+        {% for c in group %}<option value="{{ c.pk }}"{% if category == c.pk|stringformat:"s" %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
+        {% if label %}</optgroup>{% endif %}{% endfor %}
       </select>
       <label for="q-pri" class="visually-hidden">Priority</label>
       <select id="q-pri" name="priority" class="select" onchange="this.form.requestSubmit()">

@@ -32,12 +32,12 @@
     <select class="select" name="subject_pick" id="id_subject_pick" data-subject-pick aria-describedby="pick-hint">
       <option value="">None, I'll type my own subject</option>
       {% for category, choices in picks %}
-      <optgroup label="{{ category.name }}" data-category="{{ category.pk }}">
+      <optgroup label="{{ category.name }}" data-category="{{ category.pk }}" data-department="{{ category.department }}">
         {% for value, text in choices %}<option value="{{ value }}"{% if form.subject_pick.value == value %} selected{% endif %}>{{ text }}</option>{% endfor %}
       </optgroup>
       {% endfor %}
     </select>
-    <p class="hint" id="pick-hint">Picking one makes it the subject, instead of anything typed below, and fills in the category.</p>
+    <p class="hint" id="pick-hint">Picking one makes it the subject, instead of anything typed below, and fills in the category. The category list then shows only that team's categories.</p>
   </div>
   {% endif %}{% endwith %}
 
@@ -59,7 +59,7 @@
     <select class="select" name="category" id="{{ form.category.id_for_label }}" required
             {% if form.category.errors %}aria-invalid="true" aria-describedby="category-error"{% endif %}>
       {% for value, label in form.category.field.choices %}
-      <option value="{{ value }}"{% if value|stringformat:"s" == form.category.value|stringformat:"s" %} selected{% endif %}>{{ label }}</option>
+      <option value="{{ value }}"{% if value %} data-department="{{ value.instance.department }}"{% endif %}{% if value|stringformat:"s" == form.category.value|stringformat:"s" %} selected{% endif %}>{{ label }}</option>
       {% endfor %}
     </select>
     {% if form.category.errors %}<p class="field-error" id="category-error">{% icon "alert" %}{{ form.category.errors.0 }}</p>{% endif %}

@@ -95,11 +95,13 @@ class QuickPickFormTests(MediaTestCase):
         ticket = Ticket.objects.get()
         self.assertEqual(ticket.subject, self.mechanics.subject_choices[0])
 
-    def test_a_chosen_category_still_wins_with_the_pick_as_subject(self):
+    def test_a_chosen_category_of_another_department_gives_way_to_the_picks(self):
+        # The page offers only the pick's department's categories; without
+        # JavaScript another department's still arrives, and the pick's is used.
         hardware = Category.objects.get(name="Hardware")
         self.post(subject_pick=f"{self.mechanics.pk}:0", subject="Monitor flickers", category=hardware.pk)
         ticket = Ticket.objects.get()
-        self.assertEqual((ticket.subject, ticket.category), (self.mechanics.subject_choices[0], hardware))
+        self.assertEqual((ticket.subject, ticket.category), (self.mechanics.subject_choices[0], self.mechanics))
 
     def test_the_page_says_the_pick_replaces_the_subject(self):
         page = self.client.get(self.url)

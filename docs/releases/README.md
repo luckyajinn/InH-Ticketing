@@ -4,6 +4,7 @@ One page per version, each with screenshots of what changed. Newest first.
 
 | Version | What | Notes |
 |---|---|---|
+| v0.10.1 | Category lists follow the department; IT's common requests; no phones or restore drill | [v0.10.1.md](v0.10.1.md) |
 | v0.10.0d | Documentation only: the network and phones, backup and restore steps, usage rules for review | [v0.10.0d.md](v0.10.0d.md) |
 | v0.10.0 | Departments set up by admins; a new install has IT only | [v0.10.0.md](v0.10.0.md) |
 | v0.9.1 | Before go-live: departments, the archive, removing passwords, safety fixes | [v0.9.1.md](v0.9.1.md) |

@@ -31,7 +31,7 @@ What has been checked, and what hasn't:
 6. [First start](#6-first-start)
 7. [Post-install checklist](#7-post-install-checklist)
 8. [Backups](#8-backups)
-9. [Restore drill](#9-restore-drill)
+9. [Restoring a backup](#9-restoring-a-backup)
 10. [Updating and rolling back](#10-updating-and-rolling-back)
 11. [Routine checks](#11-routine-checks)
 12. [Troubleshooting](#12-troubleshooting)
@@ -160,60 +160,32 @@ docker run --rm hello-world
 systemctl is-enabled docker   # "enabled": Docker, and so the app, starts at boot
 ```
 
-### 1.6 The network: DNS, Wi-Fi and phones
+### 1.6 The network: DNS and Wi-Fi
 
-This part isn't on the server: it's for whoever runs the company's DNS,
-Wi-Fi and Intune.
+This part isn't on the server: it's for whoever runs the company's DNS and
+Wi-Fi.
 
-The app only works at `https://helpdesk.example.com`. Opening the server's IP
-address, or plain `http://`, just redirects there. So every device people use
-has to find that name, and trust its certificate.
+The app only works at `https://helpdesk.example.com`, from company PCs. Opening
+the server's IP address, or plain `http://`, just redirects there, so every PC
+has to find that name. **Phones aren't supported** (decided 2026-11-11): from a
+phone, people email their request to the help-desk mailbox instead.
 
 **DNS.** In the internal DNS (usually the domain controllers), add an A record:
 `helpdesk.example.com` pointing to the server's address. Then make sure every
-network staff use gets its answers from that DNS:
+network staff PCs use gets its answers from that DNS:
 - wired PCs and the VPN
-- **the staff Wi-Fi:** its DHCP must hand out the internal DNS servers, not the
-  router or a public DNS. Otherwise phones and laptops on it look the name up
-  on the internet. If the domain's public DNS has a catch-all record, they then
-  land on the company's public web host instead, for example a web host's
-  "coming soon" or cPanel page.
+- **the staff Wi-Fi,** for laptops: its DHCP must hand out the internal DNS
+  servers, not the router or a public DNS. Otherwise a laptop on it looks the
+  name up on the internet. If the domain's public DNS has a catch-all record,
+  it then lands on the company's public web host instead, for example a web
+  host's "coming soon" or cPanel page.
 
 To check, on a PC run `Resolve-DnsName helpdesk.example.com`: it should give
-the server's address. On a phone, the Wi-Fi network's details list its DNS
-servers (on an iPhone: Settings → Wi-Fi → (i) → Configure DNS).
-
-Phones can also skip the internal DNS by themselves:
-- **Android's Private DNS** set to a provider's name: set it to Automatic
-  (Settings → Network & internet → Private DNS; menu names vary by phone).
-- **iCloud Private Relay on an iPhone:** turn it off for the company Wi-Fi
-  (Settings → Wi-Fi → (i) → iCloud Private Relay). To turn it off for a whole
-  network, its DNS can answer "no such name" for `mask.icloud.com` and
-  `mask-h2.icloud.com`.
+the server's address.
 
 **Guest Wi-Fi.** Docker's ports skip the server's own firewall (see 1.4), so the
 network firewall in front of the server is what limits ports 80 and 443.
 Allow the staff networks and the VPN, and block the guest Wi-Fi.
-
-**The certificate on phones and tablets.** Company PCs trust the internal root
-CA through Group Policy; phones don't. Without it, phones show a certificate
-warning, and staff learn to click through warnings.
-- **Phones managed with Intune:** a **Trusted certificate** configuration
-  profile with the internal root (`internal-root.pem`, renamed to `.cer`): one
-  profile for iOS/iPadOS and one for Android. On an Android phone with a work
-  profile, use the browser in the work profile.
-- **By hand, for a test phone:**
-  - iPhone: open the `.cer` file, install it (Settings → Profile Downloaded),
-    then turn on full trust under Settings → General → About → Certificate
-    Trust Settings.
-  - Android: Settings → Security → Encryption & credentials → Install a
-    certificate → CA certificate (menu names vary by phone).
-
-**Check from a phone on the staff Wi-Fi:** `https://helpdesk.example.com/healthz`
-shows `ok`, with no certificate warning. If it doesn't:
-- another website opens: DNS
-- a certificate warning: the root isn't on the phone
-- no answer at all: the network firewall
 
 ## 2. Get the code
 
@@ -254,7 +226,7 @@ Clone, and check out the release you're installing:
 git clone git@github.com:luckyajinn/InH-Ticketing.git /srv/inh-ticketing/app
 cd /srv/inh-ticketing/app
 git tag --list           # the releases
-git checkout v0.10.0d    # the newest release in that list; "detached HEAD" is expected
+git checkout v0.10.1     # the newest release in that list; "detached HEAD" is expected
 file scripts/backup.sh   # "POSIX shell script ... executable", and no "CRLF"
 ```
 
@@ -511,12 +483,11 @@ the go-live records.
 | 13 | A test email in | Email the help-desk mailbox from your account | A new ticket within a minute |
 | 14 | A backup | `/srv/inh-ticketing/app/scripts/backup.sh first-install` | Ends with `Backup OK` (section 8) |
 | 15 | Nightly backup scheduled | `crontab -l` | The line from section 8 |
-| 16 | **Restore drill done and recorded** | Section 9 | Required before go-live |
-| 17 | Survives a reboot | `sudo reboot`, wait 2 minutes, repeat checks 1, 3 and 7 | Everything back by itself |
-| 18 | Expiry dates in the calendar | The certificate (3.3) and the client secret (4) | Both, with owners |
-| 19 | PCs no longer read the mailbox | Section 5 | `INBOUND_EMAIL=off` on PCs |
-| 20 | **A phone on the staff Wi-Fi** | Open `https://helpdesk.example.com/healthz` (section 1.6) | `ok`, with no certificate warning |
-| 21 | Guest Wi-Fi blocked | From a phone on the guest Wi-Fi, open `http://` and the server's address | No answer |
+| 16 | Survives a reboot | `sudo reboot`, wait 2 minutes, repeat checks 1, 3 and 7 | Everything back by itself |
+| 17 | Expiry dates in the calendar | The certificate (3.3) and the client secret (4) | Both, with owners |
+| 18 | PCs no longer read the mailbox | Section 5 | `INBOUND_EMAIL=off` on PCs |
+| 19 | **A laptop on the staff Wi-Fi** | Open `https://helpdesk.example.com/healthz` (section 1.6) | `ok`, with no certificate warning |
+| 20 | Guest Wi-Fi blocked | From a device on the guest Wi-Fi, open `http://` and the server's address | No answer |
 
 If the server can't resolve its own name for checks 3–5, add
 `--resolve helpdesk.example.com:443:127.0.0.1` (or `:80:` for check 4).
@@ -588,33 +559,34 @@ The backups are on the same server as the data, so they don't protect
 against losing the VM or its disk. Copying the backups folder somewhere else
 every night (a file server, or cloud storage) is the recommended next step.
 
-## 9. Restore drill
+## 9. Restoring a backup
 
-The risk assessment requires **one tested restore before go-live**. Do it on
-the production server *before* it holds real data: that tests the real
-server, and nothing is lost. If people are already using it (a pilot, say),
-tell them first: anything done in the app between steps 2 and 5 is lost.
+A restore puts the help desk back to how it was when a backup was made: after
+lost or damaged data, or to roll back an update (section 10, which says which
+version to check out first). **Everything done in the app since that backup
+is lost**, so tell people before you start.
 
-1. Create two test tickets, one with an attachment. Note their numbers.
-2. Back up: `/srv/inh-ticketing/app/scripts/backup.sh drill`
-3. Create a third test ticket, and delete or change something in the first two.
-4. Restore the drill backup. The script lists the backups, checks the
-   checksums, shows what's in the backup and asks you to type its name:
+1. Find the backup, then restore it. The script checks the backup's checksums,
+   shows what's in it, asks you to type its name, and takes a safety backup of
+   the current data first:
    ```bash
    cd /srv/inh-ticketing/app
    ./scripts/restore.sh                       # lists the backups
-   ./scripts/restore.sh 2026-11-06_141500_drill
+   ./scripts/restore.sh 2026-11-06_023000     # the one to restore
    ```
-5. Start the app again, with the command the script prints at the end:
+2. Start the app again, with the command the script prints at the end:
    `docker compose -f compose.yaml -f compose.prod.yaml up -d --build`
-6. Check: the first two tickets are back as they were, the attachment
-   downloads, the third ticket is gone, sign-in works, the worker is running.
-7. Fill in the record below and file it with the system's validation records.
+3. Check: tickets from before the backup are there and their attachments
+   open, sign-in works, and the worker is running (checks 1, 3, 7 and 11 in
+   section 7).
 
-After go-live, repeat the drill yearly or after big changes, **on a separate
-test VM, never the live server**: a restore replaces everything since the
-backup. On a test VM, set `EMAIL_BACKEND=file` and `INBOUND_EMAIL=off` in its
-`.env` before starting it, or it will email real people and read the real mailbox.
+If the restore was the wrong one, restore the newest backup ending
+`_before-restore` the same way: that's the data from just before.
+
+A practice restore (a restore drill) isn't planned (decided 2026-11-11). To
+try one anyway, use a **separate test VM, never the live server**, and set
+`EMAIL_BACKEND=file` and `INBOUND_EMAIL=off` in its `.env` before starting it,
+or it will email real people and read the real mailbox.
 
 Things to know about restoring:
 
@@ -623,33 +595,6 @@ Things to know about restoring:
 - Emails that arrived after the backup was made were moved to the mailbox's
   *Processed by InH-Ticketing* folder. To get them in again, move them back
   to the Inbox and mark them unread; the worker picks them up *(untested)*.
-
-### Restore test record
-
-```
-InH-Ticketing restore test
-
-Date and time:
-Done by:                               Reviewed by:
-Server:
-Backup restored (folder name):
-Backup made at:                        App version (backup / code):
-Restored:   [ ] database   [ ] attachments
-Time taken (start of restore to app back up):
-
-Checks
-[ ] restore.sh reported the checksums OK
-[ ] tickets from before the backup are present:        #
-[ ] their attachments open:                            #
-[ ] tickets made after the backup are gone:            #
-[ ] sign-in works, roles are right
-[ ] worker running; a test email was sent
-
-Problems found, and what was done:
-
-Result:  PASS / FAIL
-Signature:
-```
 
 ### Restoring onto a new server (the old one is lost)
 
@@ -663,7 +608,7 @@ install.)*
    the same emails.
 2. **Build the new server:** sections 1 and 2. Then open the backup's
    `manifest.txt` and check out the tag on its "App version" line (the `git:`
-   part), e.g. `git checkout v0.10.0d`.
+   part), e.g. `git checkout v0.10.1`.
 3. **A new certificate** for the same name: section 3. The old private key
    wasn't backed up.
 4. **The `.env`** from the password vault: section 5, with the same
@@ -698,7 +643,8 @@ they say if there are new `.env` settings or anything else to do.
 **Skipping versions** is fine: one update applies every migration in between,
 in order. But read the Upgrading section of **every** release you skip, and do
 each one's "Before installing" steps first. For example, from v0.8.3 to
-v0.10.0d, read v0.8.4, v0.9.0, v0.9.1 (Entra roles to create first) and v0.10.0.
+v0.10.1, read v0.8.4, v0.9.0, v0.9.1 (Entra roles to create first), v0.10.0 and
+v0.10.1.
 A version ending in a letter, such as v0.10.0d, changes only the documents:
 there's nothing extra to do for it.
 
@@ -706,7 +652,7 @@ Set `NEW` to the version you're installing, then run the rest as it is:
 
 ```bash
 cd /srv/inh-ticketing/app
-NEW=v0.10.0d                               # the version you're installing
+NEW=v0.10.1                                # the version you're installing
 OLD=$(git describe --tags); echo "$OLD"    # the current version: write it down, rolling back needs it
 ./scripts/backup.sh before-$NEW            # always, before updating
 git fetch --tags
@@ -758,7 +704,7 @@ the backups.
   docker compose -f compose.yaml -f compose.prod.yaml up -d --build
   ```
   Everything done in the app since the update is lost: tell people. See the
-  notes at the end of section 9 about emails. Always finish with `up -d
+  notes in section 9 about emails. Always finish with `up -d
   --build` as above: plain `up -d` would start the new version's images on
   the restored database, and they would re-apply the new migrations.
 - **From v0.10.0 back to v0.9.1:** v0.10.0 adds migrations `tickets` 0008
@@ -814,8 +760,7 @@ Logs: `docker compose -f compose.yaml -f compose.prod.yaml logs --tail 100 <serv
 | Symptom | Likely cause | Fix |
 |---|---|---|
 | Certificate warning on a company PC | The PC doesn't trust the internal root; the name isn't in the certificate's SAN; or the intermediate is missing from `fullchain.pem` | Re-run the checks in 3.2. The root reaches PCs through Group Policy or Intune |
-| Certificate warning on a phone or tablet | The phone doesn't trust the internal root | An Intune Trusted certificate profile, or install it by hand (section 1.6) |
-| Another website opens (a web host's "coming soon" or cPanel page), often on a phone | That device looks the name up on the internet: its Wi-Fi hands out a public DNS, or Private DNS or iCloud Private Relay is on | Section 1.6. Compare the device's DNS servers with a working PC's (`ipconfig /all`) |
+| Another website opens (a web host's "coming soon" or cPanel page) | That PC looks the name up on the internet: its network (often a Wi-Fi) hands out a public DNS | Section 1.6. Compare its DNS servers with a working PC's (`ipconfig /all`) |
 | Browser can't connect at all | DNS, the network firewall, or `proxy` isn't running | `nslookup helpdesk.example.com`; `docker compose … ps` |
 | `proxy` keeps restarting | A certificate file is missing or unreadable, the key doesn't match, or the Caddyfile has an error | `docker compose … logs proxy`; repeat step 6.2 |
 | `502 Bad Gateway` | `web` is down or still starting | `docker compose … ps`; `logs web` |

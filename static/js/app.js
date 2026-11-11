@@ -163,8 +163,11 @@
     // "Common requests" on the New request form: a chosen one is the subject.
     // The subject box greys out (a disabled field isn't sent) and a note says
     // what's typed there won't be used; what was typed stays, in case they
-    // choose "None" again. Choosing one also fills in its category. Without
-    // JS the server uses the chosen one as the subject on submit.
+    // choose "None" again. Choosing one also fills in its category, and the
+    // category list then offers only that department's categories; "None"
+    // brings them all back. Without JS the server uses the chosen one as the
+    // subject on submit, and its category if the chosen one is another
+    // department's.
     document.querySelectorAll("select[data-subject-pick]").forEach(function (pick) {
       var form = pick.form;
       var subject = form && form.elements.subject;
@@ -172,6 +175,21 @@
       var note = form && form.querySelector("[data-subject-override]");
       if (!subject) return;
       var field = subject.closest(".field");
+      // Every category option, in page order, to put back the ones a pick hid.
+      var allCategories = category ? Array.prototype.slice.call(category.options) : [];
+
+      // Show only one department's categories ("" for all), keeping the
+      // chosen one if it's still there.
+      function limitCategories(department) {
+        if (!category) return;
+        var current = category.value;
+        while (category.firstChild) category.removeChild(category.firstChild);
+        allCategories.forEach(function (o) {
+          if (!department || !o.value || o.getAttribute("data-department") === department) category.appendChild(o);
+        });
+        category.value = current;
+        if (category.selectedIndex < 0) category.value = "";
+      }
 
       function update(chosenNow) {
         var option = pick.options[pick.selectedIndex];
@@ -181,7 +199,8 @@
         if (field) field.classList.toggle("is-overridden", picked);
         if (note) note.textContent = picked ? note.getAttribute("data-text") : "";
         var group = option && option.parentElement;
-        if (picked && chosenNow && category && group && group.getAttribute("data-category")) {
+        limitCategories(picked && group ? group.getAttribute("data-department") || "" : "");
+        if (picked && category && group && group.getAttribute("data-category") && (chosenNow || !category.value)) {
           category.value = group.getAttribute("data-category");
         }
       }

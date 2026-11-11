@@ -142,6 +142,31 @@ class AttachmentInline(ReadOnlyInline):
     readonly_fields = fields
 
 
+class TicketCategoryFilter(admin.SimpleListFilter):
+    """
+    Categories: only the chosen department's when the department filter is
+    set, otherwise all, each with its department's name. A category left over
+    from another department is ignored.
+    """
+
+    title = "category"
+    parameter_name = "category"
+
+    def lookups(self, request, model_admin):
+        department = request.GET.get(TicketDepartmentFilter.parameter_name, "")
+        if department:
+            return [(str(c.pk), c.name) for c in Category.objects.filter(department=department)]
+        names = dict(departments.choices())
+        return [(str(c.pk), f"{names.get(c.department, c.department)}: {c.name}") for c in Category.objects.all()]
+
+    def value(self):
+        value = super().value()
+        return value if value in {key for key, _ in self.lookup_choices} else None
+
+    def queryset(self, request, queryset):
+        return queryset.filter(category_id=int(self.value())) if self.value() else queryset
+
+
 @admin.register(Ticket)
 class TicketAdmin(admin.ModelAdmin):
     """
@@ -150,7 +175,7 @@ class TicketAdmin(admin.ModelAdmin):
     """
 
     list_display = ["number", "subject", "status", "priority", "requester", "assignee", "category", "created_at"]
-    list_filter = ["status", TicketDepartmentFilter, "priority", "category", "source", "archived_at"]
+    list_filter = ["status", TicketDepartmentFilter, "priority", TicketCategoryFilter, "source", "archived_at"]
     search_fields = ["subject", "requester__display_name", "requester__email"]
     list_select_related = ["requester", "assignee", "category"]
     date_hierarchy = "created_at"

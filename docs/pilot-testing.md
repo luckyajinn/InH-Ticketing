@@ -12,7 +12,7 @@ category Other. Say what you did, what you expected, what happened, and on
 which device and browser, with a screenshot if it helps. Mark it:
 
 - **Blocker:** someone sees what they shouldn't, data is lost, or sign-in fails
-- **Major:** a wrong status or email, or a page that doesn't work on a phone
+- **Major:** a wrong status or email, or a page that doesn't work
 - **Minor:** looks wrong, or the wording is confusing
 
 **Never use a real password, even to test the password check.** Make them up.
@@ -65,7 +65,7 @@ then swap. Use the test shared mailbox for email.
 
 ## 6. New in v0.8 and v0.9
 
-- [ ] **Common requests:** type a subject, then pick a common request: the subject box greys out, a note says what you typed won't be used, and the category fills in. Send it: the ticket's subject is the common request. Pick "None" again: your typed subject comes back. Change the category after picking: your category wins.
+- [ ] **Common requests:** type a subject, then pick a common request: the subject box greys out, a note says what you typed won't be used, and the category fills in. Send it: the ticket's subject is the common request. Pick "None" again: your typed subject comes back. After picking, the category list shows only that team's categories (a Mechanics request: only Mechanics); change it to another of them and yours wins. "None" brings every category back.
 - [ ] **Departments:** as a Mechanics agent (`Agent.Mechanics`), the queue shows only Mechanics tickets; an IT ticket's number shows Not found. "Wrong department?" asks an admin; the admin's Move needs "That department has agreed" ticked. An internal note not marked to share isn't visible to the new department.
 - [ ] **Archive:** close a ticket: it's read-only, in the Archive view, and shows "kept until". A requester's reply to it by email starts a follow-up. An admin can take it out of the archive.
 - [ ] **Remove a password:** as an admin, paste a fake password into a reply, then use Remove… on it: the reply shows "[removed by IT]", the history says something was removed (not what), and the copy of the email in the admin site's Outbound emails no longer has it.
@@ -75,7 +75,7 @@ then swap. Use the test shared mailbox for email.
 - [ ] **Not found page:** open a made-up address. "Go to my tickets" (or "Go to the queue" for IT) and "New request" work; your own ticket number in the box opens it; someone else's shows Not found.
 - [ ] **Help contact:** the sign-in page and the error pages say who to contact, with the right extension or channel.
 - [ ] **Usage and privacy:** the footer link opens it, signed in or not.
-- [ ] **Icon:** the browser tab shows the app's ticket icon; "Add to home screen" on a phone uses it too.
+- [ ] **Icon:** the browser tab shows the app's ticket icon.
 
 ## 7. New in v0.10.0: departments in the admin site (admins)
 
@@ -84,13 +84,16 @@ then swap. Use the test shared mailbox for email.
 - [ ] **IT is fixed:** IT's page is read-only, with no Delete. Mechanics has no Delete either, because it has categories.
 - [ ] **Add a test department,** e.g. "Pilot test", key `pilot-test`. These are each refused with a clear message: the role `Agent`, `Admin` or `Agent.Mechanics`; a key with capitals or spaces; an alert address outside the company, or the help-desk mailbox. Then save it with the role `Agent.PilotTest` and no alert address: it gets the next colour (yellow). The Add page lists the steps to finish setting one up.
 - [ ] **A department without categories:** on a ticket, "Wrong department?" and Move don't offer "Pilot test". The sign-in page names it ("Ask IT, Mechanics, Cleaning & sanitization, or Pilot test"), so do this test quickly.
+- [ ] **Category lists follow the department (v0.10.1):** in the queue, choose Mechanics: the category filter lists only Mechanics' categories. Back to All departments: they're grouped by department. The same in the admin site's ticket list.
+- [ ] **IT's common requests (v0.10.1):** New request offers printer, password and Wi-Fi requests under Hardware, Access and Network, and none of them sets off the password warning.
 - [ ] **Delete the test department:** it has no categories, agents or notes, so Delete works, and the sign-in page goes back to the three teams.
 
 ## 8. Devices and display
 
-- [ ] A phone, a tablet and a small laptop; Edge and Chrome. Phones on the staff Wi-Fi need the network set up first ([deployment.md](deployment.md), section 1.6).
+- [ ] A small laptop and a large monitor; Edge and Chrome. Phones aren't supported: from a phone, people email their request (below).
 - [ ] Dark mode, 200% zoom, keyboard only (Tab through every form), "reduce motion" turned on.
-- [ ] A slow connection (a phone hotspot).
+- [ ] A slow connection (a laptop on a phone's hotspot).
+- [ ] **From a phone's mail app:** email a new request to the test mailbox, then reply to its notification. Both arrive (a new ticket, then a reply), and lines such as "Sent from my iPhone" don't get in the way.
 
 ## 9. Sign-in and roles
 
@@ -102,4 +105,4 @@ then swap. Use the test shared mailbox for email.
 
 - [ ] `https://helpdesk.example.com/healthz` answers.
 - [ ] Restart the app mid-use (`docker compose -f compose.yaml -f compose.prod.yaml restart`): nothing is lost, and queued emails still go out.
-- [ ] Last night's backup exists, and the restore drill works ([deployment.md](deployment.md) section 9).
+- [ ] Last night's backup exists ([deployment.md](deployment.md) section 8).

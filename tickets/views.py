@@ -464,6 +464,16 @@ def _queue_queryset(view_id: str, user, department: str = ""):
     return tickets.open()
 
 
+def _category_groups(categories: list, by_department: bool) -> list[tuple[str, list]]:
+    """The queue's category filter: [(department name, its categories)] for all
+    departments, or one unlabelled group when they're all one department's."""
+    if not by_department:
+        return [("", categories)]
+    groups = [(label, [c for c in categories if c.department == key]) for key, label in departments.choices()]
+    groups = [group for group in groups if group[1]]
+    return groups if len(groups) > 1 else [("", categories)]
+
+
 @agent_required
 @require_GET
 def queue(request):
@@ -480,8 +490,15 @@ def queue(request):
     tickets = _queue_queryset(view_id, request.user, department).select_related(
         "requester", "assignee", "category"
     )
+    # The category filter offers only the department's categories: the agent's
+    # own, or the one an admin chose. A category from elsewhere is ignored.
+    shown_department = department or ("" if request.user.is_admin else request.user.agent_department)
+    categories = list(Category.objects.filter(department=shown_department) if shown_department
+                      else Category.objects.all())
     q = request.GET.get("q", "").strip()
     category = request.GET.get("category", "")
+    if category not in {str(c.pk) for c in categories}:
+        category = ""
     priority = request.GET.get("priority", "")
     if q:
         term = q.lstrip("#")
@@ -520,8 +537,7 @@ def queue(request):
             "category": category,
             "priority": priority,
             "filtered": bool(q or category or priority or department),
-            "categories": (Category.objects.all() if request.user.is_admin
-                           else Category.objects.filter(department=request.user.agent_department)),
+            "category_groups": _category_groups(categories, by_department=not shown_department),
             "department": department,
             "departments": departments.choices() if request.user.is_admin else [],
             "department_label": (departments.label(department) if department

@@ -100,15 +100,17 @@ class SignInLinkTests(MediaTestCase):
 
 
 class QuickPickCategoryTests(MediaTestCase):
-    def test_a_category_chosen_after_the_pick_wins(self):
+    def test_a_category_chosen_after_the_pick_wins_within_its_department(self):
+        # Another department's category gives way to the pick's (v0.10.1):
+        # see test_category_lists.NewRequestTests.
         self.client.force_login(self.requester)
-        mechanics = add_example_departments()["mechanics"]
         hardware = Category.objects.get(name="Hardware")
+        network = Category.objects.get(name="Network")
         self.client.post(reverse("tickets:new"), {
-            "subject_pick": f"{mechanics.pk}:0", "subject": mechanics.subject_choices[0],
-            "category": hardware.pk, "description": "The label printer motor is dead.",
+            "subject_pick": f"{hardware.pk}:0", "subject": hardware.subject_choices[0],
+            "category": network.pk, "description": "The office printer drops off the network.",
         })
-        self.assertEqual(Ticket.objects.get().category, hardware)
+        self.assertEqual(Ticket.objects.get().category, network)
 
 
 class WordingTests(MediaTestCase):

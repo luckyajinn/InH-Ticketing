@@ -59,8 +59,10 @@ Before go-live (by 2027-01-11):
         Reports' trends lose them then: keep monthly totals first.
 - [x] ~~Quarterly review of who holds the Agent and Admin roles.~~ *Not needed (decided 2026-11-09).*
 - [ ] Monthly check of dependencies for security updates.
-- [ ] Off-server backup copy and one tested restore (also under v0.6.0).
-      *(2026-11-11: moved to after v1.0.0; where the copies go is undecided.)*
+- [ ] Off-server backup copy (also under v0.6.0). *(2026-11-11: moved to after
+      v1.0.0; where the copies go is undecided.)*
+- [x] ~~One tested restore.~~ *Not planned (decided 2026-11-11). The risk
+      assessment asked for one before go-live: confirm with the compliance lead.*
 
 ## v0.5.0 (milestone 5: automations)
 
@@ -87,7 +89,7 @@ Decided 2026-11-06:
       certificate, HSTS and an HTTP-to-HTTPS redirect (clears the two
       `check --deploy` warnings).
 - [x] Nightly local backups with 14-day retention, and a restore procedure.
-- [ ] The restore drill on the real server, recorded (docs/deployment.md section 9).
+- [x] ~~The restore drill on the real server, recorded.~~ *Not planned (decided 2026-11-11).*
 - [ ] Entra: add the redirect URI `https://helpdesk.example.com/auth/callback`,
       and use a separate client secret (or a certificate) for the server.
 - [x] A deployment guide covering first install, updating to a new version, and restoring.
@@ -217,6 +219,13 @@ ticket, subject starting "Pilot:", so it's tracked in the app itself.
 
 ## v1.0.0 (everything for IT finalized, by 2026-11-13 or 11-16)
 
+Decided 2026-11-11: the web page is for company PCs. Phones aren't supported:
+from a phone, people email their request. No restore drill is planned.
+
+- [x] Category lists follow the department: the queue, New request and the
+      admin site's ticket list. *(v0.10.1.)*
+- [x] Common requests for IT: printers, passwords, Wi-Fi. *(v0.10.1.)*
+
 - [x] **A mailbox per department** *(built in v0.9.1, `DEPARTMENT_MAILBOXES`;
       switched on once the addresses are decided. Required before v1.0.0, decided
       2026-11-09)*. Mechanics and Cleaning & sanitization already have shared
@@ -250,7 +259,7 @@ ticket, subject starting "Pilot:", so it's tracked in the app itself.
   - [x] Usage and privacy page: ignored emails are logged with their sender
         and subject, and the emails the app sends are kept. *(v0.9.1.)*
 - [ ] Everything in v0.9.x, plus the server and Microsoft 365 tasks in the
-      roadmap's "Your side" list (restore drill, the server's own Entra
+      roadmap's "Your side" list (the server's own Entra
       secret, the permission-check record, DMARC). The off-server backup moved
       to after v1.0.0 (2026-11-11).
 
