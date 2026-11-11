@@ -2,6 +2,20 @@
 
 All notable changes to InH-Ticketing. Versions follow [Semantic Versioning](https://semver.org).
 Each version also has illustrated release notes in [docs/releases](docs/releases/README.md).
+A letter after a version, such as 0.10.0d, marks a documentation-only update:
+the app is the same as that version.
+
+## [0.10.0d] - 2026-11-11
+
+Documentation only: the app is the same as 0.10.0. [Release notes](docs/releases/v0.10.0d.md).
+
+### Changed
+- Deployment guide: the network, DNS and phones (new section 1.6); updating
+  with the version set once, skipping versions, `.env` changes; rolling back;
+  the restore drill; restoring onto a new server.
+- v0.10.0's notes: `HELPDESK_HOSTNAME` must be set in `.env`.
+- Usage rules drafted for Mechanics and Cleaning & sanitization, for review.
+- Pilot checklist for v0.10.0; the off-server backup copy moves to after 1.0.0.
 
 ## [0.10.0] - 2026-11-11
 
@@ -466,6 +480,7 @@ Milestone 1: skeleton and Microsoft 365 sign-in. [Release notes with screenshots
 - `/healthz` endpoint, Dockerfile and Docker Compose with PostgreSQL 17.
 - Entra setup guide (`docs/entra-setup.md`) and the UI mockup (`mockups/`).
 
+[0.10.0d]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.10.0d
 [0.10.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.10.0
 [0.9.1]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.9.1
 [0.9.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.9.0

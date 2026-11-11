@@ -21,6 +21,8 @@ what actually shipped is in [releases/](releases/README.md).
   (Dec 21 – Jan 1) still apply to go-live.
 - **Version numbers:** each milestone is the next `0.x.0` or `1.x.0`, fixes
   are `x.y.1`, `x.y.2` and so on, and **1.0.0 means ready for everyone**.
+  A letter after a version, such as `v0.10.0d`, marks a documentation-only
+  update: the app is the same as `v0.10.0`.
 
 ## Timeline: finalized by Friday Nov 20
 
