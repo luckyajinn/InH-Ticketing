@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ app_name }} mockup</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="{{ icon }}" type="image/svg+xml">
+{# Built by "python manage.py build_mockup" from the app's own pages. Don't edit by hand. #}
+<style>
+:root {
+  color-scheme: light dark;
+  --bar-bg: #1d2127;
+  --bar-raised: #2a3038;
+  --bar-line: #3b424c;
+  --bar-text: #f4f1ec;
+  --bar-muted: #b3bac2;
+  --bar-accent: #3db5a5;
+  --stage: #d9d4cd;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --stage: #0d0c0b; }
+}
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  display: flex;
+  flex-direction: column;
+  background: var(--stage);
+  color: var(--bar-text);
+  font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+.bar {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 8px 16px 10px;
+  background: var(--bar-bg);
+  border-bottom: 1px solid #000;
+}
+.tag {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--bar-accent);
+  color: #07201c;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.ctrl { flex: none; display: inline-flex; align-items: center; gap: 6px; color: var(--bar-muted); font-size: 13px; }
+.bar select, .bar button { font: inherit; color: var(--bar-text); }
+.bar select {
+  min-height: 30px;
+  padding: 3px 8px;
+  border: 1px solid var(--bar-line);
+  border-radius: 6px;
+  background: var(--bar-raised);
+}
+.bar select option { color: #111; background: #fff; }
+.screens { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.screens a {
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--bar-text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.screens a:hover { background: rgba(255, 255, 255, .09); }
+.screens a[aria-current="page"] { background: var(--bar-text); color: var(--bar-bg); font-weight: 600; }
+.spacer { flex: 1 1 0; }
+.seg { display: inline-flex; border: 1px solid var(--bar-line); border-radius: 6px; overflow: hidden; }
+.seg button { min-height: 28px; padding: 3px 10px; border: 0; background: transparent; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--bar-line); }
+.seg button[aria-pressed="true"] { background: var(--bar-text); color: var(--bar-bg); font-weight: 600; }
+.note { flex: 1 0 100%; margin: 0; color: var(--bar-muted); font-size: 13px; }
+.note strong { color: var(--bar-text); font-weight: 600; }
+.stage { flex: 1 1 auto; display: flex; justify-content: center; min-height: 0; }
+.stage iframe { display: block; width: 100%; height: 100%; border: 0; background: #f6f3ef; }
+.phone .stage { padding: 20px 16px; }
+.phone .stage iframe {
+  width: 390px;
+  max-width: 100%;
+  border-radius: 24px;
+  box-shadow: 0 0 0 10px var(--bar-bg), 0 16px 48px rgba(0, 0, 0, .35);
+}
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 32px);
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: var(--bar-bg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
+}
+.toast[hidden] { display: none; }
+:focus-visible { outline: 2px solid var(--bar-accent); outline-offset: 2px; }
+@media (max-width: 720px) {
+  .bar { padding: 8px 12px; gap: 8px 12px; }
+  .screens { flex: 1 0 100%; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .spacer, .width-ctrl { display: none; } /* already phone width */
+  .phone .stage { padding: 0; }
+  .phone .stage iframe { width: 100%; border-radius: 0; box-shadow: none; }
+}
+</style>
+</head>
+<body>
+<header class="bar" aria-label="Mockup controls, not part of the app">
+  <span class="tag">Mockup</span>
+  <label class="ctrl" for="role">Viewing as <select id="role"></select></label>
+  <nav class="screens" id="screens" aria-label="Screens"></nav>
+  <span class="spacer"></span>
+  <span class="ctrl width-ctrl">Width
+    <span class="seg" role="group" aria-label="Width">
+      <button type="button" data-width="desktop" aria-pressed="true">Desktop</button>
+      <button type="button" data-width="phone" aria-pressed="false">Phone</button>
+    </span>
+  </span>
+  <label class="ctrl" for="theme">Theme
+    <select id="theme">
+      <option value="auto">Match system</option>
+      <option value="light">Light</option>
+      <option value="dark">Dark</option>
+    </select>
+  </label>
+  <p class="note" id="note" aria-live="polite"></p>
+</header>
+<main class="stage"><iframe id="frame" title="App screen"></iframe></main>
+<div class="toast" id="toast" role="status" hidden></div>
+{{ data|json_script:"mockup-data" }}
+<script>
+(function () {
+  "use strict";
+  var data = JSON.parse(document.getElementById("mockup-data").textContent);
+  var frame = document.getElementById("frame");
+  var roleSelect = document.getElementById("role");
+  var themeSelect = document.getElementById("theme");
+  var screensNav = document.getElementById("screens");
+  var note = document.getElementById("note");
+  var toast = document.getElementById("toast");
+  var roles = {};
+  var current = null; // "role url", a key of data.pages
+  var theme = "auto";
+
+  function remember(name, value) {
+    try { window.localStorage.setItem("inh-mockup-" + name, value); } catch (e) { /* not kept */ }
+  }
+  function recall(name) {
+    try { return window.localStorage.getItem("inh-mockup-" + name); } catch (e) { return null; }
+  }
+
+  // The same as normalize() in build_mockup.py: the path, then the query
+  // without empty values or "next", sorted.
+  function normalize(href, base) {
+    var url = new URL(href, "http://mockup" + (base || "/"));
+    var pairs = [];
+    url.searchParams.forEach(function (value, name) { if (value && name !== "next") pairs.push([name, value]); });
+    pairs.sort(function (a, b) {
+      var x = a[0] + "\u0000" + a[1], y = b[0] + "\u0000" + b[1];
+      return x < y ? -1 : x > y ? 1 : 0;
+    });
+    var query = new URLSearchParams(pairs).toString();
+    return url.pathname + (query ? "?" + query : "");
+  }
+  function find(role, url) {
+    var key = role + " " + url;
+    for (var hops = 0; data.aliases[key] && hops < 5; hops++) key = data.aliases[key];
+    return data.pages[key] ? key : null;
+  }
+  function split(key) {
+    var at = key.indexOf(" ");
+    return { role: key.slice(0, at), url: key.slice(at + 1) };
+  }
+
+  var DARK = /@media\s*\(prefers-color-scheme:\s*dark\)/g;
+  var LIGHT = /@media\s*\(prefers-color-scheme:\s*light\)/g;
+  function themed(css) {
+    if (theme === "dark") return css.replace(DARK, "@media all").replace(LIGHT, "@media not all");
+    if (theme === "light") return css.replace(DARK, "@media not all").replace(LIGHT, "@media all");
+    return css;
+  }
+  function assemble(page) {
+    var html = page.html
+      .replace("<!--mockup:icons-->", function () { return data.icons; })
+      .replace(/<(style|script) data-mockup-asset="([^"]+)"><\/\1>/g, function (match, tag, name) {
+        var text = data.assets[name] || "";
+        return "<" + tag + ">" + (tag === "style" ? themed(text) : text) + "</" + tag + ">";
+      });
+    if (theme !== "auto") html = html.replace(/<html\b/, '<html data-theme="' + theme + '"');
+    return html;
+  }
+
+  var toastTimer;
+  function say(text) {
+    toast.textContent = text;
+    toast.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toast.hidden = true; }, 4000);
+  }
+
+  function renderBar() {
+    var where = split(current);
+    var role = roles[where.role];
+    roleSelect.value = role.id;
+    screensNav.textContent = "";
+    var featured = null;
+    role.screens.forEach(function (screen) {
+      var link = document.createElement("a");
+      link.href = "#" + role.id + ":" + screen.url;
+      link.textContent = screen.label;
+      if (find(role.id, screen.url) === current) {
+        link.setAttribute("aria-current", "page");
+        featured = featured || screen;
+      }
+      screensNav.appendChild(link);
+    });
+    note.textContent = "";
+    if (role.who) {
+      var who = document.createElement("strong");
+      who.textContent = role.who + ".";
+      note.appendChild(who);
+      note.appendChild(document.createTextNode(" "));
+    }
+    var about = featured ? featured.note : data.pages[current].title;
+    note.appendChild(document.createTextNode(about + " " + data.footer));
+  }
+
+  function show(key, fromHistory) {
+    if (!key || !data.pages[key]) return;
+    current = key;
+    var page = data.pages[key];
+    frame.srcdoc = assemble(page);
+    frame.title = page.title;
+    renderBar();
+    var where = split(key);
+    var hash = "#" + where.role + ":" + where.url;
+    if (!fromHistory && window.location.hash !== hash) {
+      try { window.history.pushState(null, "", hash); } catch (e) { /* no history here */ }
+    }
+  }
+  function fromHash() {
+    var hash = decodeURIComponent(window.location.hash.slice(1));
+    var at = hash.indexOf(":");
+    if (at < 0) return null;
+    return find(hash.slice(0, at), normalize(hash.slice(at + 1)));
+  }
+
+  function go(href, missing) {
+    if (/^[a-z][a-z0-9+.-]*:/i.test(href) && !/^https?:\/\/(localhost|testserver)\b/i.test(href)) {
+      say("Links that leave the app don't open from the mockup.");
+      return;
+    }
+    var where = split(current);
+    var url = normalize(href, where.url);
+    if (where.role === "visitor" && url.indexOf("/auth/login") === 0) {
+      say("Signed in as " + roles.requester.who + ".");
+      show(find("requester", "/"));
+      return;
+    }
+    var key = find(where.role, url);
+    if (key) show(key);
+    else say(missing || "That page isn't in the mockup.");
+  }
+
+  window.addEventListener("message", function (event) {
+    var message = event.data;
+    if (event.source !== frame.contentWindow || !message || !message.mockup) return;
+    if (message.type === "go") {
+      go(message.href);
+    } else if (message.type === "submit") {
+      if (/\/(signout|logout)\//.test(message.action)) {
+        say("Signed out.");
+        show(find("visitor", "/signin/"));
+      } else if (message.method === "get") {
+        var action = message.action || split(current).url.split("?")[0];
+        go(action + (message.query ? "?" + message.query : ""),
+           "Searching and filtering don't work in the mockup. Try the views and tickets instead.");
+      } else {
+        say("This is a mockup, so nothing is sent or saved.");
+      }
+    }
+  });
+
+  data.roles.forEach(function (role) {
+    roles[role.id] = role;
+    var option = document.createElement("option");
+    option.value = role.id;
+    option.textContent = role.label;
+    roleSelect.appendChild(option);
+  });
+  roleSelect.addEventListener("change", function () {
+    var role = roles[roleSelect.value];
+    show(find(role.id, role.screens[0].url));
+  });
+  screensNav.addEventListener("click", function (event) {
+    var link = event.target.closest("a");
+    if (!link) return;
+    event.preventDefault();
+    var role = split(current).role;
+    show(find(role, link.getAttribute("href").slice(role.length + 2)));
+  });
+
+  theme = recall("theme") || "auto";
+  themeSelect.value = theme;
+  themeSelect.addEventListener("change", function () {
+    theme = themeSelect.value;
+    remember("theme", theme);
+    show(current, true);
+  });
+
+  var widthButtons = document.querySelectorAll("[data-width]");
+  function setWidth(width) {
+    document.body.classList.toggle("phone", width === "phone");
+    widthButtons.forEach(function (button) {
+      button.setAttribute("aria-pressed", String(button.getAttribute("data-width") === width));
+    });
+    remember("width", width);
+  }
+  widthButtons.forEach(function (button) {
+    button.addEventListener("click", function () { setWidth(button.getAttribute("data-width")); });
+  });
+  setWidth(recall("width") === "phone" ? "phone" : "desktop");
+
+  // Back and Forward, and a changed address (both fire popstate).
+  window.addEventListener("popstate", function () { show(fromHash(), true); });
+  var first = data.roles[0];
+  show(fromHash() || find(first.id, first.screens[0].url), true);
+})();
+</script>
+</body>
+</html>

@@ -97,12 +97,24 @@ To try email-in without Microsoft 365, feed it an email:
 ### Try it with demo data
 
 ```powershell
-python manage.py seed_demo          # 8 fictional people and 8 tickets
+python manage.py seed_demo          # 12 fictional people and 13 tickets
 python manage.py seed_demo --clear  # remove them again
 ```
 
 Demo people can't sign in. Sign in yourself with the **Agent** or **Admin**
 role to see their tickets in the queue.
+
+### The clickable mockup
+
+[mockups/ui-mockup.html](mockups/ui-mockup.html) shows the app without
+installing it: open it in any browser and click through it as a requester, an
+IT agent, a Mechanics agent or an admin, in light or dark, at desktop or phone
+width. It's the real pages with the demo data, and nothing is sent or saved.
+After a release, rebuild it from a development database with demo data:
+
+```powershell
+python manage.py build_mockup
+```
 
 ### Run the tests
 
@@ -150,7 +162,7 @@ deploy/caddy/      The HTTPS proxy's configuration (production, with compose.pro
 scripts/           backup.sh and restore.sh for the server; release_body.py
 docs/              Setup and deployment guides, and backlog.md (the to-do list)
 docs/releases/     Release notes and screenshots for every version
-mockups/           The clickable UI mockup the design is based on
+mockups/           The clickable mockup, built from the app's pages (manage.py build_mockup)
 ```
 
 Built with Django 6.1, MSAL (Microsoft's auth library), PostgreSQL and WhiteNoise.

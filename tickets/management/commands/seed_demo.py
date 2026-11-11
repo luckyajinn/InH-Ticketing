@@ -17,21 +17,26 @@ from django.db import transaction
 from django.utils import timezone
 
 from accounts.models import User
+from core.departments import Department
 from tickets import services
 from tickets.models import Category, Comment, Ticket, TicketEvent
 
 PREFIX = "demo-"
 
+# key: (name, email name, role, department). Agents with no department work for IT.
 PEOPLE = {
-    "sam": ("Sam Patel", "sam.patel", User.Role.AGENT),
-    "alex": ("Alex Morgan", "alex.morgan", User.Role.AGENT),
-    "dana": ("Dana Whitfield", "dana.whitfield", User.Role.REQUESTER),
-    "tom": ("Tom Reyes", "tom.reyes", User.Role.REQUESTER),
-    "elena": ("Elena Brooks", "elena.brooks", User.Role.REQUESTER),
-    "marcus": ("Marcus Delaney", "marcus.delaney", User.Role.REQUESTER),
-    "owen": ("Owen Castillo", "owen.castillo", User.Role.REQUESTER),
-    "aisha": ("Aisha Kamara", "aisha.kamara", User.Role.REQUESTER),
-    "morgan": ("Morgan Lee", "morgan.lee", User.Role.REQUESTER),  # Owen's manager
+    "sam": ("Sam Patel", "sam.patel", User.Role.AGENT, ""),
+    "alex": ("Alex Morgan", "alex.morgan", User.Role.AGENT, ""),
+    "mo": ("Mo Okafor", "mo.okafor", User.Role.AGENT, Department.MECHANICS),
+    "grace": ("Grace Liu", "grace.liu", User.Role.AGENT, Department.CLEANING),
+    "riley": ("Riley Chen", "riley.chen", User.Role.ADMIN, ""),
+    "dana": ("Dana Whitfield", "dana.whitfield", User.Role.REQUESTER, ""),
+    "tom": ("Tom Reyes", "tom.reyes", User.Role.REQUESTER, ""),
+    "elena": ("Elena Brooks", "elena.brooks", User.Role.REQUESTER, ""),
+    "marcus": ("Marcus Delaney", "marcus.delaney", User.Role.REQUESTER, ""),
+    "owen": ("Owen Castillo", "owen.castillo", User.Role.REQUESTER, ""),
+    "aisha": ("Aisha Kamara", "aisha.kamara", User.Role.REQUESTER, ""),
+    "morgan": ("Morgan Lee", "morgan.lee", User.Role.REQUESTER, ""),  # Owen's manager
 }
 
 # (requester, category, subject, description, blocking, hours ago)
@@ -63,6 +68,10 @@ TICKETS = [
     ("aisha", "Cleaning & sanitization", "Spill or mess that needs cleaning up",
      "A box of cleaning solution split in warehouse aisle 4, by the loading door. "
      "It's slippery, so I've put a cone out.", True, 0.6),
+    # v0.9.1: logged as IT's, but it's Mechanics' (IT asks an admin to move it).
+    ("owen", "Hardware", "Line 1 conveyor screen keeps freezing",
+     "The touch screen on the Line 1 conveyor freezes every hour or so and the belt stops "
+     "until someone restarts it.", False, 7),
 ]
 
 
@@ -125,10 +134,12 @@ class Command(BaseCommand):
             raise CommandError("Demo data is already there. Run with --clear first to start over.")
 
         people = {}
-        for key, (name, email_name, role) in PEOPLE.items():
+        for key, (name, email_name, role, department) in PEOPLE.items():
+            is_admin = role == User.Role.ADMIN  # as Entra sign-in sets them
             people[key] = User.objects.create(
                 username=f"{PREFIX}{key}", display_name=name,
-                email=f"{email_name}@example.invalid", role=role,
+                email=f"{email_name}@example.invalid", role=role, department=department,
+                is_staff=is_admin, is_superuser=is_admin,
             )
             people[key].set_unusable_password()
             people[key].save()
@@ -146,8 +157,8 @@ class Command(BaseCommand):
             created.append(ticket)
 
         sam, alex = people["sam"], people["alex"]
-        # The printer, Power BI, Mechanics and C&S tickets are left New and unassigned on purpose.
-        vpn, outlook, mfa, laptop, finance, printer, teams, _powerbi, _mechanics, _cleaning = created
+        # The printer and Power BI tickets are left New and unassigned on purpose.
+        vpn, outlook, mfa, laptop, finance, printer, teams, _powerbi, filler, spill, conveyor = created
         # The printer ticket arrived by email to the help-desk mailbox.
         Ticket.objects.filter(pk=printer.pk).update(source=Ticket.Source.EMAIL)
 
@@ -202,6 +213,24 @@ class Command(BaseCommand):
 
         # Resolved a couple of days ago, so the requester page shows its close date.
         Ticket.objects.filter(pk=teams.pk).update(resolved_at=now - timedelta(days=2))
+
+        # v0.9.1: each department works its own tickets.
+        mo, grace = people["mo"], people["grace"]
+        services.update_ticket(ticket=filler, actor=mo, assignee=mo, priority=Ticket.Priority.HIGH)
+        services.add_comment(
+            ticket=filler, author=mo,
+            body="Thanks Marcus. I'll replace the nozzle seal on Line 2 after the 10:00 break. "
+                 "Keep it at the slower speed until then.",
+        )
+        services.add_comment(ticket=filler, author=mo, is_internal=True,
+                             body="Seal kit is in stores, bin M-14. Check the head bearing while it's open.")
+        services.update_ticket(ticket=spill, actor=grace, assignee=grace)
+        services.add_comment(ticket=spill, author=grace,
+                             body="On my way with the spill kit. Please keep people out of aisle 4 until it's dry.")
+        # Logged as IT's, but it's the conveyor: Alex asks an admin to move it to Mechanics.
+        services.update_ticket(ticket=conveyor, actor=alex, assignee=alex)
+        services.request_move(ticket=conveyor, actor=alex, department=Department.MECHANICS,
+                              reason="The screen is fine; it's the conveyor's controller restarting. That's Mechanics.")
 
         # A closed ticket with a follow-up linked to it.
         badge = self._closed_with_follow_up(people, categories["Access"], now)

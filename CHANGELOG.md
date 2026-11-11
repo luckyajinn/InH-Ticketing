@@ -3,6 +3,17 @@
 All notable changes to InH-Ticketing. Versions follow [Semantic Versioning](https://semver.org).
 Each version also has illustrated release notes in [docs/releases](docs/releases/README.md).
 
+## [Unreleased]
+
+### Changed
+- **The clickable mockup** (`mockups/ui-mockup.html`) is now built from the
+  app's own pages with the demo data (`python manage.py build_mockup`), so it
+  matches the current version: requester, IT agent, Mechanics agent and admin
+  screens, light and dark, desktop and phone width. The v0.1.0 design mockup
+  it replaces is in git history.
+- **Demo data** (`seed_demo`) adds a Mechanics agent, a Cleaning & sanitization
+  agent, an admin, and a ticket with a request to move it to Mechanics.
+
 ## [0.9.1] - 2026-11-10
 
 Before go-live: departments, the archive, removing passwords, and the safety
