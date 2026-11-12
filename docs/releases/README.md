@@ -4,6 +4,7 @@ One page per version, each with screenshots of what changed. Newest first.
 
 | Version | What | Notes |
 |---|---|---|
+| v0.10.4 | Review fixes: password hints, a length limit; the monthly update check | [v0.10.4.md](v0.10.4.md) |
 | v0.10.3 | The worker's heartbeat: Reports and Docker say for sure that it's running | [v0.10.3.md](v0.10.3.md) |
 | v0.10.2 | An email when staff close a ticket | [v0.10.2.md](v0.10.2.md) |
 | v0.10.1 | Category lists follow the department; IT's common requests; no phones or restore drill | [v0.10.1.md](v0.10.1.md) |

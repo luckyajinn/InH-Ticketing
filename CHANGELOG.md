@@ -5,6 +5,26 @@ Each version also has illustrated release notes in [docs/releases](docs/releases
 A letter after a version, such as 0.10.0d, marks a documentation-only update:
 the app is the same as that version.
 
+## [0.10.4] *(unreleased)*
+
+Review fixes and the monthly update check. [Release notes](docs/releases/v0.10.4.md).
+
+### Fixed
+- The password check's hints never show an earlier password: one close
+  before another is masked too ("…password ••••••• new password S•••••••").
+- A description or reply over 20,000 characters gets a clear message and
+  stays in the box, instead of a very long paste going through. Email-in
+  already cut emails there; both now use the same limit.
+
+### Added
+- `scripts/check_updates.py`: known security issues in the installed
+  packages (from PyPI), newer releases, and Caddy's latest release.
+- Deployment guide section 11: the monthly check, and refreshing PostgreSQL
+  and the Python base image, which updating the app never does.
+
+### Changed
+- Email setup: on the server, a `.env` change needs `up -d`.
+
 ## [0.10.3] *(unreleased)*
 
 The worker's heartbeat. [Release notes](docs/releases/v0.10.3.md).

@@ -58,7 +58,11 @@ Before go-live (by 2027-01-11):
   - [ ] Delete archived tickets when their two years are up (`ARCHIVE_KEEP_DAYS`).
         Reports' trends lose them then: keep monthly totals first.
 - [x] ~~Quarterly review of who holds the Agent and Admin roles.~~ *Not needed (decided 2026-11-09).*
-- [ ] Monthly check of dependencies for security updates.
+- [x] Monthly check of dependencies for security updates. *(v0.10.4:
+      `scripts/check_updates.py` and refreshing the images, deployment.md
+      section 11. Checked 2026-11-11: no known security issues; Caddy 2.11.9
+      is current; gunicorn 27.0 is out, not a security fix, so not bumped.
+      Next check: mid-December.)*
 - [ ] Off-server backup copy (also under v0.6.0). *(2026-11-11: moved to after
       v1.0.0; where the copies go is undecided.)*
 - [x] ~~One tested restore.~~ *Not planned (decided 2026-11-11). The risk
@@ -174,10 +178,16 @@ Still from the review, before v1.0.0:
 - [x] **Start-up order:** the worker waits for the web container
       (`condition: service_healthy`). *(v0.9.1.)*
 - [x] The web manifest's content type (`application/manifest+json`). *(v0.9.1.)*
-- [ ] *(Later)* A Content-Security-Policy header; password hints that never
-      show an earlier password; matching first sign-ins on
-      `preferred_username`; a length limit on descriptions and replies;
-      rolling back 0005 shouldn't delete an admin's own "Mechanics" category.
+- [ ] *(Later)* A Content-Security-Policy header. First move the queue's 3
+      inline `onchange` handlers into `app.js`; test sign-in and sign-out
+      through Microsoft on the server, as a wrong policy blocks them.
+- [ ] *(To decide)* Matching a first sign-in to an account made by email on
+      `preferred_username` when the token has no `email` claim.
+- [x] Password hints never show an earlier password. *(v0.10.4.)*
+- [x] A length limit on descriptions and replies: 20,000 characters, as for
+      email. *(v0.10.4.)*
+- [x] ~~Rolling back 0005 shouldn't delete an admin's own "Mechanics"
+      category.~~ *No longer applies: since v0.10.0, 0005 adds no categories.*
 
 ## v0.8.4 (released 2026-11-10: admin look, common requests)
 

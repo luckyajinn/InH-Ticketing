@@ -22,7 +22,7 @@ what the person chose. It never stores the text that matched.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 # ---------------------------------------------------------------------------
 # Detection
@@ -130,10 +130,10 @@ class Finding:
     hint: str  # the words before it, with the password itself masked
 
 
-def _mask(text: str, start: int, end: int) -> str:
+def _mask(text: str, start: int, end: int, first: str = "") -> str:
     """'...my password is S•••••••' The same number of dots whatever the length."""
     before = " ".join(text[max(0, start - 40):start].split()[-4:])
-    masked = text[start] + "•" * 7
+    masked = (first or text[start]) + "•" * 7
     sep = " " if before and text[start - 1].isspace() else ""
     return f"…{before}{sep}{masked}" if before else masked
 
@@ -272,7 +272,16 @@ def find(text: str) -> list[Finding]:
         if kept and finding.start < kept[-1].end:
             continue
         kept.append(finding)
-    return kept
+    if len(kept) < 2:
+        return kept
+    # A hint shows the words before its password, which can hold an earlier
+    # one ("old password Hunter22! new password S•••••••"): mask those too.
+    hidden = list(text)
+    for finding in kept:
+        hidden[finding.start:finding.end] = "•" * (finding.end - finding.start)
+    hidden = "".join(hidden)
+    return [replace(f, hint=re.sub("•+", "•" * 7, _mask(hidden, f.start, f.end, first=text[f.start])))
+            for f in kept]
 
 
 FIELD_NAMES = {"subject": "the subject", "description": "the description", "body": "your message"}

@@ -133,7 +133,9 @@ EMAIL_BACKEND=graph
 HELPDESK_MAILBOX=helpdesk-test@example.com
 ```
 
-Restart the server and the worker. Create a test ticket for yourself: the
+Restart the server and the worker (on the server: `docker compose -f compose.yaml
+-f compose.prod.yaml up -d`, as a restart doesn't read `.env` again). Create a
+test ticket for yourself: the
 worker should print `Emails: 1 sent`, the receipt should arrive in your inbox,
 and a copy should be in the shared mailbox's **Sent Items**.
 
@@ -146,7 +148,7 @@ The error appears in the worker's terminal and on the email in the admin site.
 | `Graph returned 403: ErrorAccessDenied` | The app isn't allowed to send as that mailbox, or the permission hasn't taken effect yet | Re-run step 4 of 3c; wait an hour |
 | `Couldn't get a Graph token: invalid_client` | Client secret wrong or expired | Same fix as for sign-in |
 | `Graph returned 404` / `MailboxNotEnabledForRESTAPI` | The address isn't an Exchange Online mailbox | Check `HELPDESK_MAILBOX` |
-| Email stays *Pending* | The worker isn't running | Start `manage.py run_worker` |
+| Email stays *Pending* | The worker isn't running | Start `manage.py run_worker`. On the server, Reports and `docker compose ps` say so (`worker` `(unhealthy)`) |
 
 ## On the server (Docker)
 
@@ -231,7 +233,8 @@ HELPDESK_MAILBOX=helpdesk-test@example.com
 INBOUND_ALLOWED_DOMAINS=example.com
 ```
 
-Restart the worker. It should print `Email-in: reading helpdesk-test@… every 60s`.
+Restart the worker (on the server: `docker compose … up -d`). It should print
+`Email-in: reading helpdesk-test@… every 60s`.
 Email the test mailbox from your own account: within a minute it shows up in the
 queue, and you get a receipt.
 

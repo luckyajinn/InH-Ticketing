@@ -226,7 +226,7 @@ Clone, and check out the release you're installing:
 git clone git@github.com:luckyajinn/InH-Ticketing.git /srv/inh-ticketing/app
 cd /srv/inh-ticketing/app
 git tag --list           # the releases
-git checkout v0.10.3     # the newest release in that list; "detached HEAD" is expected
+git checkout v0.10.4     # the newest release in that list; "detached HEAD" is expected
 file scripts/backup.sh   # "POSIX shell script ... executable", and no "CRLF"
 ```
 
@@ -608,7 +608,7 @@ install.)*
    the same emails.
 2. **Build the new server:** sections 1 and 2. Then open the backup's
    `manifest.txt` and check out the tag on its "App version" line (the `git:`
-   part), e.g. `git checkout v0.10.3`.
+   part), e.g. `git checkout v0.10.4`.
 3. **A new certificate** for the same name: section 3. The old private key
    wasn't backed up.
 4. **The `.env`** from the password vault: section 5, with the same
@@ -643,8 +643,8 @@ they say if there are new `.env` settings or anything else to do.
 **Skipping versions** is fine: one update applies every migration in between,
 in order. But read the Upgrading section of **every** release you skip, and do
 each one's "Before installing" steps first. For example, from v0.8.3 to
-v0.10.3, read v0.8.4, v0.9.0, v0.9.1 (Entra roles to create first), v0.10.0,
-v0.10.1, v0.10.2 and v0.10.3.
+v0.10.4, read v0.8.4, v0.9.0, v0.9.1 (Entra roles to create first), and each
+v0.10.x.
 A version ending in a letter, such as v0.10.0d, changes only the documents:
 there's nothing extra to do for it.
 
@@ -652,7 +652,7 @@ Set `NEW` to the version you're installing, then run the rest as it is:
 
 ```bash
 cd /srv/inh-ticketing/app
-NEW=v0.10.3                                # the version you're installing
+NEW=v0.10.4                                # the version you're installing
 OLD=$(git describe --tags); echo "$OLD"    # the current version: write it down, rolling back needs it
 ./scripts/backup.sh before-$NEW            # always, before updating
 git fetch --tags
@@ -750,7 +750,38 @@ Monthly, about ten minutes:
 | Certificate expiry | `openssl x509 -in /srv/inh-ticketing/certs/fullchain.pem -noout -enddate` |
 | Client secret expiry | Entra → App registrations → InH-Ticketing → Certificates & secrets |
 | Updates | `sudo apt update && sudo apt upgrade`; reboot if `/var/run/reboot-required` exists |
-| Caddy | A newer 2.x patch release? Change the tag in `compose.prod.yaml` through a normal release |
+| The app's parts: known security issues | `docker compose -f compose.yaml -f compose.prod.yaml exec web python scripts/check_updates.py`. "Known security issues: none." is the all-clear. If it lists one, a new release of the app fixes it (send the output to whoever maintains the app) |
+| PostgreSQL and the Python base image | Refresh them: the steps below |
+| Caddy | The same script says if there's a newer release. Change the tag in `compose.prod.yaml` through a normal release |
+| The worker | `ps` shows `worker` as `(healthy)`, and Reports → *Email and safety checks* says "The worker is running" |
+
+### Refreshing the images (monthly)
+
+Updating the app (section 10) never downloads a newer PostgreSQL or Python
+base image: Docker keeps the ones it got on the first install. Their
+security fixes arrive only when you refresh them. Out of hours, as it
+restarts everything for a minute:
+
+```bash
+cd /srv/inh-ticketing/app
+./scripts/backup.sh before-refresh
+docker compose -f compose.yaml -f compose.prod.yaml pull db
+docker compose -f compose.yaml -f compose.prod.yaml build --pull
+docker compose -f compose.yaml -f compose.prod.yaml up -d
+docker compose -f compose.yaml -f compose.prod.yaml ps
+```
+
+- `pull db` gets the newest PostgreSQL 17 (17.x: the same data format, so
+  there's nothing to convert).
+- `build --pull` gets the newest `python:3.13-slim` and installs the Python
+  packages again, each at the newest release its pin in `requirements.txt`
+  allows (the security fixes; never a bigger jump).
+- `up -d` replaces `db`, `web` and `worker` with the new images. The app's
+  version doesn't change.
+
+Then repeat checks 1, 3, 7 and 11 from section 7, and run `check_updates.py`
+again: its "A rebuild picks up" line should be gone. Old images stay on disk
+until `docker image prune -f`.
 
 ## 12. Troubleshooting
 

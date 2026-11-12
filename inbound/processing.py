@@ -37,11 +37,11 @@ from inbound.models import InboundEmail
 from inbound.text import clean_subject, find_ticket_number, is_automatic, strip_quoted
 from notifications import graph
 from tickets import password_guard, services
-from tickets.models import Category, Ticket
+from tickets.models import TEXT_MAX_CHARS, Category, Ticket
 
 logger = logging.getLogger(__name__)
 Outcome = InboundEmail.Outcome
-MAX_BODY = 20_000
+MAX_BODY = TEXT_MAX_CHARS
 
 
 @dataclass

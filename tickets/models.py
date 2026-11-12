@@ -23,6 +23,10 @@ from django.urls import reverse
 
 from core import departments
 
+# The longest description or reply, on the web (a clear message) and by email
+# (cut short there). A long log belongs in an attached file.
+TEXT_MAX_CHARS = 20_000
+
 
 class Department(models.Model):
     """

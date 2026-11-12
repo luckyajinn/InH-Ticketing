@@ -77,6 +77,9 @@ Every change is written to the ticket's history: who, what, when.
   today; admins edit the lists (one per line).
 - **Attachments:** up to 5 files, 10 MB each (screenshots, PDFs, Office files,
   text, zip), dragged in or browsed.
+- **Length:** a description or reply holds up to 20,000 characters (an
+  emailed one is cut there). Over that, the page says so: attach a long log
+  as a file.
 - **"This is blocking my work"** flag, used when setting priority.
 - A notice on the form: what the app is for, product complaints go to QA,
   and no passwords.
@@ -84,7 +87,8 @@ Every change is written to the ticket's history: who, what, when.
 ### Password check
 - Before a request, reply or internal note is sent, the page asks the server
   whether the text might contain a password, PIN or code.
-- If so, a warning shows where (with the password itself masked). The person
+- If so, a warning shows where (with the password itself masked, and any
+  other password in the words shown). The person
   takes it out, or ticks "It isn't a password, or I need to send it anyway".
 - It leans towards false alarms on purpose, but stays quiet on everyday
   wording ("my password expired", "error code 1603", file names, "the pin
@@ -233,6 +237,7 @@ A load test on 2026-11-09 (app held to 2 CPUs and 4 GB): responses averaged
 | Wed Nov 11 | v0.10.1: category lists follow the department; IT's common requests (done) |
 | Wed Nov 11 | v0.10.2: an email when staff close a ticket |
 | Wed Nov 11 | v0.10.3: the worker's heartbeat in Reports and Docker |
+| Wed Nov 11 | v0.10.4: review fixes (password hints, a length limit) and the monthly update check |
 | After the pilot's testing | v0.10.x: pilot fixes |
 | Fri Nov 13 (or Mon 16) | v1.0.0: everything for IT finalized, a mailbox per department, server checks (the off-server backup follows after v1.0.0) |
 | Mon–Tue Nov 16–17 | v1.1.0 (stretch): reply templates, response targets, Teams alerts |

@@ -8,9 +8,18 @@ from django.template.defaultfilters import filesizeformat
 from accounts.models import User
 from core import departments
 from tickets import password_guard
-from tickets.models import Category, Ticket
+from tickets.models import TEXT_MAX_CHARS, Category, Ticket
 
 POSSIBLE_PASSWORD = "possible_password"
+
+
+def not_too_long(value: str) -> None:
+    """Descriptions and replies: a clear message, rather than the browser cutting a paste short."""
+    if len(value) > TEXT_MAX_CHARS:
+        raise forms.ValidationError(
+            f"That's {len(value):,} characters, over the {TEXT_MAX_CHARS:,} limit. "
+            "Attach a long log or list as a file instead."
+        )
 
 
 class PasswordCheckMixin:
@@ -121,6 +130,7 @@ class NewTicketForm(PasswordCheckMixin, forms.Form):
     )
     description = forms.CharField(
         error_messages={"required": "Describe the problem or what you need."},
+        validators=[not_too_long],
         widget=forms.Textarea(attrs={"class": "textarea", "rows": 6}),
     )
     is_blocking = forms.BooleanField(required=False)
@@ -184,6 +194,7 @@ class ReplyForm(PasswordCheckMixin, forms.Form):
 
     body = forms.CharField(
         error_messages={"required": "Write a message first."},
+        validators=[not_too_long],
         widget=forms.Textarea(attrs={"rows": 5}),
     )
     visibility = forms.ChoiceField(choices=VISIBILITY_CHOICES, required=False, initial="public")

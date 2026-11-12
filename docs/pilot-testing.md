@@ -1,10 +1,10 @@
 # Pilot testing: try to break it
 
-From **2026-11-10**, two testers try to break InH-Ticketing (now v0.10.3) before
+From **2026-11-10**, two testers try to break InH-Ticketing (now v0.10.4) before
 everything is finalized on **2026-11-20** (see [roadmap.md](roadmap.md)).
 Fixes ship as v0.10.x updates once the pilot's testing is done.
 
-Test on the server once it runs v0.10.3: departments, the archive, the
+Test on the server once it runs v0.10.4: departments, the archive, the
 password removal tool, Reports, the closed email and the worker's heartbeat
 all arrived after the pilot started.
 
@@ -36,6 +36,7 @@ then swap. Use the test shared mailbox for email.
 - [ ] Ordinary IT, Mechanics and cleaning wording should **not** warn ("my password expired", "error code 1603", "Office365 won't open", "the pin is bent", "lot code 23081"). Report every false alarm and every miss.
 - [ ] Tick "send anyway": IT sees *Possible password* in the history, and Admin, *Password warnings* has a row. The requester sees neither.
 - [ ] Take the password out after a warning and send: the row says *Removed before sending*.
+- [ ] Two made-up passwords close together ("old password Hunter22! new password Summer24"): neither shows in the warning's hints (v0.10.4).
 - [ ] Attach a file, trigger the warning, then send: the file is still attached.
 - [ ] Email the test mailbox with a made-up password: the ticket gets a *Possible password* line.
 
@@ -45,6 +46,7 @@ then swap. Use the test shared mailbox for email.
 - [ ] An out-of-office reply is ignored, with no email loop.
 - [ ] The CodeTwo signature folds under *Show email signature* (check #1071 too), and nothing you needed is folded away.
 - [ ] A file over 10 MB, a `.exe`, and more than 5 files each get a clear message.
+- [ ] Paste more than 20,000 characters into a description or a reply: a clear message, and the text stays in the box (v0.10.4).
 - [ ] An email arrives for each step: received, IT replied, assigned, waiting, resolved (with the close date), closed by staff.
 - [ ] **Fake "IT" email (IT, once):** from outside the company, send the test mailbox one reply to a ticket (keep `[#1234]` in the subject) with an IT agent's address as the sender. Exchange should reject or junk it. If it arrives anyway, the ticket shows it as an internal note saying Exchange couldn't confirm the sender, never as a reply the requester sees. Then reply to a notification from an IT agent's own mailbox: that arrives as a normal reply.
 

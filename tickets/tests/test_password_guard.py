@@ -119,6 +119,19 @@ class DetectionTests(SimpleTestCase):
         self.assertNotIn("ummer", finding.hint)
         self.assertIn("my password is S•••••••", finding.hint)
 
+    def test_hint_never_shows_an_earlier_password(self):
+        text = "old password Hunter22! new password Summer24"
+        first, second = password_guard.find(text)
+        self.assertEqual((text[first.start:first.end], text[second.start:second.end]), ("Hunter22!", "Summer24"))
+        self.assertEqual(second.hint, "…password ••••••• new password S•••••••")
+        for finding in (first, second):
+            self.assertNotIn("unter22", finding.hint)
+            self.assertNotIn("ummer24", finding.hint)
+
+    def test_three_passwords_in_a_row(self):
+        hints = [f.hint for f in password_guard.find("Tried Hunter22! and Summer2024 and Winter2025")]
+        self.assertEqual(hints, ["…Tried H•••••••", "…Tried ••••••• and S•••••••", "…••••••• and ••••••• and W•••••••"])
+
     def test_mask_length_is_fixed(self):
         short = password_guard.find("pw: abc1")[0].hint
         long = password_guard.find("pw: abcdefghijklmnop1")[0].hint

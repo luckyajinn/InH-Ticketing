@@ -5,6 +5,7 @@ from django.test import override_settings
 from accounts.models import User
 from notifications.models import OutboundEmail
 from tickets import services
+from tickets.examples import add_example_departments
 from tickets.models import Ticket
 from tickets.tests.helpers import MediaTestCase, make_ticket, make_user
 
@@ -93,6 +94,17 @@ class WhoGetsWhatTests(MediaTestCase):
         [email] = queued(kind="closed")
         self.assertEqual(email.to, self.requester.email)
         self.assertIn("Jo Admin closed", email.body_text)
+
+    def test_close_by_a_department_agent_emails_requester(self):
+        mechanics = add_example_departments()["mechanics"]
+        mechanic = make_user("Mo Mechanic", User.Role.AGENT)
+        User.objects.filter(pk=mechanic.pk).update(department="mechanics")
+        mechanic.refresh_from_db()
+        ticket = make_ticket(self.requester, subject="Leak on line 2", category=mechanics)
+        services.update_ticket(ticket=ticket, actor=mechanic, status=Status.CLOSED)
+        [email] = queued(kind="closed")
+        self.assertEqual(email.to, self.requester.email)
+        self.assertIn("Mo Mechanic closed", email.body_text)
 
     def test_resolve_then_close_sends_both(self):
         services.update_ticket(ticket=self.ticket, actor=self.agent, status=Status.RESOLVED)
