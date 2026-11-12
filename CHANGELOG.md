@@ -5,6 +5,16 @@ Each version also has illustrated release notes in [docs/releases](docs/releases
 A letter after a version, such as 0.10.0d, marks a documentation-only update:
 the app is the same as that version.
 
+## 0.10.4a - 2026-11-12
+
+Documentation only: the app is the same as 0.10.4. No release of its own.
+
+### Changed
+- Entra setup, section 3: IT's page in the admin site is read-only, and where
+  each of IT's settings is changed instead (its agents in Entra, its alerts
+  and mailbox in `.env`, its categories in the admin site). The deployment
+  guide (section 5) and the overview (section 3) point to it.
+
 ## [0.10.4] - 2026-11-12
 
 Review fixes and the monthly update check. [Release notes](docs/releases/v0.10.4.md).

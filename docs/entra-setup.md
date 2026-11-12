@@ -69,6 +69,22 @@ the admin site); an admin works them all. **Never give another team the plain
 one is `Agent`, otherwise for the department added first. A role change
 applies at the person's next sign-in.
 
+**IT's page is read-only.** Under **Tickets → Departments**, IT's page shows
+its settings, but nobody can edit them there, admins included, and IT can't
+be deleted. They're set elsewhere:
+
+| IT's | Where | Setting |
+|---|---|---|
+| Agents | Entra: assign IT's people or group the `Agent` role (section 5) | `ENTRA_ROLE_AGENT` in `.env`, only to use another value |
+| New-ticket alerts | `.env` | `IT_NOTIFY_EMAIL` ([email-setup.md](email-setup.md)) |
+| Mailbox | `.env` | `HELPDESK_MAILBOX` ([email-setup.md](email-setup.md)) |
+| Categories and their common requests | The admin site, **Tickets → Categories** | Each category's department is IT |
+| Name, key and colour in Reports | Fixed | |
+
+On the server, a change to `.env` applies after
+`docker compose -f compose.yaml -f compose.prod.yaml up -d`. A plain
+`restart` doesn't read `.env` again.
+
 ## 4. Grant consent (optional, avoids a prompt)
 
 **API permissions** already lists *Microsoft Graph → User.Read*. Select

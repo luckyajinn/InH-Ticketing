@@ -33,6 +33,9 @@ It runs on the company's own server, inside the company network.
 | **Admin** | IT admins | Every department's tickets, moving a ticket between departments, removing a pasted password or file, Reports and the admin site (departments, categories, common requests, the password audit trail) |
 
 Roles come from Microsoft 365 (Entra app roles), checked at every sign-in.
+IT is built in: its role, alert address and mailbox are set on the server,
+so its page in the admin site is read-only. Admins add and edit the other
+departments there ([entra-setup.md](entra-setup.md), section 3).
 An agent never sees another department's tickets or internal notes. Staff ask
 an admin to move a ticket that's in the wrong department; the admin checks
 with the other team first.

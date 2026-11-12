@@ -418,6 +418,11 @@ Things to know:
 - **`POSTGRES_PASSWORD` is only used when the database is first created.**
   Changing it in `.env` later doesn't change the database's password: the
   app then can't connect (see section 12).
+- **IT's settings stay here.** `ENTRA_ROLE_AGENT`, `IT_NOTIFY_EMAIL` and
+  `HELPDESK_MAILBOX` are IT's role, alert address and mailbox. The admin site
+  shows them on IT's department page, read-only. The other departments'
+  roles and alert addresses are edited in the admin site instead
+  ([entra-setup.md](entra-setup.md), section 3).
 - Keep a copy of the `.env` values in IT's password vault. `.env` isn't in the backups.
 
 The HTTPS settings (`DJANGO_SECURE_SSL_REDIRECT`, `DJANGO_SECURE_HSTS_SECONDS`)
