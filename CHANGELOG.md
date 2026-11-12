@@ -5,7 +5,7 @@ Each version also has illustrated release notes in [docs/releases](docs/releases
 A letter after a version, such as 0.10.0d, marks a documentation-only update:
 the app is the same as that version.
 
-## [0.10.4] *(unreleased)*
+## [0.10.4] - 2026-11-12
 
 Review fixes and the monthly update check. [Release notes](docs/releases/v0.10.4.md).
 
@@ -25,7 +25,7 @@ Review fixes and the monthly update check. [Release notes](docs/releases/v0.10.4
 ### Changed
 - Email setup: on the server, a `.env` change needs `up -d`.
 
-## [0.10.3] *(unreleased)*
+## 0.10.3 - 2026-11-11 *(no release of its own: installed with 0.10.4)*
 
 The worker's heartbeat. [Release notes](docs/releases/v0.10.3.md).
 
@@ -42,7 +42,7 @@ The worker's heartbeat. [Release notes](docs/releases/v0.10.3.md).
 ### Fixed
 - email-setup.md: a change to `.env` needs `up -d`, not a restart.
 
-## [0.10.2] *(unreleased)*
+## 0.10.2 - 2026-11-11 *(no release of its own: installed with 0.10.4)*
 
 An email when staff close a ticket. [Release notes](docs/releases/v0.10.2.md).
 
@@ -545,6 +545,7 @@ Milestone 1: skeleton and Microsoft 365 sign-in. [Release notes with screenshots
 - `/healthz` endpoint, Dockerfile and Docker Compose with PostgreSQL 17.
 - Entra setup guide (`docs/entra-setup.md`) and the UI mockup (`mockups/`).
 
+[0.10.4]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.10.4
 [0.10.1]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.10.1
 [0.10.0d]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.10.0d
 [0.10.0]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.10.0
