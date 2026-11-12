@@ -4,7 +4,7 @@ from django.contrib import admin
 
 from accounts.models import User
 from core import departments
-from core.admin import DepartmentListFilter, TicketDepartmentFilter
+from core.admin import DepartmentListFilter, LoggedChanges, TicketDepartmentFilter
 from tickets.models import Attachment, Category, Comment, Department, PasswordWarning, Ticket, TicketEvent
 
 ADD_STEPS = (
@@ -28,7 +28,7 @@ IT_NOTE = (
 
 
 @admin.register(Department)
-class DepartmentAdmin(admin.ModelAdmin):
+class DepartmentAdmin(LoggedChanges, admin.ModelAdmin):
     """The teams that work tickets. IT is built in; admins add the rest here."""
 
     list_display = ["name", "key", "role", "alerts", "colour_name", "categories", "agents"]
@@ -96,7 +96,7 @@ class CategoryForm(forms.ModelForm):
 
 
 @admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
+class CategoryAdmin(LoggedChanges, admin.ModelAdmin):
     form = CategoryForm
     list_display = ["name", "department_name", "hint", "is_active", "sort_order"]
     list_editable = ["hint", "is_active", "sort_order"]

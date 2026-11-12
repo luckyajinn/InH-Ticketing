@@ -307,6 +307,9 @@ td, th { border-bottom-color: var(--inh-border-soft); }
 /* No zebra stripes, like the app's queue; rows light up on hover instead. */
 #container tr:nth-child(odd), #container tr:nth-child(even) { background: var(--inh-surface); }
 .module th, .module td, #result_list th, #result_list td { padding: 11px 12px; vertical-align: middle; }
+/* A ticket's comments, history and files: each row starts with a title line
+   pinned to the top, so its cells start at the top too, below it. */
+.inline-group .tabular td { vertical-align: top; }
 #changelist table thead th { padding: 0; }
 #changelist table thead th .text > a, #changelist table thead th .text > span { padding: 11px 12px; }
 #result_list tbody tr { transition: background-color 150ms ease-out; }

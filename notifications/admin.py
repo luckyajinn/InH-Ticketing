@@ -1,4 +1,5 @@
 from django.contrib import admin, messages
+from django.contrib.admin.models import CHANGE, LogEntry
 from django.utils import timezone
 
 from notifications.models import OutboundEmail
@@ -23,7 +24,13 @@ class OutboundEmailAdmin(admin.ModelAdmin):
 
     @admin.action(description="Retry selected emails now")
     def retry_now(self, request, queryset):
-        count = queryset.exclude(status=OutboundEmail.Status.SENT).update(
+        emails = list(queryset.exclude(status=OutboundEmail.Status.SENT))
+        count = OutboundEmail.objects.filter(pk__in=[e.pk for e in emails]).update(
             status=OutboundEmail.Status.PENDING, attempts=0, next_attempt_at=timezone.now()
         )
+        if emails:
+            LogEntry.objects.log_actions(
+                user_id=request.user.pk, queryset=emails, action_flag=CHANGE,
+                change_message="Queued to send again (Retry selected emails now).",
+            )
         self.message_user(request, f"{count} email(s) queued again.", messages.SUCCESS)

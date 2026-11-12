@@ -5,6 +5,26 @@ Each version also has illustrated release notes in [docs/releases](docs/releases
 A letter after a version, such as 0.10.0d, marks a documentation-only update:
 the app is the same as that version.
 
+## [0.10.5] - 2026-11-12
+
+The admin log, and the admin's ticket page fixed. [Release notes](docs/releases/v0.10.5.md).
+
+### Added
+- The admin log, under Administration → Log entries: every change made in
+  the admin site, with who, when, and what each value was and became
+  (departments, categories and their common requests, people). Filters by
+  action, person, type and date, and a search. Read-only: nothing there can
+  be added, changed or deleted.
+- "Retry selected emails now" is logged, one entry per email.
+
+### Changed
+- People can't be deleted in the admin site: it would also delete their log
+  entries. Untick **Active** instead.
+
+### Fixed
+- The admin's ticket page: each comment, history line and file's title no
+  longer sits on top of its date and text.
+
 ## 0.10.4a - 2026-11-12
 
 Documentation only: the app is the same as 0.10.4. No release of its own.
@@ -555,6 +575,7 @@ Milestone 1: skeleton and Microsoft 365 sign-in. [Release notes with screenshots
 - `/healthz` endpoint, Dockerfile and Docker Compose with PostgreSQL 17.
 - Entra setup guide (`docs/entra-setup.md`) and the UI mockup (`mockups/`).
 
+[0.10.5]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.10.5
 [0.10.4]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.10.4
 [0.10.1]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.10.1
 [0.10.0d]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.10.0d

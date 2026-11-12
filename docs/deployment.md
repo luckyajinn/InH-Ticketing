@@ -226,7 +226,7 @@ Clone, and check out the release you're installing:
 git clone git@github.com:luckyajinn/InH-Ticketing.git /srv/inh-ticketing/app
 cd /srv/inh-ticketing/app
 git tag --list           # the releases
-git checkout v0.10.4     # the newest release in that list; "detached HEAD" is expected
+git checkout v0.10.5     # the newest release in that list; "detached HEAD" is expected
 file scripts/backup.sh   # "POSIX shell script ... executable", and no "CRLF"
 ```
 
@@ -613,7 +613,7 @@ install.)*
    the same emails.
 2. **Build the new server:** sections 1 and 2. Then open the backup's
    `manifest.txt` and check out the tag on its "App version" line (the `git:`
-   part), e.g. `git checkout v0.10.4`.
+   part), e.g. `git checkout v0.10.5`.
 3. **A new certificate** for the same name: section 3. The old private key
    wasn't backed up.
 4. **The `.env`** from the password vault: section 5, with the same
@@ -648,7 +648,7 @@ they say if there are new `.env` settings or anything else to do.
 **Skipping versions** is fine: one update applies every migration in between,
 in order. But read the Upgrading section of **every** release you skip, and do
 each one's "Before installing" steps first. For example, from v0.8.3 to
-v0.10.4, read v0.8.4, v0.9.0, v0.9.1 (Entra roles to create first), and each
+v0.10.5, read v0.8.4, v0.9.0, v0.9.1 (Entra roles to create first), and each
 v0.10.x.
 A version ending in a letter, such as v0.10.0d, changes only the documents:
 there's nothing extra to do for it.
@@ -657,7 +657,7 @@ Set `NEW` to the version you're installing, then run the rest as it is:
 
 ```bash
 cd /srv/inh-ticketing/app
-NEW=v0.10.4                                # the version you're installing
+NEW=v0.10.5                                # the version you're installing
 OLD=$(git describe --tags); echo "$OLD"    # the current version: write it down, rolling back needs it
 ./scripts/backup.sh before-$NEW            # always, before updating
 git fetch --tags

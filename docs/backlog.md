@@ -63,6 +63,9 @@ Before go-live (by 2027-01-11):
       section 11. Checked 2026-11-11: no known security issues; Caddy 2.11.9
       is current; gunicorn 27.0 is out, not a security fix, so not bumped.
       Next check: mid-December.)*
+- [x] An admin log: every change in the admin site, with the old and new
+      values, read-only; people can't be deleted there. *(v0.10.5, asked
+      2026-11-12.)*
 - [ ] Off-server backup copy (also under v0.6.0). *(2026-11-11: moved to after
       v1.0.0; where the copies go is undecided.)*
 - [x] ~~One tested restore.~~ *Not planned (decided 2026-11-11). The risk

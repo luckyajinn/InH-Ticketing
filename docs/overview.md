@@ -30,7 +30,7 @@ It runs on the company's own server, inside the company network.
 |---|---|---|
 | **Requester** | Any staff member (~300) | Send requests, follow their own, reply, mark resolved, reopen, start a follow-up |
 | **Agent** | IT staff (Entra role `Agent`), or another department's staff (its own role, set with the department in the admin site) | Everything a requester can, plus their own department's queue and tickets: internal notes, history, and setting status, priority, assignee and category within the department |
-| **Admin** | IT admins | Every department's tickets, moving a ticket between departments, removing a pasted password or file, Reports and the admin site (departments, categories, common requests, the password audit trail) |
+| **Admin** | IT admins | Every department's tickets, moving a ticket between departments, removing a pasted password or file, Reports and the admin site (departments, categories, common requests, the password audit trail, the admin log) |
 
 Roles come from Microsoft 365 (Entra app roles), checked at every sign-in.
 IT is built in: its role, alert address and mailbox are set on the server,
@@ -224,6 +224,8 @@ A load test on 2026-11-09 (app held to 2 CPUs and 4 GB): responses averaged
   trail without the text; admins can remove one that was pasted, from the
   ticket and the app's copies of sent emails.
 - **Nothing deleted:** tickets can't be deleted; closed ones are archived.
+- **Admin log:** every change in the admin site, with who, when, and the
+  old and new values; read-only. Ticket changes are in each ticket's history.
 - **Files:** always downloaded, never opened in the browser; stored under
   random names.
 - **No tracking:** only necessary cookies; not indexed by search engines.
@@ -241,6 +243,7 @@ A load test on 2026-11-09 (app held to 2 CPUs and 4 GB): responses averaged
 | Wed Nov 11 | v0.10.2: an email when staff close a ticket |
 | Wed Nov 11 | v0.10.3: the worker's heartbeat in Reports and Docker |
 | Wed Nov 11 | v0.10.4: review fixes (password hints, a length limit) and the monthly update check |
+| Thu Nov 12 | v0.10.5: the admin log; the admin's ticket page fixed |
 | After the pilot's testing | v0.10.x: pilot fixes |
 | Fri Nov 13 (or Mon 16) | v1.0.0: everything for IT finalized, a mailbox per department, server checks (the off-server backup follows after v1.0.0) |
 | Mon–Tue Nov 16–17 | v1.1.0 (stretch): reply templates, response targets, Teams alerts |

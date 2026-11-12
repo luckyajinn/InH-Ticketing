@@ -21,6 +21,8 @@ See the [release notes with screenshots](docs/releases/README.md) for how it loo
 - **Email in:** emails to the help-desk mailbox become tickets, and replies
   to our emails (with `[#1001]` in the subject) are added to the right ticket.
 - **History:** every change is logged with who made it and when.
+- **Admin log:** every change in the admin site (departments, categories,
+  people) is logged with what each value was and became. Read-only.
 - **Password check:** requests, replies and notes are checked before sending;
   anything that might be a password gets a warning, with "send anyway" for
   false alarms. Each warning outcome is kept in an audit trail (never the

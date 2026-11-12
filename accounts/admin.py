@@ -4,14 +4,14 @@ from django.contrib.auth.models import Group
 
 from accounts.models import User
 from core import departments
-from core.admin import DepartmentListFilter
+from core.admin import DepartmentListFilter, LoggedChanges
 
 # Roles come from Entra app roles, not Django groups, so hide Groups to avoid confusion.
 admin.site.unregister(Group)
 
 
 @admin.register(User)
-class InHUserAdmin(UserAdmin):
+class InHUserAdmin(LoggedChanges, UserAdmin):
     """People are managed in Entra. Here you can view them, or deactivate one locally."""
 
     list_display = ["__str__", "email", "role", "department_name", "is_active", "last_login"]
@@ -40,6 +40,10 @@ class InHUserAdmin(UserAdmin):
     add_fieldsets = []
 
     def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        # Deactivate instead: deleting someone would also delete their entries in the admin log.
         return False
 
     @admin.display(description="department", ordering="department")
