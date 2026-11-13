@@ -18,6 +18,7 @@ urlpatterns = [
     path("attachments/<int:pk>/<path:filename>", views.download_attachment, name="attachment"),
     # IT
     path("queue/", views.queue, name="queue"),
+    path("people/find/", views.find_people, name="find_people"),
     path("tickets/<int:number>/update/", views.update_properties, name="update"),
     path("tickets/<int:number>/assign-to-me/", views.assign_to_me, name="assign_to_me"),
     path("tickets/<int:number>/ask-to-move/", views.ask_to_move, name="ask_to_move"),

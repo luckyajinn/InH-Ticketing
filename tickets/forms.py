@@ -5,6 +5,7 @@ from django.conf import settings
 from django.db.models import Q
 from django.template.defaultfilters import filesizeformat
 
+from accounts import people
 from accounts.models import User
 from core import departments
 from tickets import password_guard
@@ -137,6 +138,27 @@ class NewTicketForm(PasswordCheckMixin, forms.Form):
     attachments = AttachmentsField()
     password_ack = forms.BooleanField(required=False)
     password_warned = forms.BooleanField(required=False)
+    # Staff only: open the request for someone else (at the desk, say). They
+    # find a person the app knows by name or email, or type the work email
+    # (and name) of someone it doesn't know yet. Ignored for everyone else.
+    for_whom = forms.ChoiceField(choices=[("me", "Me"), ("other", "Someone else")], required=False)
+    for_email = forms.EmailField(
+        max_length=254, required=False,
+        error_messages={"invalid": "Enter their full work email, like name@company.com."},
+    )
+    for_name = forms.CharField(max_length=120, required=False)
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+
+    @property
+    def can_open_for_others(self) -> bool:
+        return bool(self.user and self.user.is_agent)
+
+    @property
+    def for_someone_else(self) -> bool:
+        return self.can_open_for_others and (self["for_whom"].value() or "me") == "other"
 
     @property
     def quick_picks(self) -> list[tuple[Category, list[tuple[str, str]]]]:
@@ -182,8 +204,55 @@ class NewTicketForm(PasswordCheckMixin, forms.Form):
                 self.errors.pop("category", None)
         if not cleaned.get("subject"):
             self.add_error("subject", "Enter a subject.")
+        self._clean_requester(cleaned)
         self.check_for_passwords(cleaned)
         return cleaned
+
+    def _clean_requester(self, cleaned: dict) -> None:
+        """
+        Who the request is for. Sets cleaned["requester"] to a person the app
+        knows, or None with cleaned["new_person"] = (email, name) for one to
+        add when the request is sent (requester()).
+        """
+        cleaned["requester"], cleaned["new_person"] = self.user, None
+        if not self.for_someone_else:
+            return
+        email = (cleaned.get("for_email") or "").strip().lower()
+        if not email:
+            if "for_email" not in self.errors:
+                self.add_error("for_email", "Enter their work email, or type part of their name to find them.")
+            return
+        known = people.by_email(email)
+        if known is not None:
+            if not known.is_active:
+                self.add_error("for_email", f"{known}'s account is turned off. An admin can turn it back on in the admin site, under Users.")
+                return
+            cleaned["requester"] = known
+            if known.pk == self.user.pk:
+                return  # their own email: it's for them after all
+        else:
+            domains = people.work_domains(self.user)
+            if domains and email.rsplit("@", 1)[-1] not in domains:
+                self.add_error("for_email", "Use their work email: an address ending in " + " or ".join(f"@{d}" for d in domains) + ".")
+                return
+            name = " ".join((cleaned.get("for_name") or "").split())
+            if not name:
+                self.add_error("for_name", "Enter their name. They haven't used the help desk yet, so it doesn't know it.")
+                return
+            cleaned["requester"], cleaned["new_person"] = None, (email, name)
+        category = cleaned.get("category")
+        if category and not self.user.is_admin and category.department != self.user.agent_department:
+            self.add_error(
+                "category",
+                f"For someone else, choose one of {self.user.department_label}'s categories. "
+                "Only an admin can open another team's request for someone.",
+            )
+
+    def requester(self):
+        """Who the request is for, adding the person now if the app didn't know them. After is_valid()."""
+        if self.cleaned_data.get("new_person"):
+            return people.add(*self.cleaned_data["new_person"])
+        return self.cleaned_data["requester"]
 
 
 class ReplyForm(PasswordCheckMixin, forms.Form):

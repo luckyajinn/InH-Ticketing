@@ -65,7 +65,9 @@ class Command(BaseCommand):
         closed = Ticket.objects.filter(
             requester__username__startswith="demo-", status=Ticket.Status.CLOSED, follow_ups__isnull=False
         ).first()
-        if not (requester and agent and sample and open_ticket and noted and resolved and closed):
+        # v0.10.6: a request Sam opened for Elena at the desk.
+        walk_in = Ticket.objects.filter(requester__username__startswith="demo-", opened_by__isnull=False).first()
+        if not (requester and agent and sample and open_ticket and noted and resolved and closed and walk_in):
             raise CommandError("Demo data not found. Run: python manage.py seed_demo --clear, then seed_demo")
         follow_up = closed.follow_ups.first()
 
@@ -79,11 +81,13 @@ class Command(BaseCommand):
             "received": latest_email(sample, "received"),
             "it_replied": latest_email(sample, "it_replied"),
             "resolved_reply": latest_email(resolved, "it_replied"),
+            "opened_for": latest_email(walk_in, "received"),
         }
         sessions = {
             "requester": self._session_for(requester),
             "agent": self._session_for(agent),
             "closed_requester": self._session_for(closed.requester),
+            "walk_in_requester": self._session_for(walk_in.requester),
         }
         out_dir = Path(out)
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -94,6 +98,7 @@ class Command(BaseCommand):
             "resolved": resolved.get_absolute_url(), "closed": closed.get_absolute_url(),
             "follow_up": follow_up.get_absolute_url(),
             "new_follow_up": f"/tickets/new/?follow_up={closed.number}",
+            "walk_in": walk_in.get_absolute_url(),
         }
         # v0.8.0: the queue filtered to one of the new teams.
         mechanics = Category.objects.filter(name="Mechanics").values_list("pk", flat=True).first()
@@ -202,6 +207,12 @@ class Command(BaseCommand):
         def pick_common_request(page):
             page.select_option("select[data-subject-pick]", index=1)
 
+        # v0.10.6: staff open a request for someone else and look them up.
+        def find_a_person(page):
+            page.click("label[for=for-other]")
+            page.fill("#id_for_email", "el")
+            page.wait_for_selector("#people-list:not([hidden]) [role=option]")
+
         shoot("01-sign-in.png", None, "/signin/", prepare=as_configured)
         shoot("02-my-tickets.png", "requester", "/tickets/")
         shoot("03-new-request.png", "requester", "/tickets/new/", full_page=True)
@@ -228,4 +239,9 @@ class Command(BaseCommand):
         shoot("22-common-requests.png", "requester", "/tickets/new/", prepare=pick_common_request,
               element="form[data-password-check]")
         shoot("23-queue-mechanics.png", "agent", urls["team_queue"])
+        shoot("47-new-request-for-someone.png", "agent", "/tickets/new/", prepare=find_a_person,
+              element="fieldset.for-whom")
+        shoot("48-agent-ticket-opened-for.png", "agent", urls["walk_in"])
+        shoot("49-requester-opened-for-you.png", "walk_in_requester", urls["walk_in"])
+        shoot_email("50-email-opened-for-you.png", emails["opened_for"])
         return saved

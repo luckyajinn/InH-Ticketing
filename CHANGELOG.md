@@ -5,6 +5,30 @@ Each version also has illustrated release notes in [docs/releases](docs/releases
 A letter after a version, such as 0.10.0d, marks a documentation-only update:
 the app is the same as that version.
 
+## [0.10.6] - 2026-11-13
+
+A request for someone else. [Release notes](docs/releases/v0.10.6.md).
+
+### Added
+- "Who is it for?" on New request, for agents and admins: **Someone else**
+  opens the request for a person at the desk. Find them by name or email
+  among the people the help desk knows (anyone who has signed in or emailed
+  it), or type the work email and name of someone it doesn't know yet; their
+  first Microsoft 365 sign-in takes the account over. The request is theirs:
+  they get the emails and see it with their own requests.
+- Who opened it, and for whom: at the top of the ticket, on the request, in
+  its history (a new history line), and in the receipt and the department's
+  alert. The side panel's Source says *Opened by staff*.
+- Agents open requests for someone else in their own department's
+  categories only; admins in any. Only the organisation's email addresses
+  are accepted for someone new, and not a turned-off account.
+- A follow-up started from someone else's closed ticket is for that person.
+- The usage and privacy page says that staff can open a request for you.
+
+### Changed
+- Email-in and New request add a person the app doesn't know yet in one
+  place (`accounts/people.py`).
+
 ## 0.10.5a - 2026-11-12
 
 Documentation only: the app is the same as 0.10.5. No release of its own.
@@ -597,6 +621,7 @@ Milestone 1: skeleton and Microsoft 365 sign-in. [Release notes with screenshots
 - `/healthz` endpoint, Dockerfile and Docker Compose with PostgreSQL 17.
 - Entra setup guide (`docs/entra-setup.md`) and the UI mockup (`mockups/`).
 
+[0.10.6]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.10.6
 [0.10.5]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.10.5
 [0.10.4]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.10.4
 [0.10.1]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.10.1

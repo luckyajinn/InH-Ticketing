@@ -84,6 +84,12 @@ Every change is written to the ticket's history: who, what, when.
   emailed one is cut there). Over that, the page says so: attach a long log
   as a file.
 - **"This is blocking my work"** flag, used when setting priority.
+- **For someone else (staff only):** "Who is it for?" opens the request for
+  a person at the desk. Type part of their name or email to find someone the
+  help desk knows (anyone who has signed in or emailed it), or their work
+  email and name if it doesn't know them yet. It's theirs: they get the
+  emails and see it with their own requests, and the ticket and its history
+  say who opened it. Agents do this for their own department; admins for any.
 - A notice on the form: what the app is for, product complaints go to QA,
   and no passwords.
 

@@ -13,7 +13,7 @@
   <h1 class="detail-title">{{ ticket.subject }}</h1>
   <div class="detail-badges">
     {% include "tickets/partials/status.html" with t=ticket %}
-    <span class="detail-meta">Opened {{ ticket.created_at|date:"M j, g:i A" }} &middot; {{ ticket.category }}</span>
+    <span class="detail-meta">Opened {{ ticket.created_at|date:"M j, g:i A" }}{% if ticket.opened_by %} for you by {{ ticket.opened_by }}{% endif %} &middot; {{ ticket.category }}</span>
   </div>
 </header>
 
@@ -64,7 +64,7 @@
 
     <h2 class="section-title">Conversation</h2>
     <ol class="timeline">
-      {% include "tickets/partials/message.html" with author=ticket.requester body=ticket.description at=ticket.created_at internal=False source=ticket.source files=original_attachments %}
+      {% include "tickets/partials/message.html" with author=ticket.requester body=ticket.description at=ticket.created_at internal=False source=ticket.source files=original_attachments opened_by=ticket.opened_by %}
       {% for item in timeline %}
         {% with c=item.comment %}
         {% include "tickets/partials/message.html" with author=c.author body=c.body at=c.created_at internal=c.is_internal source=c.source files=c.attachments.all %}

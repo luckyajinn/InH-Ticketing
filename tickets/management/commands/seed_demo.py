@@ -168,6 +168,16 @@ class Command(BaseCommand):
         Ticket.objects.filter(pk=printer.pk).update(source=Ticket.Source.EMAIL)
 
         services.update_ticket(ticket=vpn, actor=sam, priority=Ticket.Priority.URGENT, assignee=sam)
+
+        # v0.10.6: Elena came to the IT desk, and Sam opened the request for her.
+        walk_in = services.create_ticket(
+            requester=people["elena"], subject="Left monitor flickers every few seconds",
+            description="Elena came to the IT desk: her left monitor flickers every few seconds, "
+                        "worse in the afternoon. She has already tried another cable.",
+            category=categories["Hardware"], opened_by=sam,
+        )
+        Ticket.objects.filter(pk=walk_in.pk).update(created_at=now - timedelta(hours=2))
+        services.assign_to_me(ticket=walk_in, actor=sam)
         services.update_ticket(ticket=mfa, actor=alex, priority=Ticket.Priority.HIGH)
 
         services.update_ticket(ticket=outlook, actor=sam, priority=Ticket.Priority.HIGH, assignee=sam)
@@ -241,6 +251,6 @@ class Command(BaseCommand):
         badge = self._closed_with_follow_up(people, categories["Access"], now)
 
         self.stdout.write(self.style.SUCCESS(
-            f"Added {len(PEOPLE)} demo people and {len(created) + 2} demo tickets "
+            f"Added {len(PEOPLE)} demo people and {len(created) + 3} demo tickets "
             f"(#{created[0].number}-#{badge.number})."
         ))

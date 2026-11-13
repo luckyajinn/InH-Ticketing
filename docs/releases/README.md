@@ -4,6 +4,7 @@ One page per version, each with screenshots of what changed. Newest first.
 
 | Version | What | Notes |
 |---|---|---|
+| v0.10.6 | A request for someone else: staff open it for a person at the desk | [v0.10.6.md](v0.10.6.md) |
 | v0.10.5 | The admin log: every admin-site change, with the values; the admin's ticket page fixed | [v0.10.5.md](v0.10.5.md) |
 | v0.10.4 | Review fixes: password hints, a length limit; the monthly update check | [v0.10.4.md](v0.10.4.md) |
 | v0.10.3 | The worker's heartbeat: Reports and Docker say for sure that it's running *(released in v0.10.4)* | [v0.10.3.md](v0.10.3.md) |

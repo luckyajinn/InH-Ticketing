@@ -125,20 +125,33 @@ def _queue_each(addresses, **kwargs):
 
 def request_received(ticket) -> None:
     requester = ticket.requester
+    # Staff who opened it for the requester (someone at the desk, say) wrote it.
+    opener = ticket.opened_by
     if _reachable(requester):
-        _queue(
-            kind="received", ticket=ticket, to=requester.email,
-            heading="We've received your request",
-            intro=f"Thanks, {requester}. We've got request #{ticket.number}, and someone will pick it up soon.",
-            message=ticket.description, message_author="You wrote",
-            reason="you raised this request",
-        )
+        if opener:
+            _queue(
+                kind="received", ticket=ticket, to=requester.email,
+                heading="We've opened a request for you",
+                intro=(f"{opener} opened request #{ticket.number} for you. "
+                       "You'll get an email when there's an update."),
+                message=ticket.description, message_author=f"{opener} wrote",
+                reason=f"{opener} opened this request for you",
+            )
+        else:
+            _queue(
+                kind="received", ticket=ticket, to=requester.email,
+                heading="We've received your request",
+                intro=f"Thanks, {requester}. We've got request #{ticket.number}, and someone will pick it up soon.",
+                message=ticket.description, message_author="You wrote",
+                reason="you raised this request",
+            )
+    blocking = "blocking their work" if ticket.is_blocking else "not marked as blocking"
     _queue_each(
         department_alerts(ticket),
         kind="new_ticket", ticket=ticket, audience="it",
-        heading=f"New request from {requester}",
-        intro=f"{ticket.category} · {'blocking their work' if ticket.is_blocking else 'not marked as blocking'}",
-        message=ticket.description, message_author=f"{requester} wrote",
+        heading=f"New request for {requester}" if opener else f"New request from {requester}",
+        intro=f"Opened by {opener} · {ticket.category} · {blocking}" if opener else f"{ticket.category} · {blocking}",
+        message=ticket.description, message_author=f"{opener or requester} wrote",
         action="Open the ticket", reason=f"this address gets {ticket.department_label}'s new-request alerts",
     )
 

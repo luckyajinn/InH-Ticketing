@@ -1,7 +1,7 @@
 {% load ticket_tags %}
 {# One line of history. Only IT ever sees these. #}
 <li class="tl-item tl-event{% if e.kind == 'password' %} tl-event-password{% endif %}">
-  <span class="tl-event-icon" aria-hidden="true">{% if e.kind == "status" %}{% icon "status" %}{% elif e.kind == "priority" %}{% icon "signal" %}{% elif e.kind == "assignee" %}{% icon "user" %}{% elif e.kind == "password" or e.kind == "removed" %}{% icon "lock" %}{% elif e.kind == "archive" %}{% icon "archive" %}{% else %}{% icon "tag" %}{% endif %}</span>
+  <span class="tl-event-icon" aria-hidden="true">{% if e.kind == "status" %}{% icon "status" %}{% elif e.kind == "priority" %}{% icon "signal" %}{% elif e.kind == "assignee" %}{% icon "user" %}{% elif e.kind == "password" or e.kind == "removed" %}{% icon "lock" %}{% elif e.kind == "archive" %}{% icon "archive" %}{% elif e.kind == "opened_for" %}{% icon "users" %}{% else %}{% icon "tag" %}{% endif %}</span>
   <span class="visually-hidden">History: </span>
   {% if e.kind == "assignee" %}
     {% if not e.new_value %}Unassigned{% if e.actor %} by {{ e.actor }}{% endif %}
@@ -15,6 +15,8 @@
     <strong>Moved</strong> from {{ e.old_value }} to <strong>{{ e.new_value }}</strong>{% if e.actor %} by {{ e.actor }}{% endif %}
   {% elif e.kind == "move_request" %}
     {{ e.actor|default:"Someone" }} <strong>asked an admin to move this</strong> from {{ e.old_value }} to {{ e.new_value }}
+  {% elif e.kind == "opened_for" %}
+    <strong>{{ e.actor|default:"Staff" }} opened this</strong> for {{ e.new_value }}
   {% elif e.kind == "removed" %}
     <strong>{{ e.actor|default:"An admin" }} removed</strong> {{ e.new_value }}
   {% else %}

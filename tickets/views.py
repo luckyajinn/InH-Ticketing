@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Max, Q
 from django.db.models.functions import Coalesce
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
@@ -12,6 +13,7 @@ from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
+from accounts import people
 from core import departments
 from tickets import password_guard, reports, selectors, services
 from tickets.forms import MoveForm, MoveRequestForm, NewTicketForm, RemovalForm, ReplyForm, TicketPropertiesForm
@@ -52,7 +54,7 @@ def _get_ticket(request, number: int) -> Ticket:
     """The ticket, or 404 if it doesn't exist *or* this person may not see it."""
     pk = Ticket.pk_from_number(number)
     queryset = Ticket.objects.visible_to(request.user).select_related(
-        "requester", "assignee", "category"
+        "requester", "assignee", "category", "opened_by"
     )
     return get_object_or_404(queryset, pk=pk)
 
@@ -109,21 +111,30 @@ def _follow_up_target(request) -> Ticket | None:
 def new_ticket(request):
     follow_up = _follow_up_target(request)
     initial = {"subject": follow_up.subject} if follow_up else None
-    form = NewTicketForm(request.POST or None, request.FILES or None, initial=initial)
+    if follow_up and request.user.is_agent and follow_up.requester_id != request.user.pk:
+        # Staff following up someone else's ticket: it's for them again.
+        initial.update(for_whom="other", for_email=follow_up.requester.email)
+    form = NewTicketForm(request.POST or None, request.FILES or None, initial=initial, user=request.user)
     if request.method == "POST" and form.is_valid():
-        ticket = services.create_ticket(
-            requester=request.user,
-            subject=form.cleaned_data["subject"],
-            description=form.cleaned_data["description"],
-            category=form.cleaned_data["category"],
-            is_blocking=form.cleaned_data["is_blocking"],
-            files=form.cleaned_data["attachments"],
-            follows_up=follow_up,
-        )
+        with transaction.atomic():
+            requester = form.requester()
+            ticket = services.create_ticket(
+                requester=requester,
+                subject=form.cleaned_data["subject"],
+                description=form.cleaned_data["description"],
+                category=form.cleaned_data["category"],
+                is_blocking=form.cleaned_data["is_blocking"],
+                files=form.cleaned_data["attachments"],
+                follows_up=follow_up,
+                opened_by=request.user,
+            )
         password_guard.record_form(
             form, user=request.user, place=PasswordWarning.Place.NEW_REQUEST, ticket=ticket
         )
-        messages.success(request, f"Request #{ticket.number} sent. You'll get an email when there's an update.")
+        if ticket.opened_by_id:
+            messages.success(request, f"Request #{ticket.number} opened for {requester}. They'll get an email about it.")
+        else:
+            messages.success(request, f"Request #{ticket.number} sent. You'll get an email when there's an update.")
         return redirect(ticket)
     status = 400 if request.method == "POST" else 200
     return render(request, "tickets/new.html", {"form": form, "follow_up": follow_up}, status=status)
@@ -244,6 +255,19 @@ def check_text(request):
         if findings:
             found[name] = findings
     return JsonResponse({"found": bool(found), "hints": password_guard.hints(found)})
+
+
+@agent_required
+@require_GET
+@never_cache
+def find_people(request):
+    """
+    Staff opening a request for someone else: people the app knows whose
+    name or email has every word typed (two characters at least, a few at a
+    time), for app.js to list under the box. Name and email only.
+    """
+    found = people.search(request.GET.get("q", ""))
+    return JsonResponse({"people": [{"name": str(p), "email": p.email} for p in found]})
 
 
 def _changed_here(request, name: str, value) -> bool:

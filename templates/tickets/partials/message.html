@@ -14,6 +14,7 @@
         <span class="role-tag role-it">{% if author.is_admin %}Admin{% else %}{{ author.department_label|default:"IT" }}{% endif %}</span>
         {% if user.is_agent and not internal %}<span class="chip">{% icon "globe" %}Public reply</span>{% endif %}
       {% endif %}
+      {% if opened_by %}<span class="chip">{% icon "users" %}{% if user.is_agent %}Opened by {{ opened_by }}{% else %}Opened for you by {{ opened_by }}{% endif %}</span>{% endif %}
       {% if source == "email" %}<span class="chip">{% icon "mail" %}via email</span>{% endif %}
       <time class="comment-time" datetime="{{ at|date:'c' }}">{{ at|date:"M j, g:i A" }}</time>
       {% if removable and user.is_admin %}<a class="remove-link" href="{% url 'tickets:remove' ticket.number %}?part={% if note %}c{{ note.pk }}{% else %}description{% endif %}">Remove&hellip;</a>{% endif %}

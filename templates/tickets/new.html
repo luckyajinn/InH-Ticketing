@@ -26,6 +26,42 @@
   </div>
   {% for error in form.other_errors %}<p class="field-error" role="alert">{% icon "alert" %}{{ error }}</p>{% endfor %}
 
+  {% if form.can_open_for_others %}
+  {# Staff only: a request for someone else (at the desk, say). The "Someone else" fields hide while "Me" is chosen (app.css, :has). #}
+  <fieldset class="field for-whom">
+    <legend class="label">Who is it for?</legend>
+    <div class="mode-toggle">
+      <input type="radio" name="for_whom" id="for-me" value="me"{% if not form.for_someone_else %} checked{% endif %}>
+      <label for="for-me">{% icon "user" %}Me</label>
+      <input type="radio" name="for_whom" id="for-other" value="other"{% if form.for_someone_else %} checked{% endif %}>
+      <label for="for-other">{% icon "users" %}Someone else</label>
+    </div>
+    <div class="for-other-fields">
+      <div class="field">
+        <label for="id_for_email">Their work email</label>
+        <div class="person-find">
+          <input class="input" type="email" name="for_email" id="id_for_email" maxlength="254" autocomplete="off" spellcheck="false"
+                 value="{{ form.for_email.value|default:'' }}" data-find-people="{% url 'tickets:find_people' %}"
+                 role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="people-list"
+                 aria-describedby="for-email-hint{% if form.for_email.errors %} for-email-error{% endif %}"{% if form.for_email.errors %} aria-invalid="true"{% endif %}>
+          <ul class="person-list" id="people-list" role="listbox" aria-label="People the help desk knows" hidden></ul>
+        </div>
+        <p class="hint" id="for-email-hint">Start typing their name or email to find someone who has used the help desk, or type their full work email. They get the emails about it and see it under My tickets.</p>
+        <p class="hint person-found" data-person-found role="status"></p>
+        {% if form.for_email.errors %}<p class="field-error" id="for-email-error">{% icon "alert" %}{{ form.for_email.errors.0 }}</p>{% endif %}
+      </div>
+      <div class="field">
+        <label for="id_for_name">Their name <span class="optional">(only if the help desk doesn't know them yet)</span></label>
+        <input class="input" type="text" name="for_name" id="id_for_name" maxlength="120" autocomplete="off"
+               value="{{ form.for_name.value|default:'' }}"
+               {% if form.for_name.errors %}aria-invalid="true" aria-describedby="for-name-error"{% endif %}>
+        {% if form.for_name.errors %}<p class="field-error" id="for-name-error">{% icon "alert" %}{{ form.for_name.errors.0 }}</p>{% endif %}
+      </div>
+      {% if not user.is_admin %}<p class="hint">For someone else, choose one of {{ user.department_label }}'s categories below.</p>{% endif %}
+    </div>
+  </fieldset>
+  {% endif %}
+
   {% with picks=form.quick_picks %}{% if picks %}
   <div class="field">
     <label for="id_subject_pick">Common requests <span class="optional">(optional)</span></label>
@@ -76,7 +112,7 @@
   <div class="field">
     <div class="check">
       <input type="checkbox" name="is_blocking" id="id_is_blocking" aria-describedby="blocking-hint"{% if form.is_blocking.value %} checked{% endif %}>
-      <label for="id_is_blocking">This is blocking my work</label>
+      <label for="id_is_blocking">This is blocking {% if form.can_open_for_others %}<span class="if-me">my</span><span class="if-other">their</span>{% else %}my{% endif %} work</label>
     </div>
     <p class="hint check-hint" id="blocking-hint">Tick this if you can't do your job until it's fixed. It's used when setting the priority.</p>
   </div>

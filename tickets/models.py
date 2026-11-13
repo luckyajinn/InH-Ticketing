@@ -218,6 +218,13 @@ class Ticket(models.Model):
         help_text="The requester said this stops them working. IT uses it to set priority.",
     )
     source = models.CharField(max_length=8, choices=Source.choices, default=Source.WEB)
+    # Staff who opened this request for the requester (someone at the desk,
+    # say). Empty when the requester opened it themselves.
+    # The history line (TicketEvent "opened_for") keeps the names as text.
+    opened_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="+",
+    )
     # Set when this ticket was started from a closed one ("Start a follow-up",
     # or an email reply to a closed ticket).
     follows_up = models.ForeignKey(
@@ -347,6 +354,8 @@ class TicketEvent(models.Model):
         MOVE_REQUEST = "move_request", "Move request"
         # Something taken out of the ticket (a pasted password, a file). Never what.
         REMOVED = "removed", "Removed"
+        # Staff opened the request for the requester (new_value: who it's for).
+        OPENED_FOR = "opened_for", "Opened for"
 
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name="events")
     actor = models.ForeignKey(

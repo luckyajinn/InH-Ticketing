@@ -90,8 +90,21 @@ def _save_attachments(ticket: Ticket, user, files, comment: Comment | None = Non
 def create_ticket(
     *, requester, subject: str, description: str, category: Category,
     is_blocking: bool = False, files=(), source: str = Ticket.Source.WEB,
-    follows_up: Ticket | None = None,
+    follows_up: Ticket | None = None, opened_by=None,
 ) -> Ticket:
+    """
+    A new request. `opened_by` is staff opening it for someone else (at the
+    desk, say): the requester is still the one it's for, who gets the emails
+    and sees it as their own. Staff can do this only for their own
+    department's categories; admins for any.
+    """
+    if opened_by is not None and opened_by.pk == requester.pk:
+        opened_by = None
+    if opened_by is not None:
+        if not opened_by.is_agent:
+            raise PermissionDenied("Only staff can open a request for someone else.")
+        if not opened_by.is_admin and category.department != opened_by.agent_department:
+            raise PermissionDenied("Staff can open requests for someone else only in their own department.")
     ticket = Ticket.objects.create(
         requester=requester,
         subject=subject.strip(),
@@ -100,8 +113,11 @@ def create_ticket(
         is_blocking=is_blocking,
         source=source,
         follows_up=follows_up,
+        opened_by=opened_by,
     )
-    _save_attachments(ticket, requester, files)
+    _save_attachments(ticket, opened_by or requester, files)
+    if opened_by is not None:
+        _log(ticket, opened_by, TicketEvent.Kind.OPENED_FOR, "", str(requester))
     notify.request_received(ticket)
     return ticket
 

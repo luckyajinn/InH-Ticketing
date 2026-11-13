@@ -32,6 +32,7 @@ from django.core.files.base import ContentFile
 from django.db import transaction
 from django.template.defaultfilters import filesizeformat
 
+from accounts import people
 from accounts.models import User
 from inbound.models import InboundEmail
 from inbound.text import clean_subject, find_ticket_number, is_automatic, strip_quoted
@@ -108,15 +109,7 @@ def _sender(address: str, name: str) -> User:
     The person who sent it. Staff who have never signed in get an account now;
     it's linked to their Microsoft 365 account the first time they sign in.
     """
-    user = User.objects.filter(email__iexact=address).order_by("-is_active", "pk").first()
-    if user:
-        return user
-    return User.objects.create(
-        username=f"email:{address.lower()}"[:150],
-        email=address.lower(),
-        display_name=(name or address)[:255],
-        role=User.Role.REQUESTER,
-    )
+    return people.by_email(address) or people.add(address, name)
 
 
 def _files(message: IncomingMessage) -> tuple[list[ContentFile], list[str]]:

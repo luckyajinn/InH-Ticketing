@@ -210,6 +210,112 @@
       update(false);
     });
 
+    // "Who is it for?" on New request (staff only): typing part of a name or
+    // email lists people the help desk knows (tickets:find_people), and
+    // choosing one fills in their email. Arrow keys move through the list,
+    // Enter chooses, Escape closes it. Without JS, the full email is typed.
+    var LIST_MOVES = { ArrowDown: 1, ArrowUp: -1 };
+    document.querySelectorAll("input[data-find-people]").forEach(function (input) {
+      var list = document.getElementById(input.getAttribute("aria-controls"));
+      var url = input.getAttribute("data-find-people");
+      var found = input.closest(".field").querySelector("[data-person-found]");
+      var nameInput = input.form && input.form.elements.for_name;
+      if (!list || !window.fetch) return;
+      var timer = null, lastQuery = "", people = [], active = -1;
+
+      function close() {
+        list.hidden = true;
+        input.setAttribute("aria-expanded", "false");
+        input.removeAttribute("aria-activedescendant");
+        active = -1;
+      }
+
+      function highlight(index) {
+        var items = list.querySelectorAll("[role=option]");
+        active = items.length ? (index + items.length) % items.length : -1;
+        Array.prototype.forEach.call(items, function (item, i) {
+          item.setAttribute("aria-selected", i === active ? "true" : "false");
+          if (i === active) {
+            input.setAttribute("aria-activedescendant", item.id);
+            item.scrollIntoView({ block: "nearest" });
+          }
+        });
+      }
+
+      function choose(person) {
+        input.value = person.email;
+        if (nameInput) nameInput.value = person.name;
+        if (found) found.textContent = person.name + " has used the help desk before.";
+        close();
+      }
+
+      function show(results) {
+        people = results;
+        list.textContent = "";
+        if (!results.length) {
+          var none = document.createElement("li");
+          none.className = "person-none";
+          none.textContent = "Nobody the help desk knows. Type their full work email, and their name below.";
+          list.appendChild(none);
+        }
+        results.forEach(function (person, i) {
+          var item = document.createElement("li");
+          item.id = "person-" + i;
+          item.setAttribute("role", "option");
+          item.setAttribute("aria-selected", "false");
+          var name = document.createElement("span");
+          name.className = "person-name";
+          name.textContent = person.name;
+          var email = document.createElement("span");
+          email.className = "person-email";
+          email.textContent = person.email;
+          item.appendChild(name);
+          item.appendChild(email);
+          // mousedown, not click, so the box doesn't lose focus and close first.
+          item.addEventListener("mousedown", function (event) { event.preventDefault(); choose(person); });
+          list.appendChild(item);
+        });
+        list.hidden = false;
+        input.setAttribute("aria-expanded", "true");
+        active = -1;
+      }
+
+      // A same-origin GET: the browser sends the sign-in cookie by default.
+      function search() {
+        var text = input.value.trim();
+        if (text.replace(/\s/g, "").length < 2) { close(); return; }
+        lastQuery = text;
+        fetch(url + "?q=" + encodeURIComponent(text))
+          .then(function (response) {
+            if (!response.ok) throw new Error("search failed");
+            return response.json();
+          })
+          .then(function (result) { if (lastQuery === input.value.trim()) show(result.people || []); })
+          .catch(close);
+      }
+
+      input.addEventListener("input", function () {
+        if (found) found.textContent = "";
+        window.clearTimeout(timer);
+        timer = window.setTimeout(search, 200);
+      });
+      input.addEventListener("keydown", function (event) {
+        if (list.hidden) return;
+        var pressed = event.key;
+        if (LIST_MOVES[pressed]) {
+          event.preventDefault();
+          highlight(active + LIST_MOVES[pressed]);
+        } else if (pressed === "Escape") {
+          event.preventDefault();
+          close();
+        } else if (pressed === "Enter" && active >= 0 && people[active]) {
+          event.preventDefault();
+          choose(people[active]);
+        }
+      });
+      input.addEventListener("blur", close);
+    });
+
     // "This might include a password" (tickets/password_guard.py). Before a
     // form is sent, ask the server whether its text looks like it holds a
     // password, so chosen files stay attached if it does. If the check can't

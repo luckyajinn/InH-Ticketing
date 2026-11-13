@@ -13,7 +13,7 @@
     {% include "tickets/partials/status.html" with t=ticket %}
     {% include "tickets/partials/priority.html" with t=ticket %}
     {% if ticket.is_blocking %}<span class="chip chip-block">{% icon "flag" %}Blocking work</span>{% endif %}
-    <span class="detail-meta">Opened by {{ ticket.requester }} {{ ticket.created_at|ago }} via {% if ticket.source == "email" %}email{% else %}the web form{% endif %} · {{ ticket.department_label }}</span>
+    <span class="detail-meta">{% if ticket.opened_by %}Opened by {{ ticket.opened_by }} for {{ ticket.requester }} {{ ticket.created_at|ago }}{% else %}Opened by {{ ticket.requester }} {{ ticket.created_at|ago }} via {% if ticket.source == "email" %}email{% else %}the web form{% endif %}{% endif %} · {{ ticket.department_label }}</span>
   </div>
 </header>
 
@@ -43,7 +43,7 @@
   <div class="detail-main">
     <h2 class="section-title">Timeline</h2>
     <ol class="timeline">
-      {% include "tickets/partials/message.html" with author=ticket.requester body=ticket.description at=ticket.created_at internal=False source=ticket.source files=original_attachments removable=True %}
+      {% include "tickets/partials/message.html" with author=ticket.requester body=ticket.description at=ticket.created_at internal=False source=ticket.source files=original_attachments removable=True opened_by=ticket.opened_by %}
       {% for item in timeline %}
         {% if item.kind == "event" %}
           {% include "tickets/partials/event.html" with e=item.event %}
@@ -204,10 +204,10 @@
       <dl class="dl">
         <dt>Ticket</dt><dd>#{{ ticket.number }}</dd>
         <dt>Department</dt><dd>{{ ticket.department_label }}</dd>
-        <dt>Source</dt><dd>{% if ticket.source == "email" %}{% icon "mail" %}Email{% else %}{% icon "globe" %}Web form{% endif %}</dd>
+        <dt>Source</dt><dd>{% if ticket.opened_by %}{% icon "users" %}Opened by staff{% elif ticket.source == "email" %}{% icon "mail" %}Email{% else %}{% icon "globe" %}Web form{% endif %}</dd>
         <dt>Created</dt><dd>{{ ticket.created_at|date:"M j, g:i A" }}</dd>
         <dt>Updated</dt><dd>{{ ticket.updated_at|date:"M j, g:i A" }}</dd>
-        <dt>Blocking</dt><dd>{% if ticket.is_blocking %}Yes, flagged by requester{% else %}No{% endif %}</dd>
+        <dt>Blocking</dt><dd>{% if ticket.is_blocking %}Yes, flagged {% if ticket.opened_by %}when opened{% else %}by requester{% endif %}{% else %}No{% endif %}</dd>
       </dl>
       {% if user.is_admin %}<p class="small mt-3"><a href="{% url 'tickets:remove' ticket.number %}?part=subject">Remove a password from the subject</a></p>{% endif %}
       <h3 class="panel-subtitle">Attachments</h3>
