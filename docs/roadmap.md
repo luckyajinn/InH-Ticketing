@@ -65,7 +65,7 @@ Nov 9 is a Monday.
 | ✅ Tue Nov 10 | Closed tickets: archived for two years, then deleted (archiving built in v0.9.1) | v0.9.1 |
 | **Before installing v0.9.1** | In Entra, create the `Agent.Mechanics` and `Agent.Cleaning` app roles and assign each team's group to its own (never plain `Agent`) | v0.9.1 |
 | Thu Nov 12 | Department mailboxes (no confirmation yet of a shared mailbox for each, Nov 10): decide new request-only mailboxes or a "Requests" folder in the existing ones (see [backlog.md](backlog.md), v1.0.0); send the addresses; in Exchange, allow the app to send as and read each one, set internal senders only, and record `Test-ServicePrincipalAuthorization` for each | v1.0.0 |
-| Fri Nov 13 | Entra: confirm the server's redirect URI, and give the server its own client secret or certificate | v1.0.0 |
+| ✅ Fri Nov 13 | Entra: confirm the server's redirect URI, and give the server its own client secret or certificate *(both done on the first install, Nov 9)* | v1.0.0 |
 | Fri Nov 13 | File the `Test-ServicePrincipalAuthorization` output with the risk assessment; check DMARC on `example.com` | v1.0.0 |
 | After v1.0.0, before go-live | Off-server backup copy. Where the copies go is undecided (2026-11-11): a network share or a second machine | Go-live |
 | Mon Nov 16 | Teams: a webhook or permission for IT alerts | v1.1.0 |

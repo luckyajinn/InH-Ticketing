@@ -97,8 +97,9 @@ Decided 2026-11-06:
       `check --deploy` warnings).
 - [x] Nightly local backups with 14-day retention, and a restore procedure.
 - [x] ~~The restore drill on the real server, recorded.~~ *Not planned (decided 2026-11-11).*
-- [ ] Entra: add the redirect URI `https://helpdesk.example.com/auth/callback`,
+- [x] Entra: add the redirect URI `https://helpdesk.example.com/auth/callback`,
       and use a separate client secret (or a certificate) for the server.
+      *(Done on the first install, 2026-11-09.)*
 - [x] A deployment guide covering first install, updating to a new version, and restoring.
 - [x] The first install on the server, following the guide and fixing it as needed.
       *(Live on the internal server and tested, 2026-11-09.)*

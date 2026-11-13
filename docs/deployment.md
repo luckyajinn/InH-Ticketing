@@ -15,11 +15,12 @@ What has been checked, and what hasn't:
 | Part | Checked | Not yet tested |
 |---|---|---|
 | Django production settings | `manage.py check --deploy` is clean; automated tests for the HTTPS redirect, HSTS and `/healthz`; served behind Caddy on the test VM | |
-| `compose.prod.yaml` | The image build and `docker compose` on Linux (test VM): web, worker, database and proxy, under load | Port 80's redirect (the test VM published HTTPS only) |
+| `compose.prod.yaml` | The image build and `docker compose` on Linux (test VM): web, worker, database and proxy, under load. Port 80's redirect to HTTPS, on the first install (2026-11-09) | |
 | `deploy/caddy/Caddyfile` | Run by Caddy 2.11.9 on the test VM, serving HTTPS | The internal-CA certificate (the test used a self-signed one) |
 | `scripts/backup.sh`, `restore.sh` | Syntax-checked with `sh -n` and `dash`; run against a stand-in for `docker` | Real Docker and PostgreSQL; cron (not run on the test VM) |
 | Certificate commands (section 3) | Run end to end with a throwaway test CA | The internal CA's own process and files |
-| Firewall, chrony, Entra and email from the server | | All of it |
+| Firewall, chrony and Entra sign-in on the server | On the first install (2026-11-09), on Debian 13: ufw, chrony's internet time, and Microsoft 365 sign-in through the proxy | |
+| Email from the server | | Not recorded here |
 
 ## Contents
 
@@ -80,15 +81,23 @@ sudo chmod 750 /srv/inh-ticketing/certs     # owned by root
 
 ### 1.2 Time sync
 
-Microsoft sign-in fails if the clock is more than two minutes out.
+Microsoft sign-in fails if the clock is more than two minutes out. The server
+isn't joined to the domain, so it only needs the correct time, not the domain
+controllers' time. Chrony's default internet time servers are the most
+accurate source; domain controllers are sometimes a minute or more out.
 
 ```bash
-sudo apt install -y chrony
-# Use the company's time servers (ask IT which: often the domain controllers).
+sudo apt install -y chrony        # replaces systemd-timesyncd
+sleep 20; chronyc sources         # one source marked ^*
+timedatectl | grep -i synchronized   # "System clock synchronized: yes"
+```
+
+If every source shows `^?`, the network blocks internet time (UDP port 123).
+Use the company's time servers instead (often the domain controllers):
+
+```bash
 echo "server <time server> iburst" | sudo tee /etc/chrony/sources.d/company.sources
-sudo systemctl restart chrony
-chronyc sources     # the company server, marked ^*
-timedatectl         # "System clock synchronized: yes"
+sudo chronyc reload sources
 ```
 
 ### 1.3 Automatic security updates
@@ -98,14 +107,16 @@ sudo apt install -y unattended-upgrades
 sudo dpkg-reconfigure -plow unattended-upgrades   # answer Yes
 ```
 
-This installs Ubuntu's security updates daily. It doesn't reboot: some updates
+This installs security updates daily. It doesn't reboot, but some updates
 (the kernel) need one. Either reboot monthly by hand, or allow automatic
-reboots after the 02:30 backup by setting these in
-`/etc/apt/apt.conf.d/50unattended-upgrades`:
+reboots at 04:00, after the 02:30 backup. A small file of its own keeps the
+setting separate from the package's own config:
 
-```
-Unattended-Upgrade::Automatic-Reboot "true";
-Unattended-Upgrade::Automatic-Reboot-Time "04:00";
+```bash
+printf 'Unattended-Upgrade::Automatic-Reboot "true";\nUnattended-Upgrade::Automatic-Reboot-Time "04:00";\n' \
+  | sudo tee /etc/apt/apt.conf.d/52inh-ticketing-reboot
+cat /etc/apt/apt.conf.d/20auto-upgrades          # both lines end in "1"
+systemctl list-timers 'apt-daily*' --no-pager    # apt-daily and apt-daily-upgrade
 ```
 
 The app comes back by itself after a reboot (checked in section 7). Docker
@@ -115,10 +126,18 @@ containers for a moment).
 
 ### 1.4 Firewall
 
+First check the address you're connecting from (the first number) is inside
+the admin range you'll allow, or enabling the firewall will lock you out:
+
 ```bash
+echo $SSH_CLIENT
+```
+
+```bash
+sudo apt install -y ufw   # not installed on Debian by default
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
-# SSH from IT admins only. Add this BEFORE enabling, from the address you're on, or you'll lock yourself out.
+# SSH from IT admins only.
 sudo ufw allow from <admin subnet, e.g. 10.10.5.0/24> to any port 22 proto tcp
 sudo ufw allow 80/tcp
 sudo ufw allow 443/tcp
@@ -135,15 +154,15 @@ sudo ufw status verbose
 ### 1.5 Docker Engine and Compose
 
 From Docker's own repository (check
-[docs.docker.com/engine/install/ubuntu](https://docs.docker.com/engine/install/ubuntu/)
-in case the steps have changed; on Debian, use `debian` in place of `ubuntu` in both URLs):
+[docs.docker.com/engine/install/debian](https://docs.docker.com/engine/install/debian/)
+in case the steps have changed; on Ubuntu, use `ubuntu` in place of `debian` in both URLs):
 
 ```bash
 sudo apt install -y ca-certificates curl
 sudo install -m 0755 -d /etc/apt/keyrings
-sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
 sudo chmod a+r /etc/apt/keyrings/docker.asc
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
   | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 sudo apt update
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
@@ -191,6 +210,12 @@ Allow the staff networks and the VPN, and block the guest Wi-Fi.
 
 The repository is private. The server gets a **read-only deploy key**: it can
 fetch this one repository and nothing else.
+
+InH-Ticketing is licensed software ([LICENSE](../LICENSE)). The repository
+and its deploy keys belong to the owner, and only the owner can add or remove
+them. Without a key, the server keeps running the release it has installed,
+but it can't fetch new releases. Updates and new releases need the owner's
+written permission.
 
 ```bash
 ssh-keygen -t ed25519 -f ~/.ssh/inh_ticketing_deploy -C "inh-ticketing deploy key ($(hostname))"
@@ -315,6 +340,31 @@ docker compose -f compose.yaml -f compose.prod.yaml restart proxy
 ```
 
 Check in a browser that the new expiry date shows, and update the calendar.
+
+### 3.5 No certificate yet? A temporary one
+
+So the rest of the install can go ahead while the real certificate is
+arranged, the server can make a 30-day certificate for itself. Browsers will
+show a warning, so it's for IT testing only, never for staff.
+
+```bash
+cd ~
+umask 077
+openssl req -x509 -newkey rsa:2048 -noenc -days 30 \
+  -keyout privkey.pem -out fullchain.pem \
+  -subj "/CN=helpdesk.example.com/O=Example Company (temporary)" \
+  -addext "subjectAltName=DNS:helpdesk.example.com"
+sudo install -o root -g root -m 644 fullchain.pem /srv/inh-ticketing/certs/fullchain.pem
+sudo install -o root -g root -m 600 privkey.pem   /srv/inh-ticketing/certs/privkey.pem
+sudo install -o root -g root -m 644 fullchain.pem /srv/inh-ticketing/certs/internal-root.pem
+rm ~/privkey.pem ~/fullchain.pem
+sudo openssl x509 -in /srv/inh-ticketing/certs/fullchain.pem -noout -subject -enddate -ext subjectAltName
+```
+
+The same file serves as `internal-root.pem`, so the `curl --cacert` checks in
+section 7 work. Browsers ignore HSTS from a site whose certificate they warn
+about, so clicking through leaves nothing behind. When the real certificate
+arrives, follow 3.1 to 3.3, then restart the proxy as in 3.4.
 
 ## 4. Microsoft Entra
 

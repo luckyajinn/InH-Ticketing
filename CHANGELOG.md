@@ -5,6 +5,28 @@ Each version also has illustrated release notes in [docs/releases](docs/releases
 A letter after a version, such as 0.10.0d, marks a documentation-only update:
 the app is the same as that version.
 
+## 0.10.5a - 2026-11-12
+
+Documentation only: the app is the same as 0.10.5. No release of its own.
+
+### Changed
+- Deployment guide, section 1, now follows the first install on Debian 13:
+  - time sync uses chrony's internet time servers, with the domain
+    controllers as the fallback when UDP 123 is blocked;
+  - automatic reboots are set in a file of their own;
+  - check the SSH address before enabling ufw, and install ufw first;
+  - Docker comes from its Debian repository, with Ubuntu as the variant.
+- Section 2: the repository and its deploy keys belong to the owner, and
+  updates need the owner's written permission (see LICENSE).
+- The guide's status table: the first install checked port 80's redirect,
+  the firewall, time sync and Microsoft 365 sign-in on the server. The
+  backlog and the roadmap mark the server's redirect URI and its own client
+  secret as done (2026-11-09).
+
+### Added
+- Section 3.5: a temporary 30-day certificate made on the server, so the
+  install can go ahead while the real certificate is arranged.
+
 ## [0.10.5] - 2026-11-12
 
 The admin log, and the admin's ticket page fixed. [Release notes](docs/releases/v0.10.5.md).
