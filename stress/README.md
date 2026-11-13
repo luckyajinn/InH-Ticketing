@@ -180,10 +180,11 @@ doesn't accept, counts as a failure.
 
 ## 4. The report
 
-Copy a report folder to your PC (from Git Bash on the PC):
+Copy the report folders to your PC (from Git Bash on the PC, in the
+repository folder). They land in `stress/reports/`, which git ignores:
 
 ```bash
-scp -r you@inh-stress:/srv/inh-stress/stress/reports/2026-11-09_101500_expected .
+scp -r you@inh-stress:/srv/inh-stress/stress/reports stress/
 ```
 
 Each folder contains:

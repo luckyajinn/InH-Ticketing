@@ -11,3 +11,7 @@ docs
 *.pem
 *.key
 *.csr
+# Stress-test server only: the "*.pem" above matches the top folder only, so
+# keep the test certificate's key, and the (large) run reports, out of the image.
+stress/.certs
+stress/reports

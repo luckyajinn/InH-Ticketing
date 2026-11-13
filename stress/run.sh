@@ -126,5 +126,6 @@ for s in $SCENARIOS; do
 	run_one "$s"
 done
 echo
-echo "Copy a report to your PC, e.g.:  scp -r <server>:$(pwd)/stress/reports/<folder> ."
+echo "Copy the reports to your PC (in the repository folder, git ignores them):"
+echo "  scp -r <server>:$(pwd)/stress/reports stress/"
 echo "Open report.html in a browser; print it to PDF to send it on."

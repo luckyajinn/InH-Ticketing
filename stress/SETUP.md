@@ -143,9 +143,14 @@ catch slow leaks).
 
 ## 7. Get the reports (PC)
 
+In the repository folder:
+
 ```bash
-scp -r you@inh-stress:/srv/inh-stress/stress/reports ./stress-reports
+scp -r you@inh-stress:/srv/inh-stress/stress/reports stress/
 ```
+
+They land in `stress/reports/`, which git ignores, so they can't be
+committed by accident.
 
 Open each folder's `report.html` in a browser. The answers to "are 2 CPUs and
 4 GB enough?":

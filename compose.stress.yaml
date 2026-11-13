@@ -53,6 +53,13 @@ services:
       default:
         aliases:
           - ${HELPDESK_HOSTNAME:-inh-stress.test}   # so loadgen reaches it by name
+    # Its access log is the report's "time inside the server alone". Production
+    # keeps 100 MB, which the busiest run (stress) can outgrow; keep up to 1 GB.
+    logging:
+      driver: json-file
+      options:
+        max-size: "200m"
+        max-file: "5"
 
   loadgen:
     image: locustio/locust:2.47.0

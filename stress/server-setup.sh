@@ -81,6 +81,11 @@ else
 fi
 sed -i '/^STRESS_BIND_ADDRESS=/d' .env
 echo "STRESS_BIND_ADDRESS=$BIND" >> .env
+# A plain `docker compose ...` typed here uses the same three files, as on the
+# real server. compose.yaml alone would publish the app on port 8000 on every
+# address, home network included.
+sed -i '/^COMPOSE_FILE=/d' .env
+echo "COMPOSE_FILE=compose.yaml:compose.prod.yaml:compose.stress.yaml" >> .env
 
 # The app shares 2 CPUs and the load generator has 2 more, so the VM needs 4 or more.
 check_cpus
