@@ -5,6 +5,15 @@ Each version also has illustrated release notes in [docs/releases](docs/releases
 A letter after a version, such as 0.10.0d, marks a documentation-only update:
 the app is the same as that version.
 
+## 0.10.7b - 2026-11-16
+
+Documentation and an owner's tool only: the app is the same as 0.10.7. No release of its own.
+
+### Added
+- `scripts/publish_copy.py` and `docs/company-copies.md`: each company gets
+  its own private copy of the app, one commit per release it's given, that
+  its people can read but not change. Both files stay out of the copies.
+
 ## 0.10.7a - 2026-11-16
 
 Documentation only: the app is the same as 0.10.7. No release of its own.
