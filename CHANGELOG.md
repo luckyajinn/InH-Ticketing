@@ -5,6 +5,19 @@ Each version also has illustrated release notes in [docs/releases](docs/releases
 A letter after a version, such as 0.10.0d, marks a documentation-only update:
 the app is the same as that version.
 
+## 0.10.7a - 2026-11-16
+
+Documentation only: the app is the same as 0.10.7. No release of its own.
+
+### Added
+- The v0.10.7 release notes' Upgrading section: no migrations of its own
+  (`tickets.0010` from v0.10.6 if you skip it), nothing new in `.env`, check
+  `DJANGO_DEBUG=False` first, what changes after the update, and rolling back.
+- Their Tests section: 527 tests, the 55 new ones, and the browser check.
+
+### Changed
+- The release notes say the server runs v0.10.4 (2026-11-16), not v0.6.0.
+
 ## [0.10.7] - 2026-11-16
 
 Security fixes from the 2026-11-16 audit. [Release notes](docs/releases/v0.10.7.md).
