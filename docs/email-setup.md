@@ -289,14 +289,23 @@ says so when it starts, and email to that mailbox becomes an IT ticket.
 - **Sender addresses can be forged.** The domain check relies on Exchange's
   spam and spoofing protection: SPF, DKIM and DMARC on your domain. IT should
   confirm DMARC is enforced before email-in is used for anything sensitive.
-- **An email that claims to be from IT** only becomes a public reply when
-  Exchange confirmed the sender: sent inside the organisation (Exchange marks
-  it `X-MS-Exchange-Organization-AuthAs: Internal` and strips that header
-  from outside email), or `dmarc=pass` / `compauth=pass` in
-  `Authentication-Results`. Otherwise it's kept as an internal note, marked as
-  unconfirmed, and the requester never sees it. If IT's genuine replies by email
-  start arriving as notes, check those headers on one; `INBOUND_VERIFY_IT_SENDERS=false`
-  turns the check off.
+- **Every sender is checked** (IT's since v0.9.1, everyone's since v0.10.7).
+  An email only becomes a new ticket, or a public reply from the requester or
+  IT, when Exchange confirmed the sender: sent inside the organisation
+  (Exchange marks it `X-MS-Exchange-Organization-AuthAs: Internal` and strips
+  that header from outside email), or `dmarc=pass` / `compauth=pass` in
+  `Authentication-Results`.
+  - A reply it can't confirm is kept as an internal note, marked as
+    unconfirmed: the requester never sees it, and it doesn't reopen or answer
+    the ticket.
+  - A new request it can't confirm is ignored: no ticket, no account, no
+    receipt. It's listed in the admin site under Inbound emails, with the reason.
+  - If genuine email starts arriving as notes or being ignored, check those
+    headers on one; `INBOUND_VERIFY_IT_SENDERS=false` turns the check off
+    (the setting kept its old name).
+- **No zip files** (v0.10.7). A `.zip` attachment isn't added to the ticket;
+  the ticket says it wasn't attached, and the email itself stays in the
+  mailbox's Processed folder.
 - **IT replying by email sends a public reply.** The footer of every IT email
   says so. For an internal note, use the ticket page.
 - **Only the test mailbox.** Pointing this at the live help-desk mailbox turns

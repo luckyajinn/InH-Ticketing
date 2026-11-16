@@ -12,6 +12,7 @@ from pathlib import Path
 from unittest import mock
 
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.test import TestCase, override_settings
 
 SETTINGS_FILE = Path(settings.BASE_DIR) / "config" / "settings.py"
@@ -75,10 +76,27 @@ class ProductionSettingsTests(TestCase):
         self.assertEqual(s["SECURE_HSTS_SECONDS"], 31_536_000)
 
     def test_not_applied_with_debug_on(self):
-        s = load_settings(DJANGO_DEBUG="True")
+        s = load_settings(DJANGO_DEBUG="True", DJANGO_ALLOWED_HOSTS="localhost,127.0.0.1")
         self.assertNotIn("SECURE_SSL_REDIRECT", s)
         self.assertNotIn("SECURE_HSTS_SECONDS", s)
-        self.assertEqual(s["ALLOWED_HOSTS"], [HOST])
+        self.assertEqual(s["ALLOWED_HOSTS"], ["localhost", "127.0.0.1"])
+
+
+class DebugGuardTests(TestCase):
+    """v0.10.7: debug mode only ever runs on a PC, never under the server's name."""
+
+    def test_refuses_to_start_with_debug_on_under_a_real_name(self):
+        for hosts in (HOST, f"localhost,{HOST}", "*", "10.0.0.5", "helpdesk"):
+            with self.subTest(hosts=hosts), self.assertRaisesMessage(ImproperlyConfigured, "DJANGO_DEBUG=False"):
+                load_settings(DJANGO_DEBUG="True", DJANGO_ALLOWED_HOSTS=hosts)
+
+    def test_starts_with_debug_on_for_local_names(self):
+        for hosts in ("localhost,127.0.0.1", "::1,[::1]", "app.localhost,.localhost"):
+            with self.subTest(hosts=hosts):
+                self.assertIs(load_settings(DJANGO_DEBUG="True", DJANGO_ALLOWED_HOSTS=hosts)["DEBUG"], True)
+
+    def test_the_server_settings_start(self):
+        self.assertIs(load_settings()["DEBUG"], False)
 
 
 class HttpsRedirectTests(TestCase):

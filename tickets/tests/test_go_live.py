@@ -434,7 +434,8 @@ class DepartmentMailboxTests(GoLiveTestCase):
             "id": "M1", "subject": "Bins full", "receivedDateTime": "2026-11-10T09:00:00Z",
             "internetMessageId": "<cs-1@example.invalid>",
             "from": {"emailAddress": {"address": self.requester.email, "name": "Dana"}},
-            "internetMessageHeaders": [], "hasAttachments": False, "body": {"content": "Lab 2"},
+            "internetMessageHeaders": [{"name": "X-MS-Exchange-Organization-AuthAs", "value": "Internal"}],
+            "hasAttachments": False, "body": {"content": "Lab 2"},
         }
 
         def fake(method, path, **kwargs):

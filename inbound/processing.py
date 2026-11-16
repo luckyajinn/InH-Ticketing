@@ -10,8 +10,10 @@ IncomingMessage and call process(), so they follow exactly the same rules:
   4. Subject has [#1001] and that ticket exists:
        from the requester or IT  -> public reply (Closed? -> a new follow-up ticket)
        from anyone else          -> internal note for IT
-       "from IT" that Exchange can't confirm -> internal note (see sender_confirmed)
-  5. Otherwise                   -> a new ticket from the sender
+       "from the requester or IT" that Exchange can't confirm
+                                 -> internal note (see sender_confirmed)
+  5. Otherwise                   -> a new ticket from the sender,
+                                    if Exchange confirmed who sent it (else ignored)
 
 Anything that looks like a password is logged in the password audit trail and
 flagged in the ticket's history for IT (tickets/password_guard.py): an email
@@ -85,13 +87,14 @@ def _allowed_domain(address: str) -> bool:
 
 
 _PASS = re.compile(r"\b(?:dmarc|compauth)=pass\b", re.IGNORECASE)
+UNCONFIRMED = "Sender wasn't confirmed by Exchange (no AuthAs: Internal, DMARC or compauth pass)"
 
 
 def sender_confirmed(message: IncomingMessage) -> bool:
     """
     Did Exchange confirm who sent this email? Anyone can type someone else's
-    address into the From line, so an email that claims to be from IT only
-    becomes a public IT reply when it was sent from inside the organisation
+    address into the From line, so an email only becomes a new ticket, or a
+    public reply from the requester or IT, when it was sent from inside the organisation
     (Exchange marks it AuthAs: Internal, a header it strips from outside
     email) or passed DMARC or Microsoft's composite authentication.
     The ingest_email command is run by an admin on the server, so it's trusted.
@@ -164,17 +167,21 @@ def process(message: IncomingMessage) -> Result:
     if not _allowed_domain(message.from_address):
         return record(Outcome.IGNORED, "Sender's domain isn't accepted (INBOUND_ALLOWED_DOMAINS).")
 
+    confirmed = sender_confirmed(message)
     with transaction.atomic():
-        sender = _sender(message.from_address, message.from_name)
-        if not sender.is_active:
-            return record(Outcome.IGNORED, "Sender's account is disabled.")
-        files, skipped = _files(message)
         number = find_ticket_number(message.subject)
         ticket = None
         if number:
             ticket = Ticket.objects.select_related("requester", "assignee").filter(
                 pk=Ticket.pk_from_number(number)
             ).first()
+        if ticket is None and not confirmed:
+            # Rule 5 needs a confirmed sender: no ticket (and no account) in someone else's name.
+            return record(Outcome.IGNORED, f"{UNCONFIRMED}, so no ticket was made.")
+        sender = _sender(message.from_address, message.from_name)
+        if not sender.is_active:
+            return record(Outcome.IGNORED, "Sender's account is disabled.")
+        files, skipped = _files(message)
 
         if ticket:
             reply = message.new_text if message.new_text is not None else strip_quoted(message.body_text)
@@ -182,14 +189,13 @@ def process(message: IncomingMessage) -> Result:
             works = sender.works_on(ticket)
             is_party = sender.pk == ticket.requester_id or works
 
-            if is_party and works and sender.pk != ticket.requester_id and not sender_confirmed(message):
+            if is_party and not confirmed:
                 note = services.add_email_from_third_party(
                     ticket=ticket, sender=sender, body=reply, files=files,
                     why="but Exchange couldn't confirm it really came from them",
                 )
                 password_guard.record_email(sender=sender, ticket=ticket, comment=note, texts={"body": reply})
-                return record(Outcome.NOTE, f"Claims to be from {sender}, but the sender wasn't confirmed "
-                                            "(no AuthAs: Internal, DMARC or compauth pass).", ticket)
+                return record(Outcome.NOTE, f"Claims to be from {sender}. {UNCONFIRMED}.", ticket)
 
             if not is_party:
                 note = services.add_email_from_third_party(ticket=ticket, sender=sender, body=reply, files=files)

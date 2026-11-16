@@ -285,6 +285,34 @@ from a phone, people email their request. No restore drill is planned.
       secret, the permission-check record, DMARC). The off-server backup moved
       to after v1.0.0 (2026-11-11).
 
+## v0.10.7 (security audit, 2026-11-16)
+
+An attack test of the app against ten common weaknesses (access control,
+secrets, debug settings, injection, uploads, sign-in, CSRF and cookies,
+dependencies, email-in, the audit trail). No ticket or file of someone
+else's could be reached; the fixes below close the gaps it found.
+
+- [x] Refuse to start with debug mode on under a real name. *(The server's
+      `.env` already had `DJANGO_DEBUG=False`, checked 2026-11-16.)*
+- [x] An unconfirmed email "from the requester" is kept as an internal note;
+      an unconfirmed new request is ignored.
+- [x] Content-Security-Policy, enforced.
+- [x] No `.zip` attachments (decided 2026-11-16 instead of a virus scanner:
+      Exchange already scans email attachments, and staff PCs' antivirus
+      scans downloads).
+- [x] The update check covers indirect packages.
+- [ ] Confirm in Entra that MFA is required for the app (Conditional Access or
+      security defaults). *(You.)*
+
+### v0.11.0: access logging (after the compliance lead's review)
+
+- [ ] Record every sign-in (success and failure) and every file download,
+      kept as long as tickets (2 years), read-only for admins in the admin
+      site. Ticket page views aren't logged (decided 2026-11-16).
+- [ ] The usage and privacy page says so; a row in `usage-rules.md` (admins
+      only see it); a drafted change to the risk assessment's personal-data
+      list, reviewed **before** it ships.
+
 ## v1.1.0 (stretch: IT improvements, by 2026-11-17)
 
 - [ ] **Reply templates:** saved answers for common requests (password resets, new starters).

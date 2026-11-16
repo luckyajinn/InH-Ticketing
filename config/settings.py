@@ -12,6 +12,7 @@ from pathlib import Path
 
 import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
+from django.utils.csp import CSP
 from dotenv import load_dotenv
 
 from config import __version__
@@ -71,6 +72,24 @@ if not SECRET_KEY:
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
 CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
 
+
+def is_local_host(host: str) -> bool:
+    """A name that only ever reaches this computer: localhost, 127.0.0.1, ::1, *.localhost."""
+    host = host.strip().lower().lstrip(".")
+    return host in {"localhost", "127.0.0.1", "::1", "[::1]", "testserver"} or host.endswith(".localhost")
+
+
+# Debug mode shows tracebacks and settings on error pages, and switches off
+# the HTTPS hardening below. It's for a PC only, so the app refuses to start
+# with it on under a real name (as on the server, if .env.example's
+# DJANGO_DEBUG=True was kept by mistake).
+_server_hosts = [host for host in ALLOWED_HOSTS if not is_local_host(host)]
+if DEBUG and _server_hosts:
+    raise ImproperlyConfigured(
+        f"DJANGO_DEBUG is on, but DJANGO_ALLOWED_HOSTS has {', '.join(_server_hosts)}. Debug mode is for "
+        "a PC only (localhost): set DJANGO_DEBUG=False in .env on the server, then start the app again."
+    )
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -88,6 +107,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "django.middleware.csp.ContentSecurityPolicyMiddleware",  # SECURE_CSP, below
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -108,6 +128,7 @@ TEMPLATES = [
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.request",
+                "django.template.context_processors.csp",  # the nonce the admin site's templates use
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "core.context_processors.app_info",
@@ -216,8 +237,9 @@ ATTACHMENT_EXTENSIONS = {
     # documents
     ".pdf", ".txt", ".log", ".csv", ".rtf", ".doc", ".docx", ".xls", ".xlsx",
     ".ppt", ".pptx", ".odt", ".ods",
-    # email and archives
-    ".eml", ".msg", ".zip",
+    # email
+    ".eml", ".msg",
+    # Not .zip (v0.10.7): an archive can hide any file type, and nothing scans inside it.
 }
 
 # --------------------------------------------------------------------------
@@ -308,6 +330,25 @@ INBOUND_MAX_ATTEMPTS = 3
 X_FRAME_OPTIONS = "DENY"
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "same-origin"
+
+# Content-Security-Policy, on every page in every environment: browsers run
+# only the app's own script and styles, so even if text from a ticket ever
+# got onto a page as HTML, it couldn't run. Pages have no inline code; the
+# admin site's few inline styles and scripts carry the per-request nonce, and
+# so does the self-contained 500 page. Django's own debug pages (DEBUG=True)
+# switch it off for themselves. To switch it off: SECURE_CSP = {}.
+SECURE_CSP = {
+    "default-src": [CSP.SELF],
+    "script-src": [CSP.SELF, CSP.NONCE],
+    "style-src": [CSP.SELF, CSP.NONCE],
+    "img-src": [CSP.SELF],
+    "font-src": [CSP.SELF],
+    "connect-src": [CSP.SELF],
+    "object-src": [CSP.NONE],
+    "base-uri": [CSP.NONE],
+    "form-action": [CSP.SELF],
+    "frame-ancestors": [CSP.NONE],
+}
 
 if not DEBUG:
     SESSION_COOKIE_SECURE = True

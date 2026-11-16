@@ -6,7 +6,7 @@
   <title>Something went wrong · InH-Ticketing</title>
   <meta name="robots" content="noindex, nofollow">
   <link rel="icon" href="/static/icons/icon.svg" type="image/svg+xml">
-  <style>
+  <style{% if csp_nonce %} nonce="{{ csp_nonce }}"{% endif %}>
     /* Self-contained on purpose: this page must render even if static files can't be served. */
     :root {
       color-scheme: light;

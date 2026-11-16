@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseServerError
+from django.middleware.csp import get_nonce
 from django.shortcuts import redirect, render
 from django.template import loader
 from django.templatetags.static import static
@@ -35,7 +36,12 @@ def server_error(request):
     The "Something went wrong" page, with who to contact. It reads settings
     only, never the database or the session, which may be what failed.
     """
-    return HttpResponseServerError(loader.get_template("500.html").render(help_contact()))
+    # Its styles are inline, so the page works without static files; the
+    # Content-Security-Policy lets them in with this request's nonce.
+    # (str() makes the nonce, so the header names it; without the middleware there's none.)
+    nonce = get_nonce(request)
+    context = {**help_contact(), "csp_nonce": str(nonce) if nonce is not None else ""}
+    return HttpResponseServerError(loader.get_template("500.html").render(context))
 
 
 @login_required

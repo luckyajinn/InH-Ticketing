@@ -82,7 +82,9 @@ class GraphInboxTests(MediaTestCase):
             "id": "AAMk-1", "subject": "Printer jammed", "receivedDateTime": "2026-11-06T09:00:00Z",
             "internetMessageId": "<graph-1@example.invalid>",
             "from": {"emailAddress": {"address": "Dana.Whitfield@example.invalid", "name": "Dana Whitfield"}},
-            "internetMessageHeaders": [{"name": "Auto-Submitted", "value": "no"}],
+            # Sent from inside the organisation, as Exchange marks it (v0.10.7: needed for a new ticket).
+            "internetMessageHeaders": [{"name": "Auto-Submitted", "value": "no"},
+                                       {"name": "X-MS-Exchange-Organization-AuthAs", "value": "Internal"}],
             "hasAttachments": True, "body": {"content": "Tray 2 again."}, "uniqueBody": {"content": "Tray 2 again."},
         }
         item.update(overrides)

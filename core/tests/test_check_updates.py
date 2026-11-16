@@ -90,3 +90,45 @@ def settings_django_pin() -> str:
     line = next(l for l in (Path(settings.BASE_DIR) / "requirements.txt").read_text().splitlines()
                 if l.startswith("Django~="))
     return line.split("~=")[1].strip()
+
+
+class IndirectPackagesTests(TestCase):
+    """v0.10.7: what the pinned packages need is checked too."""
+
+    REQUIRES = {
+        "Django": ["asgiref>=3.9", "sqlparse>=0.5", 'tzdata; sys_platform == "win32"',
+                   'argon2-cffi>=23; extra == "argon2"'],
+        "psycopg": ['psycopg-binary==3.3.8; extra == "binary"', 'psycopg-pool; extra == "pool"'],
+        "asgiref": ["typing_extensions>=4"],
+        "psycopg-binary": [],
+    }
+    INSTALLED = {"asgiref": "3.13.0", "sqlparse": "0.6.1", "typing_extensions": "4.16.0", "psycopg-binary": "3.3.8"}
+
+    def indirect(self, names, extras=None):
+        with mock.patch.object(check_updates.metadata, "requires", side_effect=lambda n: self.REQUIRES.get(n, [])), \
+                mock.patch.object(check_updates, "installed", side_effect=self.INSTALLED.get):
+            return check_updates.indirect(names, extras)
+
+    def test_follows_needs_of_needs_and_the_extras_asked_for(self):
+        found = self.indirect(["Django", "psycopg"], {"psycopg": {"binary"}})
+        self.assertEqual(found, [("asgiref", "3.13.0"), ("psycopg-binary", "3.3.8"), ("sqlparse", "0.6.1"),
+                                 ("typing_extensions", "4.16.0")])
+
+    def test_leaves_out_extras_not_asked_for_and_what_isnt_installed(self):
+        names = [name for name, _ in self.indirect(["Django", "psycopg"])]
+        self.assertNotIn("psycopg-binary", names)  # no [binary] asked for
+        self.assertNotIn("tzdata", names)  # not installed (Windows only)
+        self.assertNotIn("argon2-cffi", names)
+
+    def test_reads_the_extras_in_requirements(self):
+        self.assertEqual(check_updates.pinned_extras().get("psycopg"), {"binary"})
+
+    def test_a_known_issue_in_an_indirect_package_fails_the_check(self):
+        out = StringIO()
+        with mock.patch.object(check_updates, "_get", side_effect=fake_get(vulnerable={("sqlparse", "0.6.1")})), \
+                mock.patch.object(check_updates, "installed", side_effect=lambda name: None), \
+                mock.patch.object(check_updates, "indirect", return_value=[("sqlparse", "0.6.1")]), \
+                redirect_stdout(out):
+            code = check_updates.main()
+        self.assertEqual(code, 1)
+        self.assertIn("sqlparse 0.6.1: GHSA-test", out.getvalue())

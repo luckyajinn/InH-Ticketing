@@ -96,7 +96,8 @@ class AttachmentsField(forms.FileField):
             if ext not in settings.ATTACHMENT_EXTENSIONS:
                 raise forms.ValidationError(
                     f'"{upload.name}" isn\'t a file type we accept. Try a screenshot, PDF, '
-                    "Office document, text file or zip."
+                    "Office document or text file. Zip files aren't accepted: attach the files inside "
+                    "one by one."
                 )
             if upload.size > settings.ATTACHMENT_MAX_BYTES:
                 raise forms.ValidationError(

@@ -11,8 +11,10 @@ On a PC with the project's virtual environment, it checks that environment.
 For each package in requirements.txt it asks PyPI for known security issues
 (PyPI's vulnerability data, from the OSV database) in the installed version,
 the newest release a rebuild would install (within the pin), and the latest
-release overall. It also compares the Caddy tag in compose.prod.yaml with
-Caddy's latest release on GitHub.
+release overall. Then it checks the packages those need in turn (cryptography,
+requests, ...), as installed: a rebuild updates them with their parents. It
+also compares the Caddy tag in compose.prod.yaml with Caddy's latest release
+on GitHub.
 
 Exit code 0: no known security issues. 1: at least one, listed. 2: couldn't check.
 What to do with the result: docs/deployment.md, section 11.
@@ -31,6 +33,8 @@ ROOT = Path(__file__).resolve().parent.parent
 USER_AGENT = "InH-Ticketing update check"
 _PIN = re.compile(r"^\s*([A-Za-z0-9_.-]+)(?:\[[^\]]*\])?\s*~=\s*([0-9][0-9.]*)")
 _CADDY = re.compile(r"image:\s*caddy:([0-9.]+)")
+_NAME = re.compile(r"^\s*([A-Za-z0-9][A-Za-z0-9_.-]*)")
+_EXTRA = re.compile(r"""extra\s*==\s*["']([^"']+)["']""")
 
 
 def _get(url: str) -> dict:
@@ -87,6 +91,51 @@ def installed(name: str) -> str | None:
         return None
 
 
+def _normal(name: str) -> str:
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
+def pinned_extras(path: Path = ROOT / "requirements.txt") -> dict[str, set[str]]:
+    """{"psycopg": {"binary"}} for 'psycopg[binary]~=...'."""
+    found = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        match = re.match(r"^\s*([A-Za-z0-9_.-]+)\[([^\]]*)\]", line.split("#", 1)[0])
+        if match:
+            found[_normal(match.group(1))] = {e.strip().lower() for e in match.group(2).split(",") if e.strip()}
+    return found
+
+
+def indirect(names: list[str], extras: dict[str, set[str]] | None = None) -> list[tuple[str, str]]:
+    """
+    [(package, installed version)] for everything the pinned packages need, and
+    what those need, that's installed here. Optional extras are left out, and so
+    is anything not installed (e.g. a Windows-only need, on the server), except
+    the extras requirements.txt asks for (psycopg[binary]).
+    """
+    seen = {_normal(name) for name in names}
+    extras = extras or {}
+    queue, found = list(names), []
+    while queue:
+        parent = queue.pop()
+        try:
+            requires = metadata.requires(parent) or []
+        except metadata.PackageNotFoundError:
+            continue
+        for line in requires:
+            match = _NAME.match(line)
+            extra = _EXTRA.search(line)
+            if not match or (extra and extra.group(1).lower() not in extras.get(_normal(parent), set())):
+                continue
+            name = match.group(1)
+            version = installed(name)
+            if _normal(name) in seen or version is None:
+                continue
+            seen.add(_normal(name))
+            found.append((name, version))
+            queue.append(name)
+    return sorted(found, key=lambda item: _normal(item[0]))
+
+
 def main() -> int:
     problems, rebuild, deliberate = [], [], []
     print(f"{'Package':16} {'Installed':10} {'Rebuild gets':13} {'Latest':10} Known security issues")
@@ -106,6 +155,17 @@ def main() -> int:
                 rebuild.append(f"{name} {have} -> {newest}")
             if _key(latest) > _key(newest):
                 deliberate.append(f"{name} {latest} (the pin allows up to {newest})")
+
+        needed = indirect([name for name, _ in pins()], pinned_extras())
+        if needed:
+            print("\nNeeded by those (updated with them):")
+        for name, have in needed:
+            found = issues(name, have)
+            print(f"{name:18} {have:10} {'; '.join(found) or 'none'}")
+            if found:
+                problems.append(f"{name} {have}: {'; '.join(found)}")
+        if needed:
+            print()
 
         compose = (ROOT / "compose.prod.yaml").read_text(encoding="utf-8")
         caddy = _CADDY.search(compose)

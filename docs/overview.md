@@ -79,7 +79,7 @@ Every change is written to the ticket's history: who, what, when.
   that anything typed there won't be used. Three each for Mechanics and C&S
   today; admins edit the lists (one per line).
 - **Attachments:** up to 5 files, 10 MB each (screenshots, PDFs, Office files,
-  text, zip), dragged in or browsed.
+  text, emails; no zip files), dragged in or browsed.
 - **Length:** a description or reply holds up to 20,000 characters (an
   emailed one is cut there). Over that, the page says so: attach a long log
   as a file.

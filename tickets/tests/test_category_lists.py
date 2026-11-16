@@ -67,7 +67,8 @@ class QueueTests(MediaTestCase):
 
     def test_changing_department_clears_the_category(self):
         self.client.force_login(self.admin)
-        self.assertContains(self.client.get(self.url), "this.form.elements.category.value = ''")
+        # v0.10.7: app.js does it (data-clears), as inline handlers break the Content-Security-Policy.
+        self.assertContains(self.client.get(self.url), 'name="dept" class="select" data-submit-on-change data-clears="category"')
 
     def test_agents_see_only_their_departments_categories(self):
         mechanic = make_user("Mo Mechanic", User.Role.AGENT)

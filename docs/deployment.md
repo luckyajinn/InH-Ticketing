@@ -441,7 +441,7 @@ ls -l .env      # -rw------- 1 inhadmin inhadmin ...
 |---|---|---|
 | `COMPOSE_FILE` | `compose.yaml:compose.prod.yaml` | A `docker compose` command typed without `-f` still uses both files |
 | `HELPDESK_HOSTNAME` | `helpdesk.example.com` | The name the proxy serves and redirects to. Required: the proxy won't start without it |
-| `DJANGO_DEBUG` | `False` | Turns on the HTTPS hardening: secure cookies, redirect, HSTS |
+| `DJANGO_DEBUG` | `False` | Turns on the HTTPS hardening: secure cookies, redirect, HSTS. With `True` and a real name in `DJANGO_ALLOWED_HOSTS`, the app refuses to start (v0.10.7) |
 | `DJANGO_SECRET_KEY` | 64 random hex characters | Signs sessions. New for the server; never copy a PC's |
 | `DJANGO_ALLOWED_HOSTS` | `helpdesk.example.com` | Other names get "400 Bad Request". (`127.0.0.1` is added automatically, for Docker's health check) |
 | `DJANGO_CSRF_TRUSTED_ORIGINS` | `https://helpdesk.example.com` | Forms must come from this address |
@@ -805,7 +805,7 @@ Monthly, about ten minutes:
 | Certificate expiry | `openssl x509 -in /srv/inh-ticketing/certs/fullchain.pem -noout -enddate` |
 | Client secret expiry | Entra → App registrations → InH-Ticketing → Certificates & secrets |
 | Updates | `sudo apt update && sudo apt upgrade`; reboot if `/var/run/reboot-required` exists |
-| The app's parts: known security issues | `docker compose -f compose.yaml -f compose.prod.yaml exec web python scripts/check_updates.py`. "Known security issues: none." is the all-clear. If it lists one, a new release of the app fixes it (send the output to whoever maintains the app) |
+| The app's parts: known security issues | `docker compose -f compose.yaml -f compose.prod.yaml exec web python scripts/check_updates.py`. It checks the app's packages and, since v0.10.7, the packages they need. "Known security issues: none." is the all-clear. If it lists one, a new release of the app fixes it (send the output to whoever maintains the app) |
 | PostgreSQL and the Python base image | Refresh them: the steps below |
 | Caddy | The same script says if there's a newer release. Change the tag in `compose.prod.yaml` through a normal release |
 | The worker | `ps` shows `worker` as `(healthy)`, and Reports → *Email and safety checks* says "The worker is running" |
@@ -850,6 +850,8 @@ Logs: `docker compose -f compose.yaml -f compose.prod.yaml logs --tail 100 <serv
 | Browser can't connect at all | DNS, the network firewall, or `proxy` isn't running | `nslookup helpdesk.example.com`; `docker compose … ps` |
 | `proxy` keeps restarting | A certificate file is missing or unreadable, the key doesn't match, or the Caddyfile has an error | `docker compose … logs proxy`; repeat step 6.2 |
 | `502 Bad Gateway` | `web` is down or still starting | `docker compose … ps`; `logs web` |
+| `web` stops at once with `DJANGO_DEBUG is on, but DJANGO_ALLOWED_HOSTS has …` | `.env` has `DJANGO_DEBUG=True` (as in `.env.example`) | Set `DJANGO_DEBUG=False` in `.env`, then `docker compose … up -d` |
+| A page looks unstyled or a button does nothing, and the browser console says `Content-Security-Policy` | Something on the page isn't from the app itself (a browser extension, or a change to the templates) | Try another browser or a private window. If it's the app, report it with the console message |
 | `400 Bad Request` | Opened by IP address or a short name | Use `https://helpdesk.example.com`. Other names need adding to `DJANGO_ALLOWED_HOSTS` |
 | Too many redirects | Something in front of the proxy, or `X-Forwarded-Proto` doesn't reach Django | The proxy must be the only thing in front. Check `proxy` logs |
 | `403 CSRF verification failed` | `DJANGO_CSRF_TRUSTED_ORIGINS` doesn't match the address used | Must be `https://helpdesk.example.com` exactly |

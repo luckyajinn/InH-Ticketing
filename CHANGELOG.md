@@ -5,6 +5,34 @@ Each version also has illustrated release notes in [docs/releases](docs/releases
 A letter after a version, such as 0.10.0d, marks a documentation-only update:
 the app is the same as that version.
 
+## [0.10.7] - 2026-11-16
+
+Security fixes from the 2026-11-16 audit. [Release notes](docs/releases/v0.10.7.md).
+
+### Security
+- The app refuses to start with `DJANGO_DEBUG` on under a real name (any
+  name in `DJANGO_ALLOWED_HOSTS` other than localhost, 127.0.0.1, ::1 or
+  `*.localhost`). The message says to set `DJANGO_DEBUG=False`. A PC is
+  unaffected.
+- Email-in checks every sender with Exchange's headers, not only IT. A reply
+  that claims to be from the requester but that Exchange can't confirm is
+  kept as an internal note, like a faked IT email; it can't reopen or answer
+  the ticket. A new request from an unconfirmed sender is ignored, with no
+  ticket, account or receipt, and listed under Inbound emails with the reason.
+- A Content-Security-Policy on every page: browsers run only the app's own
+  script and styles. The queue's filter lists and the icon sprite no longer
+  use inline code; the 500 page's own styles carry the per-request nonce.
+- `.zip` attachments aren't accepted, on the web form or by email: an archive
+  can hide any file type, and nothing scans inside it. Zip files already on
+  tickets still download.
+- `scripts/check_updates.py` also checks the packages the app's parts need
+  (cryptography, requests, PyJWT, ...), not only the ones in `requirements.txt`.
+
+### Added
+- `tickets/tests/test_security_audit.py`: the audit's attacks (access to other
+  people's tickets and files, staff and admin pages, injection, uploads, CSRF,
+  headers, spoofed email, the audit trail), kept in the test suite.
+
 ## [0.10.6] - 2026-11-13
 
 A request for someone else. [Release notes](docs/releases/v0.10.6.md).
@@ -621,6 +649,7 @@ Milestone 1: skeleton and Microsoft 365 sign-in. [Release notes with screenshots
 - `/healthz` endpoint, Dockerfile and Docker Compose with PostgreSQL 17.
 - Entra setup guide (`docs/entra-setup.md`) and the UI mockup (`mockups/`).
 
+[0.10.7]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.10.7
 [0.10.6]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.10.6
 [0.10.5]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.10.5
 [0.10.4]: https://github.com/luckyajinn/InH-Ticketing/releases/tag/v0.10.4

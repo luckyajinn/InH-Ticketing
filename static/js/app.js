@@ -60,6 +60,18 @@
       });
     });
 
+    // The queue's filter lists apply as soon as one is changed (the Filter
+    // button does it without JS). data-clears names a field to empty first:
+    // a new department starts with all its categories.
+    document.querySelectorAll("select[data-submit-on-change]").forEach(function (select) {
+      select.addEventListener("change", function () {
+        var form = select.form;
+        var clears = select.getAttribute("data-clears");
+        if (clears && form.elements[clears]) form.elements[clears].value = "";
+        if (form.requestSubmit) form.requestSubmit(); else form.submit();
+      });
+    });
+
     // Whole queue rows are clickable; the subject link stays the real link.
     document.querySelectorAll("tr[data-href]").forEach(function (row) {
       row.addEventListener("click", function (event) {
