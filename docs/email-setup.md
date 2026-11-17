@@ -145,15 +145,19 @@ The error appears in the worker's terminal and on the email in the admin site.
 
 | Error | Meaning | Fix |
 |---|---|---|
-| `Graph returned 403: ErrorAccessDenied` | The app isn't allowed to send as that mailbox, or the permission hasn't taken effect yet | Re-run step 4 of 3c; wait an hour |
+| `Graph POST returned 403: …` (the text includes `ErrorAccessDenied`) | The app isn't allowed to send as that mailbox, or the permission hasn't taken effect yet | Re-run step 4 of 3c; wait up to a couple of hours |
 | `Couldn't get a Graph token: invalid_client` | Client secret wrong or expired | Same fix as for sign-in |
-| `Graph returned 404` / `MailboxNotEnabledForRESTAPI` | The address isn't an Exchange Online mailbox | Check `HELPDESK_MAILBOX` |
+| `Graph POST returned 404: …` (the text includes `MailboxNotEnabledForRESTAPI`) | The address isn't an Exchange Online mailbox | Check `HELPDESK_MAILBOX` |
 | Email stays *Pending* | The worker isn't running | Start `manage.py run_worker`. On the server, Reports and `docker compose ps` say so (`worker` `(unhealthy)`) |
 
 ## On the server (Docker)
 
 `compose.yaml` runs the worker as its own `worker` container, so it starts and
-restarts with the app. Run exactly one worker.
+restarts with the app.
+
+**Run exactly one worker.** Two workers would send each email twice, and would
+split the mailbox between them when email-in is on. Don't start a second
+`run_worker` on a PC that points at the same mailbox either.
 
 ---
 
@@ -169,10 +173,16 @@ every minute. Each email is handled once, then marked read and moved to a
 |---|---|
 | An out-of-office reply, bounce, or mailing-list email | Ignores it, so mail can't loop |
 | From an address outside your domain, or from the help-desk mailbox itself | Ignores it and **sends nothing back**. Replying to unknown senders would bounce mail at whoever's address was forged |
-| Subject has `[#1028]`, from the requester or IT | Adds a **public reply** to #1028. Only the new text is kept, not the quoted history. A requester's reply moves *Waiting on User* back to *Open*, as on the web |
+| From a disabled account | Ignores it |
+| Subject has `[#1028]`, from the requester or IT, and Exchange confirmed the sender | Adds a **public reply** to #1028. Only the new text is kept, not the quoted history. A requester's reply moves *Waiting on User* back to *Open*, as on the web |
+| Subject has `[#1028]`, from the requester or IT, but the sender is **not confirmed** | Adds an **internal note**, marked as unconfirmed. The requester never sees it, and it doesn't reopen or answer the ticket |
 | Subject has `[#1028]`, from anyone else (a manager, say) | Adds an **internal note** that only IT sees, and alerts the assignee |
-| Subject has `[#1028]` but #1028 is Closed | Starts a **new ticket** that says it follows up #1028 |
-| Anything else | Creates a **new ticket**. Category: *Other*; the requester gets the usual receipt |
+| Subject has `[#1028]` but #1028 is Closed | Starts a **new ticket** that says it follows up #1028 (only for a confirmed requester) |
+| Anything else, sender confirmed | Creates a **new ticket**. Category: *Other*; the requester gets the usual receipt |
+| Anything else, sender **not confirmed** | Ignores it: no ticket, no account, no receipt |
+
+"Confirmed" means Exchange vouched for the sender. See **Every sender is
+checked** under [Things to know](#things-to-know) for what counts.
 
 - **New senders:** colleagues who have never signed in get an account
   automatically, and it's linked to their Microsoft 365 account the first time
@@ -202,7 +212,10 @@ without Microsoft 365:
 .\.venv\Scripts\python.exe manage.py ingest_email C:\path\to\message.eml
 ```
 
-With `HELPDESK_MAILBOX` blank (as on your PC), email from any domain is accepted.
+With `HELPDESK_MAILBOX` and `INBOUND_ALLOWED_DOMAINS` both blank (as on your
+PC), email from any domain is accepted. `ingest_email` also skips the
+sender-confirmation check (section 4, *Things to know*): an admin running it
+on the server is trusted.
 
 ### 4b. Let the app read the test mailbox
 
@@ -276,7 +289,7 @@ Test-ServicePrincipalAuthorization -Identity $appId -Resource "someone.else@exam
 
 Also set each mailbox to accept internal senders only, as for the help-desk
 mailbox, and file the `Test-ServicePrincipalAuthorization` output with the
-risk assessment. The worker prints every mailbox it reads when it starts. If
+compliance records for go-live (the risk assessment the compliance lead keeps). The worker prints every mailbox it reads when it starts. If
 one isn't set up yet, the others still work and the log says which one failed.
 
 New-request alerts for a department go to its alert address in the admin site
@@ -318,4 +331,4 @@ says so when it starts, and email to that mailbox becomes an IT ticket.
 | `Inbox: couldn't read it (GraphError: Graph GET returned 403 ...)` | The app can't read the mailbox. Reports → *Email and safety checks* shows it too, with the mailbox's address | Step 4b; allow time for the permission to apply |
 | `Email-in: off` | `INBOUND_EMAIL` isn't `graph` | Set it in `.env`, then `docker compose … up -d` (a restart doesn't read `.env` again) |
 | Emails stay unread, admin shows *Error* | Processing failed | Read the error in **Inbound emails**; it retries 3 times |
-| An email was ignored | It was automatic, or from another domain | The reason is in **Inbound emails** |
+| An email was ignored | It was automatic (out-of-office, bounce, mailing list); had no sender address; came from the app's own mailbox or from a domain that isn't accepted; came from a disabled account; or the sender wasn't confirmed and there was no ticket to attach it to | The **Inbound emails** admin page shows each one's reason |

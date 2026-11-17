@@ -3,7 +3,9 @@
 All notable changes to InH-Ticketing. Versions follow [Semantic Versioning](https://semver.org).
 Each version also has illustrated release notes in [docs/releases](docs/releases/README.md).
 A letter after a version, such as 0.10.0d, marks a documentation-only update:
-the app is the same as that version.
+the app is the same as that version. Letter versions have no tag (v0.10.0d is
+the one exception: it has a tag and notes, because servers install it in place
+of v0.10.0).
 
 ## Unreleased
 
@@ -13,6 +15,53 @@ Small fixes, going out with the next release.
 - The queue's Views list: the counts line up on the right again. "Recently
   resolved" was wider than the column, which pushed its count out of line;
   the column now grows to fit its longest label (216px at least).
+
+## 0.10.7e - 2026-11-17
+
+Documentation only: the app is the same as 0.10.7. No release of its own.
+Fixes from a review of every document (2026-11-17).
+
+### Fixed
+- Status pages caught up with v0.10.7: README's status and roadmap table,
+  overview.md (version, test count, the reinstalled server, What's next; the
+  old demo section is now a short history note), roadmap.md (v0.10.2–v0.10.7
+  ticked, v1.0.0 to v1.2.0 after go / no-go, a v0.11.0 row), backlog.md (the
+  CSP ticked, v0.11.0 its own section), pilot-testing.md (v0.10.7, and checks
+  for zip files, a request for someone else and unconfirmed email),
+  server-requirements.md (what's measured and what's estimated).
+- deployment.md:
+  - 2.1's tag commands no longer delete the checked-out tag;
+  - 3.2 uses one file name for the chain;
+  - 3.5 moves `fullchain.pem` aside too;
+  - the `.env` template leaves `HELP_CONTACT` blank;
+  - the secret check accepts quotes;
+  - rolling back from v0.10.1–v0.10.5 to v0.10.0;
+  - clearer checks 16, 18 and 20, the backup names, and finding the version in a backup's manifest;
+  - `journalctl` for cron on Debian 13;
+  - rows for four tunable settings.
+- email-setup.md:
+  - the incoming-email table has the v0.10.7 sender rules;
+  - the real `Graph POST returned …` lines;
+  - every reason an email is ignored;
+  - one wait time.
+- `.env.example`'s comment on `INBOUND_VERIFY_IT_SENDERS` says every sender is checked.
+- entra-setup.md:
+  - the Entra roles needed;
+  - both sign-in expiry messages, quoted exactly.
+- Release notes:
+  - v0.10.6's rollback command has the production compose files;
+  - rollback steps in v0.10.3, v0.10.4 and v0.10.7 are corrected;
+  - v0.10.7 says the server was reinstalled with it;
+  - smaller fixes in v0.1.0, v0.3.0, v0.4.0, v0.7.0, v0.8.3 and v0.10.0.
+- usage-rules.md: closed tickets are due for deletion after two years, but
+  deletion isn't switched on.
+- **To fill in** labels where the facts aren't known yet: the usage rules'
+  review, the risk assessment for Mechanics and C&S, and the proxy check (6.2).
+- company-copies.md:
+  - the tag clash when moving a server;
+  - the private-words check's rules;
+  - which letter versions and refs a docs-only update takes;
+  - the `github-inh` alias.
 
 ## 0.10.7d - 2026-11-17
 
@@ -89,8 +138,9 @@ Documentation and an owner's tool only: the app is the same as 0.10.7. No releas
   its people can read but not change. Both files stay out of the copies.
 
 ### Fixed
-- `publish_copy.py` checks for private words before pointing links at the
-  copy, so a copy whose own name contains one isn't refused (2026-11-17).
+- A later fix, on 2026-11-17: `publish_copy.py` checks for private words
+  before pointing links at the copy, so a copy whose own name contains one
+  isn't refused.
 
 ## 0.10.7a - 2026-11-16
 

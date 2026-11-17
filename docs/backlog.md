@@ -31,7 +31,7 @@ InH-Ticketing as **non-GxP**: internal IT support only, holding no
 FDA-required records. The compliance lead reviewed it, and the risk assessment
 passed (reported 2026-11-09).
 
-Before the pilot (by 2026-11-30):
+First steps (planned for before the pilot, which started 2026-11-10; one is still open):
 - [x] One page of usage rules: [usage-rules.md](usage-rules.md) (intended
       use, the *not used for* list, "forward complaints to QA the same day,
       never delete", "no passwords in tickets", and IT's handling steps).
@@ -66,10 +66,12 @@ Before go-live (by 2027-01-11):
 - [x] An admin log: every change in the admin site, with the old and new
       values, read-only; people can't be deleted there. *(v0.10.5, asked
       2026-11-12.)*
-- [ ] Off-server backup copy (also under v0.6.0). *(2026-11-11: moved to after
-      v1.0.0; where the copies go is undecided.)*
+- [ ] Off-server backup copy: see **Later** below, which holds the one entry.
+      *(2026-11-11: moved to after v1.0.0; where the copies go is undecided.)*
 - [x] ~~One tested restore.~~ *Not planned (decided 2026-11-11). The risk
       assessment asked for one before go-live: confirm with the compliance lead.*
+  - [ ] Confirm with the compliance lead that no restore test is acceptable,
+        and record the answer in the risk assessment.
 
 ## v0.5.0 (milestone 5: automations)
 
@@ -78,6 +80,8 @@ Before go-live (by 2027-01-11):
 - [x] "Start a follow-up" on closed tickets on the web, and a Linked tickets
       panel on both tickets.
 - [ ] *(To decide)* Reminder when a ticket has been Waiting on User for N days.
+      The owner decides, with IT. Done means the decision (yes with N, or no)
+      is recorded here.
 
 ## v0.6.0 (milestone 6: deploy)
 
@@ -182,7 +186,7 @@ Still from the review, before v1.0.0:
 - [x] **Start-up order:** the worker waits for the web container
       (`condition: service_healthy`). *(v0.9.1.)*
 - [x] The web manifest's content type (`application/manifest+json`). *(v0.9.1.)*
-- [ ] *(Later)* A Content-Security-Policy header. First move the queue's 3
+- [x] A Content-Security-Policy header *(v0.10.7)*. First move the queue's 3
       inline `onchange` handlers into `app.js`; test sign-in and sign-out
       through Microsoft on the server, as a wrong policy blocks them.
 - [ ] *(To decide)* Matching a first sign-in to an account made by email on
@@ -215,9 +219,10 @@ Still from the review, before v1.0.0:
       the manifest type, the privacy page.
 - [x] A mailbox per department, ready to switch on.
 
-## v0.9.x (pilot fixes, after the pilot's testing)
+## v0.9.x (pilot fixes, shipped as v0.10.x)
 
-Paused until the pilot's testing is done (2026-11-10).
+The pilot fixes shipped as v0.10.x (v0.10.2 to v0.10.7), not v0.9.x. This
+section keeps its old name for history.
 
 Filled from the pilot, which starts 2026-11-10. Report what you find as a
 ticket, subject starting "Pilot:", so it's tracked in the app itself.
@@ -231,7 +236,7 @@ ticket, subject starting "Pilot:", so it's tracked in the app itself.
       each warning to its message, so it can start there.)*
 - [x] What happens to closed tickets: archived for two years (see Compliance above). *(v0.9.1.)*
 
-## v1.0.0 (everything for IT finalized, by 2026-11-13 or 11-16)
+## v1.0.0 (everything for IT finalized; date set after go / no-go, 2026-11-20)
 
 Decided 2026-11-11: the web page is for company PCs. Phones aren't supported:
 from a phone, people email their request. No restore drill is planned.
@@ -270,7 +275,7 @@ from a phone, people email their request. No restore drill is planned.
   - Exchange, per mailbox: allow the app to send as it and read it
     ([email-setup.md](email-setup.md) 3c and 4b), set internal senders only,
     and record `Test-ServicePrincipalAuthorization` for it.
-- [ ] From the reports research (2026-11-10):
+- [x] From the reports research (2026-11-10):
   - [x] Admins can hard-delete a ticket and its history in the admin site,
         against the usage rules ("never delete it"). *(Turned off in v0.9.1.)*
   - [x] The closed-ticket decision keeps a closed ticket's row and history
@@ -280,10 +285,12 @@ from a phone, people email their request. No restore drill is planned.
         with a Docker health check for the worker.)*
   - [x] Usage and privacy page: ignored emails are logged with their sender
         and subject, and the emails the app sends are kept. *(v0.9.1.)*
-- [ ] Everything in v0.9.x, plus the server and Microsoft 365 tasks in the
-      roadmap's "Your side" list (the server's own Entra
-      secret, the permission-check record, DMARC). The off-server backup moved
-      to after v1.0.0 (2026-11-11).
+- [ ] The pilot fixes are done: the v0.10.x fixes (the "Fixes for everything
+      the pilot breaks" item above, kept under v0.9.x for history).
+- [ ] The server and Microsoft 365 tasks are done: the roadmap's "Your side"
+      list (the permission-check record, DMARC) and `docs/deployment.md`,
+      "Still to fill in or add". The off-server backup moved to after v1.0.0
+      (2026-11-11).
 
 ## v0.10.7 (security audit, 2026-11-16)
 
@@ -304,7 +311,7 @@ else's could be reached; the fixes below close the gaps it found.
 - [ ] Confirm in Entra that MFA is required for the app (Conditional Access or
       security defaults). *(You.)*
 
-### v0.11.0: access logging (after the compliance lead's review)
+## v0.11.0 (access logging, after the compliance lead's review)
 
 - [ ] Record every sign-in (success and failure) and every file download,
       kept as long as tickets (2 years), read-only for admins in the admin
@@ -313,7 +320,7 @@ else's could be reached; the fixes below close the gaps it found.
       only see it); a drafted change to the risk assessment's personal-data
       list, reviewed **before** it ships.
 
-## v1.1.0 (stretch: IT improvements, by 2026-11-17)
+## v1.1.0 (stretch: IT improvements, after go / no-go)
 
 - [ ] **Reply templates:** saved answers for common requests (password resets, new starters).
 - [ ] **Response targets:** how long tickets wait, by priority, with overdue highlighting.
@@ -329,7 +336,7 @@ else's could be reached; the fixes below close the gaps it found.
         `department` claim stored), and a monthly summary email.
 - [ ] **Teams alerts** for IT, alongside email. *(Needs a Teams webhook or permission.)*
 
-## v1.2.0 (stretch: the other teams, by 2026-11-19)
+## v1.2.0 (stretch: the other teams, after go / no-go)
 
 - [x] **Own queue and role for Mechanics and for Cleaning & sanitization.**
       *(Built early, in v0.9.1, as decided below.)*

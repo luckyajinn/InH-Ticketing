@@ -52,9 +52,19 @@ On GitHub, signed in as the owner:
       (deployment.md section 10). `.env` isn't tracked, so it stays:
       ```bash
       cd /srv/inh-ticketing/app
-      git remote set-url origin git@github.com:<org>/InH-Ticketing-<Company>.git
+      git remote set-url origin git@github-inh:<org>/InH-Ticketing-<Company>.git   # the SSH alias, deployment.md section 2
       git fetch --tags origin
       ```
+      If the checkout already has tags from the owner's repository, the
+      fetch can refuse a tag with the same name ("would clobber existing
+      tag"), because the copy's tags are new commits. Either:
+      - run `git describe --tags` to see what's checked out, then
+        `git tag -d <tag>` for each other tag the fetch refused (never the
+        checked-out one), then `git fetch --tags origin` again; or
+      - simpler, re-clone from the copy, and copy the old `.env` back.
+
+      Then `git checkout vX.Y.Z`. [deployment.md](deployment.md) section 2.1
+      covers the same thing.
 
 ## Each release
 
@@ -79,10 +89,18 @@ v0.10.7c) go the same way, with that version:
 python scripts/publish_copy.py --to <org>/InH-Ticketing-<Company> --tag vX.Y.Za --push
 ```
 
-They're sent from `main` (`--ref` for something else). The tool refuses
+The version is a release that's an annotated tag here, plus one lowercase
+letter: `vX.Y.Za`, and later ones use the next letter (`b`, `c`, …). The
+base release must exist as a tag.
+
+It sends what's committed on `main` (or `--ref`). Uncommitted changes aren't
+sent, and `main` doesn't need to be pushed first. The tool refuses
 if anything but the documents (`docs/`, `CHANGELOG.md`, `README.md`, and
 the `.env.example` sample) changed
-since the release, so a change to the app always needs a release. The copy's
+since the release, so a change to the app always needs a release. If the
+app's own files changed (say, a fix listed under Unreleased), pass `--ref`
+with the last documentation commit before that fix, or wait for the next
+release. The copy's
 `main` gets the documents, with no tag: its tags stay the releases a server
 can check out.
 
@@ -90,6 +108,11 @@ Before sending, it checks the copy against the owner's local list of words
 that must never leave this PC, `.git/info/copy-forbidden`: internal host
 names, addresses, people's names. It isn't committed, so make one on any
 new PC. It refuses if one is found and names the file, not the word.
+- Matching ignores case. Lines starting with `#` are comments.
+- It checks the copy before links are pointed at it, so the copy's own name
+  may contain a listed word. It runs on dry runs too.
+- If the file is missing, nothing is checked and the copy is still sent, after
+  a printed note. So make the file on every PC before the first send.
 
 Old release notes in the copy point at release pages that only exist here.
 The notes themselves are in the copy, under `docs/releases/`.

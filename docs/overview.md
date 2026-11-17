@@ -1,13 +1,13 @@
 # InH-Ticketing: overview
 
 What the system is, where it stands, and how each feature and system works.
-Written 2026-11-10 for v0.9.1. Each section is meant to work as one slide.
+Written 2026-11-10 for v0.9.1; updated 2026-11-17 for v0.10.7. Each section is meant to work as one slide.
 
 ## 1. In one paragraph
 
 InH-Ticketing is the company's in-house help desk. Staff sign in with their
 Microsoft 365 work account and send a request to IT, Mechanics, or Cleaning
-and sanitization; the team works it through to resolution, and the person is
+and sanitization today (admins can add more departments); the team works it through to resolution, and the person is
 kept up to date by email. It replaces ad-hoc emails and hallway requests with
 one tracked record per request: who asked, what was done, by whom and when.
 It runs on the company's own server, inside the company network.
@@ -16,13 +16,16 @@ It runs on the company's own server, inside the company network.
 
 | | |
 |---|---|
-| Version | **v0.9.1**, released 2026-11-10 |
-| Built | v0.1.0 to v0.9.1 between 2026-11-05 and 2026-11-10, each release tested and documented with screenshots |
-| Server | Live on the internal server (16 cores, 32 GB RAM) at `helpdesk.example.com` |
-| Pilot | Starts 2026-11-10 with one other tester, trying to break it |
-| Compliance | Intended-use and risk assessment passed (the compliance lead); internal setup approved (management). A risk assessment for the Mechanics and C&S use is on 2026-11-10 |
-| Target | Everything finalized by **Friday 2026-11-20**; go-live date set then (earliest Monday 2026-11-30) |
-| Quality | 356 automated tests, all passing, including an attack test (SQL, shell and template injection in every input) |
+| Version | **v0.10.7**, released 2026-11-16 |
+| Built | v0.1.0 to v0.10.7 between 2026-11-05 and 2026-11-16, each release tested and documented with screenshots |
+| Server | Live on the internal server (16 cores, 32 GB RAM) at `helpdesk.example.com`: first installed 2026-11-09, reinstalled from scratch 2026-11-17, now on v0.10.7 |
+| Pilot | Started 2026-11-10 with two testers (the developer and one other), trying to break it |
+| Compliance | Intended-use and risk assessment passed (the compliance lead); internal setup approved (management). The risk assessment for the Mechanics and C&S use: *(see below)* |
+| Target | Go / no-go on **Friday 2026-11-20**; v1.0.0 and the go-live date follow it (earliest Monday 2026-11-30) |
+| Quality | 527 automated tests, all passing, including an attack test (SQL, shell and template injection in every input) |
+
+> **To fill in:** the outcome and date of the risk assessment for the Mechanics
+> and C&S use (from the compliance lead).
 
 ## 3. Who uses it
 
@@ -237,24 +240,27 @@ A load test on 2026-11-09 (app held to 2 CPUs and 4 GB): responses averaged
 - **No tracking:** only necessary cookies; not indexed by search engines.
 - **Reports:** admins only, per team, never figures for one person.
 
-## 8. What's next (to Friday 2026-11-20)
+## 8. What's next (go / no-go on Friday 2026-11-20)
 
 | When | What |
 |---|---|
-| Tue Nov 10 | Demo, pilot starts, risk assessment for Mechanics and C&S |
+| Tue Nov 10 | Demo, pilot starts (done) |
 | Tue Nov 10 | v0.9.0: Reports for admins (done) |
 | Tue Nov 10 | v0.9.1: departments, the archive, the removal tool, safety fixes (done) |
 | Wed Nov 11 | v0.10.0: departments set up by admins (done) |
 | Wed Nov 11 | v0.10.1: category lists follow the department; IT's common requests (done) |
-| Wed Nov 11 | v0.10.2: an email when staff close a ticket |
-| Wed Nov 11 | v0.10.3: the worker's heartbeat in Reports and Docker |
-| Wed Nov 11 | v0.10.4: review fixes (password hints, a length limit) and the monthly update check |
-| Thu Nov 12 | v0.10.5: the admin log; the admin's ticket page fixed |
-| After the pilot's testing | v0.10.x: pilot fixes |
-| Fri Nov 13 (or Mon 16) | v1.0.0: everything for IT finalized, a mailbox per department, server checks (the off-server backup follows after v1.0.0) |
-| Mon–Tue Nov 16–17 | v1.1.0 (stretch): reply templates, response targets, Teams alerts |
-| Wed–Thu Nov 18–19 | v1.2.0 (stretch): more common requests and a self-fill option for Mechanics and C&S |
-| Fri Nov 20 | Go / no-go, go-live date set (earliest Mon Nov 30) |
+| Wed Nov 11 | v0.10.2: an email when staff close a ticket (done) |
+| Wed Nov 11 | v0.10.3: the worker's heartbeat in Reports and Docker (done) |
+| Thu Nov 12 | v0.10.4: review fixes (password hints, a length limit) and the monthly update check (done) |
+| Thu Nov 12 | v0.10.5: the admin log; the admin's ticket page fixed (done) |
+| Fri Nov 13 | v0.10.6: staff open a request for someone else (done) |
+| Mon Nov 16 | v0.10.7: security fixes (a CSP, no zip files, every email sender confirmed, no debug mode on the server) (done) |
+| Until go / no-go | v0.10.x: pilot fixes |
+| Fri Nov 20 | Go / no-go |
+| After go / no-go | v1.0.0: everything for IT finalized, a mailbox per department, server checks (the off-server backup follows after v1.0.0). Date not set yet |
+| After the compliance lead's review | v0.11.0: sign-in and download logging. No date |
+| After v1.0.0 | v1.1.0 (stretch): reply templates, response targets, Teams alerts |
+| After v1.0.0 | v1.2.0 (stretch): more common requests and a self-fill option for Mechanics and C&S |
 
 **Decisions needed:** department mailboxes (new request-only mailboxes, or a
 folder in the existing ones; the app supports both); the go-live date.
@@ -274,37 +280,7 @@ folder in the existing ones; the app supports both); the go-live date.
 8. **Safety nets:** open a ticket number that isn't yours (Not found, with
    next steps); the usage and privacy page.
 
-## 10. Ready for the demo?
+## 10. History note
 
-**Yes: go.** Three independent reviews of v0.8.2 on 2026-11-10 (security and
-privacy, feature logic, deployment and readiness) found no way for staff to
-see anyone else's tickets, notes or files. Every page was checked on desktop
-and phone in light and dark mode, and the production settings check is clean.
-
-**v0.8.3 fixes what they found for the pilot:**
-
-- The side panel saves only the field you changed (an old page could put
-  back someone else's assignment or reopen a resolved ticket).
-- A reply you're typing is kept when the side panel saves.
-- The password check no longer warns on "pin is bent", "pass is broken",
-  lot, batch, cost or part codes, or pasted timestamps, and now catches lock
-  combinations.
-- Short lists at the end of an email no longer fold as a signature.
-- Superscript digits ("²") and odd sign-in links no longer show an error page.
-- The last "IT"-only wording staff of other teams saw.
-- The deployment guide has the help contact and a rollback that keeps
-  tickets; the restore script prints the right start command; the pilot
-  checklist covers v0.8.
-
-An attack test also tried SQL, shell and template injection in every input
-(forms, replies, notes, search, ticket numbers, sign-in links, file names,
-email): nothing ran, nothing broke, and the text is stored exactly as typed.
-
-**One thing first:** set `HELP_CONTACT` in the server's `.env` before the
-update (put the value in quotes if it contains `#`). Left blank, the sign-in
-page would show the test mailbox's address.
-
-**Still to do before v1.0.0** (none needed for the demo or pilot): a check
-that emails claiming to be from IT really are (anti-spoofing), protection for
-shared PCs (pages not cached after sign-out, sign-in ending when the browser
-closes), and the worker waiting for database updates on start-up.
+The v0.8.2 demo on 2026-11-10 got a "go". The fixes since then, including
+the pilot's, are in the [release notes](releases/README.md).

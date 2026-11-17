@@ -2,11 +2,15 @@
 
 Where InH-Ticketing is heading, version by version, with target dates.
 Written 2026-11-06; **rewritten 2026-11-09**: the server went live a week early,
-so the plan now aims to have **everything finalized by Friday 2026-11-20**,
-with v1.0.0 by the end of this week and v1.1.0 and v1.2.0 as stretch goals
-before the 20th. Update it whenever a date moves. FDA review done (the compliance lead) and internal setup approved (management), 2026-11-06; the risk
-assessment passed. Item-level detail lives in [backlog.md](backlog.md), and
-what actually shipped is in [releases/](releases/README.md).
+so the plan aims to have **everything finalized by Friday 2026-11-20**, the
+go / no-go. **Updated 2026-11-17** (the app is v0.10.7): v1.0.0 has no date
+yet and follows go / no-go, and v1.1.0 and v1.2.0 are stretch goals after it.
+Update it whenever a date moves. Item-level detail lives in
+[backlog.md](backlog.md), and what actually shipped is in
+[releases/](releases/README.md).
+
+- **Approvals:** FDA review done (the compliance lead) and internal setup
+  approved (management), 2026-11-06; the risk assessment passed.
 
 ## How to read the dates
 
@@ -42,17 +46,18 @@ Nov 9 is a Monday.
 | ✅ Tue Nov 10 | **v0.9.1** | Before go-live: Mechanics and C&S see and work their own tickets (v1.2.0's queues, built early), closed tickets archived for two years, the pasted-password removal tool, fake "IT" emails, shared PCs, no ticket deletes; department mailboxes ready to switch on | — |
 | ✅ Wed Nov 11 | **v0.10.0** | Admins set up the departments in the admin site: IT built in, each other team with its own Entra role, alert address and Reports colour, up to 8. A new install has IT only. The clickable mockup is built from the app's pages | — |
 | ✅ Wed Nov 11 | **v0.10.1** | Category lists follow the department (queue, New request, admin site); IT's common requests for printers, passwords and Wi-Fi. Decided: no phones (they email in), no restore drill | — |
-| Wed Nov 11 | **v0.10.2** | When staff (an agent or an admin) close a ticket, the requester gets an email saying it's closed and complete, with how to start a follow-up. Closing by itself after 7 days still sends nothing | — |
-| Wed Nov 11 | **v0.10.3** | The worker's heartbeat: Reports says for sure whether the worker is running, and shows the last inbox read and auto-close with any error (a mailbox that can't be read is named). Docker's health check for the worker uses it | — |
-| Wed Nov 11 | **v0.10.4** | From the pre-pilot review: password hints never show an earlier password, and descriptions and replies stop at 20,000 characters with a clear message. The monthly update check: `scripts/check_updates.py` and refreshing PostgreSQL and the Python image | — |
-| Thu Nov 12 | **v0.10.5** | The admin log: every change in the admin site, with who, when and the old and new values, read-only; people can't be deleted there. The admin's ticket page no longer overlaps comments and history | — |
-| Fri Nov 13 | **v0.10.6** | A request for someone else: staff open it for a person at the desk (found by name or email, or added by their work email), and it's theirs: the emails, their own requests, and who opened it in the history | — |
-| Mon Nov 16 | **v0.10.7** | Security fixes from the audit: no debug mode on the server, unconfirmed "requester" emails kept as notes, a Content-Security-Policy, no zip files, the update check covers every package | — |
-| **Tue Nov 10** | Demo, pilot starts | CFO demo of v0.8.3. Pilot with one other tester, trying to break it ([pilot-testing.md](pilot-testing.md)). Risk assessment for the new teams with the compliance lead | v0.8.3 installed on the server |
-| **After the pilot's testing** | **v0.10.x** | Paused until the pilot's testing is done, on v0.10.0. Then: pilot fixes | Pilot findings |
-| **Fri Nov 13** (or Mon Nov 16) | **v1.0.0** | **Everything for IT finalized,** plus **a mailbox per department**: email to Mechanics' or C&S's mailbox becomes a ticket for that department, answered from the same mailbox. Final checks on the server, docs and release done | Your side (below); the mailbox decision |
-| Mon–Tue Nov 16–17 | v1.1.0 (stretch) | IT improvements: reply templates, response targets, Teams alerts (reporting shipped early, in v0.9.0) | A Teams webhook or permission for the alerts |
-| Wed–Thu Nov 18–19 | v1.2.0 (stretch) | More common requests and a self-fill option for Mechanics and C&S (their own queues and roles shipped early, in v0.9.1) | The common requests from the teams |
+| ✅ Wed Nov 11 | **v0.10.2** | When staff (an agent or an admin) close a ticket, the requester gets an email saying it's closed and complete, with how to start a follow-up. Closing by itself after 7 days still sends nothing | — |
+| ✅ Wed Nov 11 | **v0.10.3** | The worker's heartbeat: Reports says for sure whether the worker is running, and shows the last inbox read and auto-close with any error (a mailbox that can't be read is named). Docker's health check for the worker uses it | — |
+| ✅ Thu Nov 12 | **v0.10.4** | From the pre-pilot review: password hints never show an earlier password, and descriptions and replies stop at 20,000 characters with a clear message. The monthly update check: `scripts/check_updates.py` and refreshing PostgreSQL and the Python image | — |
+| ✅ Thu Nov 12 | **v0.10.5** | The admin log: every change in the admin site, with who, when and the old and new values, read-only; people can't be deleted there. The admin's ticket page no longer overlaps comments and history | — |
+| ✅ Fri Nov 13 | **v0.10.6** | A request for someone else: staff open it for a person at the desk (found by name or email, or added by their work email), and it's theirs: the emails, their own requests, and who opened it in the history | — |
+| ✅ Mon Nov 16 | **v0.10.7** | Security fixes from the audit: no debug mode on the server, unconfirmed "requester" emails kept as notes, a Content-Security-Policy, no zip files, the update check covers every package | — |
+| ✅ **Tue Nov 10** | Demo, pilot starts | CFO demo of v0.8.3. Pilot with one other tester, trying to break it ([pilot-testing.md](pilot-testing.md)). Risk assessment for the new teams with the compliance lead | v0.8.3 installed on the server |
+| **During the pilot** | **v0.10.x** | Pilot fixes, shipped as v0.10.x (v0.10.2 to v0.10.7 so far). More follow as the pilot finds things | Pilot findings |
+| After the compliance lead's review | **v0.11.0** | Access logging: every sign-in (success and failure) and every file download, kept for two years, read-only for admins. Detail in [backlog.md](backlog.md). No date | The compliance lead's review |
+| After go / no-go (Fri 2026-11-20); no date yet | **v1.0.0** | **Everything for IT finalized,** plus **a mailbox per department**: email to Mechanics' or C&S's mailbox becomes a ticket for that department, answered from the same mailbox. Final checks on the server, docs and release done | Your side (below); the mailbox decision |
+| After go / no-go (Fri 2026-11-20) | v1.1.0 (stretch) | IT improvements: reply templates, response targets, Teams alerts (reporting shipped early, in v0.9.0) | A Teams webhook or permission for the alerts |
+| After go / no-go (Fri 2026-11-20) | v1.2.0 (stretch) | More common requests and a self-fill option for Mechanics and C&S (their own queues and roles shipped early, in v0.9.1) | The common requests from the teams |
 | **Fri Nov 20** | Final | **Go / no-go**, go-live date set, last docs and release | Sign-off |
 | Go-live (date set on Nov 20) | Live | Switch to the live help-desk mailbox, assign all ~300 staff in Entra, set `REPORTS_FROM` to the go-live date, tell everyone. Earliest Mon Nov 30, after Thanksgiving week; not during the Dec 21 – Jan 1 freeze | Go / no-go |
 | 2027 | v1.x | Improvements, chosen from pilot and live use (see below) | — |
@@ -61,18 +66,18 @@ Nov 9 is a Monday.
 
 | By | Task | Unlocks |
 |---|---|---|
-| **Tue Nov 10, morning** | Install v0.8.3 on the server ([deployment.md](deployment.md), section 10; the migrations run when it starts). Set `HELP_CONTACT` in `.env` first. Check ticket #1071's signature is folded, and that Mechanics and Cleaning & sanitization are on the New request form | Demo, pilot |
-| Tue Nov 10 | Start the pilot with one tester; report findings as tickets with "Pilot:" in the subject | v0.10.x fixes |
-| Tue Nov 10 | Risk assessment for Mechanics and Cleaning & sanitization with the compliance lead; then update [usage-rules.md](usage-rules.md) (drafted Nov 11, waiting on that review) | v1.2.0 |
-| ✅ Tue Nov 10 | Closed tickets: archived for two years, then deleted (archiving built in v0.9.1) | v0.9.1 |
+| ✅ ~~Tue Nov 10, morning~~ *Superseded: the server was reinstalled from scratch on 2026-11-17 and runs v0.10.7.* | ~~Install v0.8.3 on the server ([deployment.md](deployment.md), section 10; the migrations run when it starts). Set `HELP_CONTACT` in `.env` first. Check ticket #1071's signature is folded, and that Mechanics and Cleaning & sanitization are on the New request form~~ | Demo, pilot |
+| ✅ Tue Nov 10 | Start the pilot with one tester; report findings as tickets with "Pilot:" in the subject | v0.10.x fixes |
+| Tue Nov 10 *(passed; the outcome isn't recorded yet)* | Risk assessment for Mechanics and Cleaning & sanitization with the compliance lead; then update [usage-rules.md](usage-rules.md) (drafted Nov 11, waiting on that review) | v1.2.0 |
+| ✅ Tue Nov 10 | Closed tickets: archived for two years (built in v0.9.1). The ✅ covers archiving only: deleting them after two years isn't built or switched on (see [backlog.md](backlog.md), Compliance) | v0.9.1 |
 | **Before installing v0.9.1** | In Entra, create the `Agent.Mechanics` and `Agent.Cleaning` app roles and assign each team's group to its own (never plain `Agent`) | v0.9.1 |
-| Thu Nov 12 | Department mailboxes (no confirmation yet of a shared mailbox for each, Nov 10): decide new request-only mailboxes or a "Requests" folder in the existing ones (see [backlog.md](backlog.md), v1.0.0); send the addresses; in Exchange, allow the app to send as and read each one, set internal senders only, and record `Test-ServicePrincipalAuthorization` for each | v1.0.0 |
+| Thu Nov 12 *(passed; still open)* | Department mailboxes (no confirmation yet of a shared mailbox for each, Nov 10): decide new request-only mailboxes or a "Requests" folder in the existing ones (see [backlog.md](backlog.md), v1.0.0); send the addresses; in Exchange, allow the app to send as and read each one, set internal senders only, and record `Test-ServicePrincipalAuthorization` for each | v1.0.0 |
 | ✅ Fri Nov 13 | Entra: confirm the server's redirect URI, and give the server its own client secret or certificate *(both done on the first install, Nov 9)* | v1.0.0 |
-| Fri Nov 13 | File the `Test-ServicePrincipalAuthorization` output with the risk assessment; check DMARC on `example.com` | v1.0.0 |
+| Fri Nov 13 *(passed; still open)* | File the `Test-ServicePrincipalAuthorization` output with the risk assessment; check DMARC on `example.com` | v1.0.0 |
 | After v1.0.0, before go-live | Off-server backup copy. Where the copies go is undecided (2026-11-11): a network share or a second machine | Go-live |
-| Mon Nov 16 | Teams: a webhook or permission for IT alerts | v1.1.0 |
-| ✅ Tue Nov 10 | Entra groups for the Mechanics and Cleaning & sanitization teams are live. Still to do: assign each group its app role, `Agent.Mechanics` or `Agent.Cleaning` (safe before v1.2.0; never the plain `Agent` role) | v1.2.0 |
-| Mon Nov 16 | The common requests you're gathering from Mechanics and Cleaning & sanitization | v1.2.0 |
+| Mon Nov 16 *(passed; still open; v1.1.0 follows go / no-go)* | Teams: a webhook or permission for IT alerts | v1.1.0 |
+| Tue Nov 10 | Entra groups for the Mechanics and Cleaning & sanitization teams are live (✅). Still to do: assign each group its app role, `Agent.Mechanics` or `Agent.Cleaning` (safe before v1.2.0; never the plain `Agent` role) | v1.2.0 |
+| Mon Nov 16 *(passed; still open)* | The common requests you're gathering from Mechanics and Cleaning & sanitization | v1.2.0 |
 | **Fri Nov 20** | Go / no-go; set the go-live date and the live-mailbox cut-over; draft the all-staff announcement | Go-live |
 
 ## Site basics (checklist, 2026-11-09)
@@ -114,7 +119,8 @@ third-party analytics (v1.1.0's reporting answers the same questions).
 ## After 1.0: candidate improvements (v1.x)
 
 To be prioritised from pilot and live feedback. Reply templates, response
-targets, reporting and Teams alerts are planned for v1.1.0 (above).
+targets and Teams alerts are planned for v1.1.0 (above); reporting already
+shipped, in v0.9.0.
 
 - **Backups copied off the server** (moved here from v1.0.0, 2026-11-11), once
   where they go is decided. Still needed before go-live (the compliance list in

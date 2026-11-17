@@ -4,12 +4,19 @@ What the server for InH-Ticketing needs, for whoever builds it. One Linux VM
 runs everything in Docker: the web app, the email worker, PostgreSQL and a
 Caddy reverse proxy. Installing the app on it is [deployment.md](deployment.md).
 
-> Written before the server existed. The sizes are estimates; check them
-> against the real server after a few months.
+> Written before the first install. The server has run since 2026-11-09 (it
+> was reinstalled from scratch on 2026-11-17).
 >
-> A load test on 2026-11-09 supports the CPU and memory figures. On a test VM,
-> with the whole app held to 2 CPUs and 4 GB, responses averaged 10–16 ms with
-> up to 400 people at once, none failed, and memory stayed under 0.75 GB.
+> Estimates: the per-container memory table, the disk table, and the
+> attachment growth figures. Nothing has measured them on the real server yet;
+> check them after a few months.
+>
+> Measured: the CPU and memory figures come from a load test on 2026-11-09. On
+> a test VM, with the whole app held to 2 CPUs and 4 GB, responses averaged
+> 10–16 ms with up to 400 people at once, none failed, and the app's
+> containers together stayed under 0.75 GB. That sits inside the table's
+> container figures (about 0.5–0.85 GB for `db`, `web`, `worker` and `proxy`);
+> the table's ~1–1.5 GB total also counts Linux, Docker and SSH.
 
 ## At a glance
 
@@ -27,7 +34,7 @@ Caddy reverse proxy. Installing the app on it is [deployment.md](deployment.md).
 
 **2 vCPU.** The load is light: a few requests a minute, a handful at once.
 The second CPU keeps the app responsive while a new version builds or the
-nightly backup compresses the attachments.
+nightly backup runs.
 
 **4 GB RAM.** Estimated memory use per container:
 
@@ -69,8 +76,9 @@ backup still restores as a complete copy (`scripts/backup.sh` explains how).
 | 3 years | 6 / 18 GB | ~30 / ~55 GB |
 | 5 years | 10 / 30 GB | ~40 / ~80 GB: nearly full if heavy |
 
-So 80 GB lasts **well over five years** at the expected rate, and about five
-if use is heavy. The nightly backup logs a warning once the disk is 80% full;
+So 80 GB lasts **well over five years** at the expected rate, and about four
+years before the 80% disk warning if use is heavy. The nightly backup logs a
+warning once the disk is 80% full;
 before that, grow the virtual disk or give the backups their own disk. Check
 disk use monthly ([deployment.md](deployment.md#11-routine-checks)). Note that
 deleting an old backup frees only the files no newer backup still shares.

@@ -2,7 +2,11 @@
 
 This connects InH-Ticketing to the company's Microsoft 365 sign-in. It takes
 about 15 minutes in the [Microsoft Entra admin center](https://entra.microsoft.com).
-You need rights to create app registrations and assign enterprise apps.
+You need the **Application Administrator** or **Cloud Application
+Administrator** role to create the app registration and assign users to it.
+The same roles can grant admin consent for its one delegated permission,
+*User.Read* (section 4). The Exchange steps in [email-setup.md](email-setup.md)
+need an Exchange admin.
 
 When you're done, you'll have four values for `.env`:
 
@@ -73,13 +77,13 @@ applies at the person's next sign-in.
 its settings, but nobody can edit them there, admins included, and IT can't
 be deleted. They're set elsewhere:
 
-| IT's | Where | Setting |
+| IT setting | Where | Setting |
 |---|---|---|
 | Agents | Entra: assign IT's people or group the `Agent` role (section 5) | `ENTRA_ROLE_AGENT` in `.env`, only to use another value |
 | New-ticket alerts | `.env` | `IT_NOTIFY_EMAIL` ([email-setup.md](email-setup.md)) |
 | Mailbox | `.env` | `HELPDESK_MAILBOX` ([email-setup.md](email-setup.md)) |
 | Categories and their common requests | The admin site, **Tickets → Categories** | Each category's department is IT |
-| Name, key and colour in Reports | Fixed | |
+| Name, key and colour in Reports | Built into the app | Can't be changed |
 
 On the server, a change to `.env` applies after
 `docker compose -f compose.yaml -f compose.prod.yaml up -d`. A plain
@@ -147,5 +151,6 @@ Step by step in [deployment.md](deployment.md#4-microsoft-entra). In short:
 | `AADSTS7000215` | Wrong client secret | Paste the secret's **Value**, not its Secret ID. |
 | `AADSTS7000222` | Client secret expired | Create a new secret and update `.env`. |
 | `AADSTS700016` | App not found in tenant | Check `ENTRA_CLIENT_ID` and `ENTRA_TENANT_ID`. The tenant ID is a GUID, not a domain. |
-| "Your sign-in session expired" | The browser lost the session mid-sign-in | Sign in again. If it keeps happening, check that cookies aren't blocked for localhost. |
+| "Your sign-in session expired before it finished. Please sign in again." | The browser lost the session mid-sign-in | Sign in again. If it keeps happening, check that cookies aren't blocked for localhost. |
+| "That sign-in link has expired or was already used. Please sign in again." | The sign-in reply didn't match the sign-in that started it: usually a stale tab, or the same sign-in finished twice | Start the sign-in again from the app's sign-in page. |
 | Everyone shows as Requester | Roles missing from the token | Check the role **Values** match `.env`, and that the person or their group is assigned a role, not *Default Access*. |

@@ -1,8 +1,8 @@
 # InH-Ticketing usage rules
 
-> **Draft for review (2026-11-11):** this version adds Mechanics and Cleaning
-> & sanitization. Review it with the compliance lead, record the date and the
-> decision under [Reviews](#reviews), then remove this note.
+> **To fill in:** the review of this version, which adds Mechanics and Cleaning
+> & sanitization: who reviews it (the compliance lead?), the decision, and the
+> date. Record them under [Reviews](#reviews), then remove this note.
 
 **InH-Ticketing is for requests to IT, Mechanics, and Cleaning &
 sanitization only.** These rules come from the system's intended-use and risk
@@ -69,7 +69,8 @@ factual and professional.
 ## How long tickets are kept
 
 A resolved ticket closes 7 days later. A closed ticket is archived (read-only)
-for two years, then deleted. That's another reason a ticket must never be the
+for two years, then due for deletion. Automatic deletion isn't switched on
+yet. That's another reason a ticket must never be the
 only copy of a record that has to be kept.
 
 ## Changes to these rules
@@ -84,4 +85,4 @@ year, and whenever the use changes.
 | Date | Change | Decision |
 |---|---|---|
 | 2026-11-06 | First version: IT only | Reviewed with the compliance lead; the risk assessment passed |
-| *(to fill in)* | Mechanics and Cleaning & sanitization added | *(the compliance lead's decision)* |
+| *To fill in: the review date* | Mechanics and Cleaning & sanitization added | *To fill in: the reviewer and the decision* |

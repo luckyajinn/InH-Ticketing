@@ -1,12 +1,12 @@
 # Pilot testing: try to break it
 
-From **2026-11-10**, two testers try to break InH-Ticketing (now v0.10.5) before
+From **2026-11-10**, two testers try to break InH-Ticketing (now v0.10.7) before
 everything is finalized on **2026-11-20** (see [roadmap.md](roadmap.md)).
-Fixes ship as v0.10.x updates once the pilot's testing is done.
+Fixes ship as v0.10.x updates during the pilot (v0.10.2 to v0.10.7 so far).
 
-Test on the server once it runs v0.10.5: departments, the archive, the
-password removal tool, Reports, the closed email, the worker's heartbeat and
-the admin log all arrived after the pilot started.
+Test on the server once it runs v0.10.7: departments, the archive, the
+password removal tool, Reports, the closed email, the worker's heartbeat, the
+admin log, requests for someone else and the security fixes all arrived after the pilot started.
 
 **Report each finding as a ticket in the app**, subject starting `Pilot:`,
 category Other. Say what you did, what you expected, what happened, and on
@@ -45,7 +45,7 @@ then swap. Use the test shared mailbox for email.
 - [ ] Email a new request; reply to a notification (keep `[#1234]` in the subject); reply from a colleague who isn't the requester (it becomes an internal note); reply to a closed ticket (a linked follow-up).
 - [ ] An out-of-office reply is ignored, with no email loop.
 - [ ] The CodeTwo signature folds under *Show email signature* (check #1071 too), and nothing you needed is folded away.
-- [ ] A file over 10 MB, a `.exe`, and more than 5 files each get a clear message.
+- [ ] A file over 10 MB, a `.exe`, a `.zip` and more than 5 files each get a clear message. The `.zip` one says zip files aren't accepted and to attach the files inside one by one (v0.10.7).
 - [ ] Paste more than 20,000 characters into a description or a reply: a clear message, and the text stays in the box (v0.10.4).
 - [ ] An email arrives for each step: received, IT replied, assigned, waiting, resolved (with the close date), closed by staff.
 - [ ] **Fake "IT" email (IT, once):** from outside the company, send the test mailbox one reply to a ticket (keep `[#1234]` in the subject) with an IT agent's address as the sender. Exchange should reject or junk it. If it arrives anyway, the ticket shows it as an internal note saying Exchange couldn't confirm the sender, never as a reply the requester sees. Then reply to a notification from an IT agent's own mailbox: that arrives as a normal reply.
@@ -93,6 +93,13 @@ then swap. Use the test shared mailbox for email.
 - [ ] **The worker's heartbeat (v0.10.3, IT):** `docker compose -f compose.yaml -f compose.prod.yaml ps` shows `worker` as `(healthy)`, and Reports → *Email and safety checks* says "The worker is running". Stop it for 6 minutes (`docker compose -f compose.yaml -f compose.prod.yaml stop worker`): Reports says it may have stopped. Start it again (`start worker`): Reports is back to running within a minute, and emails queued meanwhile go out.
 - [ ] **The admin log (v0.10.5):** change the test department's alert address. Administration → Log entries shows you, the time, and the old and new address. Nothing there can be edited or deleted. A person has no Delete. On a ticket's page in the admin site, comments and history lines don't overlap, on a phone too.
 - [ ] **Delete the test department:** it has no categories, agents or notes, so Delete works, and the sign-in page goes back to the three teams.
+
+## 7a. New in v0.10.6 and v0.10.7
+
+- [ ] **A request for someone else (v0.10.6):** as an IT agent, choose *Someone else* on New request and type two letters of a colleague's name: people the help desk knows are listed. Pick one and send. The ticket says *Opened by* you *for* them, and they get the receipt and see it with their own requests. A requester doesn't see the *Who is it for?* question. Try a work email the help desk doesn't know yet, and one outside the company (refused).
+- [ ] **Zip files (v0.10.7):** attach a `.zip` to a new request and to a reply: it's refused with the message about attaching the files inside one by one. Email one to the test mailbox: the ticket lists it as left out, "(file type not accepted)".
+- [ ] **Unconfirmed email (v0.10.7, IT, once):** from outside the company, email the test mailbox as a requester (a reply with `[#1234]` in the subject, then a new request). If Exchange lets either through, the reply is an internal note marked unconfirmed and doesn't reopen the ticket, and the new request is ignored, listed in the admin site under Inbound emails. The requester sees neither.
+- [ ] **Nothing looks different (v0.10.7):** click through the queue, a ticket, New request and Reports. The queue's filters still apply when you change them, and nothing is blocked or broken.
 
 ## 8. Devices and display
 

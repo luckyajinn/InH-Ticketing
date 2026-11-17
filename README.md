@@ -3,8 +3,8 @@
 An in-house help desk. Staff send IT a request; IT works
 it through to resolution. People sign in with their Microsoft 365 work account.
 
-**Status:** v0.10.0: admins set up the departments in the admin site (IT is built in), and the clickable mockup is built from the app's own pages, on top of v0.9.1's departments (each team works its own tickets), the archive for closed tickets, removing a pasted password, and the safety fixes from the reviews, on top of v0.9.0's Reports for admins, v0.8.4's admin look and common requests as the subject, v0.8.3's fixes from the pre-pilot review, and v0.8.2's basics (a new Not found page, a help contact, no double-sent requests, a usage and privacy page, a favicon), v0.8.0's Mechanics and Cleaning & sanitization requests and v0.7.0's new look, password check and folded email signatures. Live on the internal server; the pilot starts 2026-11-10, and the target is to have everything finalized by Friday 2026-11-20 (see [docs/roadmap.md](docs/roadmap.md)). This is a test build, approved for internal setup.
-See the [release notes with screenshots](docs/releases/README.md) for how it looks and what changed in each version.
+**Status:** v0.10.7 (2026-11-16), live on the internal server and in the pilot. This is a test build, approved for internal setup. Go / no-go is Friday 2026-11-20; v1.0.0 follows it (see [docs/roadmap.md](docs/roadmap.md)).
+See the [release notes with screenshots](docs/releases/README.md) for how it looks and what changed in each version, and the [CHANGELOG](CHANGELOG.md) for the list.
 
 ## What works today
 
@@ -37,7 +37,7 @@ See the [release notes with screenshots](docs/releases/README.md) for how it loo
   them all and are the only ones who move a ticket between departments.
   Internal notes stay with their department. A new install has IT only; the
   demo data adds Mechanics and Cleaning & sanitization as examples.
-- **The archive:** closing a ticket archives it, read-only, for two years.
+- **The archive:** closing a ticket archives it, read-only, for two years (automatic deletion after that isn't switched on yet).
 - **Removing a pasted password or file** (admins), from the ticket and the
   app's copies of the emails it sent.
 - **Common requests:** quick picks on the New request form. A picked one
@@ -183,7 +183,9 @@ item-level detail is in [docs/backlog.md](docs/backlog.md).
 | 3 | Outbound email notifications (files locally, Microsoft Graph for real) | ✅ v0.3.0 |
 | 4 | Inbound email-to-ticket from a test shared mailbox | ✅ v0.4.0 |
 | 5 | Automations: auto-close resolved tickets, follow-ups, usage controls | ✅ v0.5.0 |
-| 6 | Deployment package: HTTPS proxy, backups, server guides | ✅ v0.6.0 (first install waits on the server) |
+| 6 | Deployment package: HTTPS proxy, backups, server guides | ✅ v0.6.0; installed on the server 2026-11-09 |
+
+Later versions (v0.7 to v0.10.7) are in [docs/roadmap.md](docs/roadmap.md) and the [release notes](docs/releases/README.md).
 
 ## License
 
