@@ -4,11 +4,17 @@ in the owner's GitHub organization that the company can read but not change.
 
     python scripts/publish_copy.py --to <org>/<repo> --tag v0.10.7            # dry run: shows what would go
     python scripts/publish_copy.py --to <org>/<repo> --tag v0.10.7 --push     # sends it
+    python scripts/publish_copy.py --to <org>/<repo> --tag v0.10.7c --push    # a documentation-only update
 
 Each run adds ONE commit to the copy's `main`, holding the app exactly as it
 is at that release, and an annotated tag of the same name. The copy never
 gets this repository's history, its other branches, or the owner-only files
 listed in OWNER_ONLY below. Links to this repository are pointed at the copy.
+
+A version ending in a letter (v0.10.7c) is a documentation-only update, with
+no tag here. It's sent from `main` (or --ref), only if nothing but the
+documents changed since its release (v0.10.7). It gets no tag in the copy
+either: the copy's tags stay the releases a server can run.
 
 Before sending anything, it refuses if the copy would contain any word from
 the owner's local list, `.git/info/copy-forbidden` (one per line: internal
@@ -34,6 +40,10 @@ OWNER_ONLY = ["scripts/publish_copy.py", "scripts/release_body.py", "docs/compan
 FORBIDDEN_LIST = ROOT / ".git" / "info" / "copy-forbidden"
 _SLUG = re.compile(r"^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$")
 _TAG = re.compile(r"^v[0-9]+\.[0-9]+\.[0-9]+$")
+_DOCS_VERSION = re.compile(r"^(v[0-9]+\.[0-9]+\.[0-9]+)[a-z]$")
+# What a documentation-only update may change, besides the owner-only files.
+DOCS_FOLDER = "docs/"
+DOCS_FILES = {"CHANGELOG.md", "README.md"}
 
 
 def git(*args: str, env: dict | None = None, input: bytes | None = None, check: bool = True) -> str:
@@ -54,6 +64,13 @@ def previous_copy(url: str, ref: str) -> str | None:
             return None
         raise SystemExit(f"Couldn't read {url}:\n{error}")
     return git("rev-parse", ref)
+
+
+def not_docs(release: str, ref: str) -> list[str]:
+    """Files other than documents that changed between `release` and `ref`."""
+    changed = git("diff", "--name-only", release, ref).splitlines()
+    return [path for path in changed
+            if path not in OWNER_ONLY and not path.startswith(DOCS_FOLDER) and path not in DOCS_FILES]
 
 
 def build_tree(tag: str, target_slug: str) -> tuple[str, str, list[str], list[str]]:
@@ -104,22 +121,40 @@ def forbidden_found(tree: str) -> list[str]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[1])
     parser.add_argument("--to", required=True, help="the copy's repository, <org>/<repo>")
-    parser.add_argument("--tag", required=True, help="the release to publish, e.g. v0.10.7")
+    parser.add_argument("--tag", required=True,
+                        help="the release to publish, e.g. v0.10.7, or a documentation-only update, e.g. v0.10.7c")
+    parser.add_argument("--ref", default="main", help="for a documentation-only update: what to send (default main)")
     parser.add_argument("--push", action="store_true", help="send it (without this, only show what would go)")
     parser.add_argument("--url", help="push somewhere else than github.com (a test repository)")
     args = parser.parse_args()
 
     if not _SLUG.fullmatch(args.to) or args.to.lower() == SOURCE_SLUG.lower():
         raise SystemExit("--to must be the copy's <org>/<repo>, never this repository.")
-    if not _TAG.fullmatch(args.tag) or git("cat-file", "-t", args.tag, check=False) != "tag":
-        raise SystemExit(f"{args.tag} isn't an annotated release tag here (vX.Y.Z).")
+    docs_only = _DOCS_VERSION.fullmatch(args.tag)
+    if docs_only:
+        release = docs_only.group(1)
+        if git("cat-file", "-t", release, check=False) != "tag":
+            raise SystemExit(f"{release} isn't an annotated release tag here, so {args.tag} has nothing to update.")
+        if not git("rev-parse", "--verify", "--quiet", f"{args.ref}^{{commit}}", check=False):
+            raise SystemExit(f"{args.ref} isn't a commit here.")
+        changed = not_docs(release, args.ref)
+        if changed:
+            raise SystemExit(f"{args.tag} may change only the documents since {release}, but {args.ref} also "
+                             f"changes: {', '.join(changed)}. Make a release instead.")
+        source = args.ref
+    elif not _TAG.fullmatch(args.tag) or git("cat-file", "-t", args.tag, check=False) != "tag":
+        raise SystemExit(f"{args.tag} isn't an annotated release tag here (vX.Y.Z), "
+                         "or a documentation-only update of one (vX.Y.Za).")
+    else:
+        source = args.tag
     url = args.url or f"https://github.com/{args.to}.git"
     tracking = f"refs/copies/{args.to}/main"
 
     parent = previous_copy(url, tracking)
-    tree, unlinked_tree, left_out, relinked = build_tree(args.tag, args.to)
+    tree, unlinked_tree, left_out, relinked = build_tree(source, args.to)
     files = len(git("ls-tree", "-r", "--name-only", tree).splitlines())
-    print(f"Copy of {args.tag} for {args.to}: {files} files.")
+    kind = f" (documentation only, from {source}; no tag)" if docs_only else ""
+    print(f"Copy of {args.tag}{kind} for {args.to}: {files} files.")
     print(f"  Left out (owner only): {', '.join(left_out) or 'none'}")
     print(f"  Links pointed at {args.to}: {', '.join(relinked) or 'none'}")
     print(f"  On top of: {parent[:10] + ' (the copy as it is now)' if parent else 'nothing: the first release there'}")
@@ -139,9 +174,18 @@ def main() -> int:
         print("\nDry run: nothing sent. Add --push to send it.")
         return 0
 
-    message = (f"InH-Ticketing {args.tag}\n\nRelease notes: docs/releases/{args.tag}.md\n\n"
-               "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n")
+    if docs_only:
+        message = (f"InH-Ticketing {args.tag}: documentation only\n\n"
+                   f"The app is the same as {release}. What changed: CHANGELOG.md, under {args.tag[1:]}.\n\n")
+    else:
+        message = f"InH-Ticketing {args.tag}\n\nRelease notes: docs/releases/{args.tag}.md\n\n"
+    message += "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n"
     commit = git("commit-tree", tree, *(["-p", parent] if parent else []), input=message.encode())
+    if docs_only:
+        git("push", "--quiet", url, f"{commit}:refs/heads/main")
+        git("update-ref", tracking, commit)
+        print(f"\nSent: {args.to} main is now {commit[:10]} ({args.tag}: documentation only, no tag).")
+        return 0
     tagger = git("var", "GIT_COMMITTER_IDENT")
     tag_object = git("mktag", input=(f"object {commit}\ntype commit\ntag {args.tag}\ntagger {tagger}\n\n"
                                      f"InH-Ticketing {args.tag}\n").encode())

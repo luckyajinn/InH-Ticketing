@@ -25,6 +25,9 @@ Documentation only: the app is the same as 0.10.7. No release of its own.
   `AUTO_CLOSE_RESOLVED_DAYS`, which were in `.env` but not in the table.
 - deployment.md section 10: rolling back from v0.10.6 or later
   (`migrate tickets 0009`).
+- `publish_copy.py` sends documentation-only updates too
+  (`--tag v0.10.7c`): from `main`, only if nothing but the documents changed
+  since the release, and with no tag in the copy.
 
 ### Changed
 - deployment.md's examples use v0.10.7; its status line says the server

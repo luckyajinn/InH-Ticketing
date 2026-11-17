@@ -70,6 +70,19 @@ The tool:
 - leaves out the owner-only files;
 - sends nothing if the copy already has exactly that release.
 
+**Documentation-only updates** (a version ending in a letter, such as
+v0.10.7c) go the same way, with that version:
+
+```bash
+python scripts/publish_copy.py --to <org>/InH-Ticketing-<Company> --tag vX.Y.Za --push
+```
+
+They're sent from `main` (`--ref` for something else). The tool refuses
+if anything but the documents (`docs/`, `CHANGELOG.md`, `README.md`) changed
+since the release, so a change to the app always needs a release. The copy's
+`main` gets the documents, with no tag: its tags stay the releases a server
+can check out.
+
 Before sending, it checks the copy against the owner's local list of words
 that must never leave this PC, `.git/info/copy-forbidden`: internal host
 names, addresses, people's names. It isn't committed, so make one on any
