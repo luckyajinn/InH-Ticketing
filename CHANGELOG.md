@@ -5,6 +5,15 @@ Each version also has illustrated release notes in [docs/releases](docs/releases
 A letter after a version, such as 0.10.0d, marks a documentation-only update:
 the app is the same as that version.
 
+## Unreleased
+
+Small fixes, going out with the next release.
+
+### Fixed
+- The queue's Views list: the counts line up on the right again. "Recently
+  resolved" was wider than the column, which pushed its count out of line;
+  the column now grows to fit its longest label (216px at least).
+
 ## 0.10.7d - 2026-11-17
 
 Documentation only: the app is the same as 0.10.7. No release of its own.

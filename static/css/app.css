@@ -1169,7 +1169,8 @@ form.is-saving .props-hint { color: var(--accent-soft-text); font-weight: 650; }
    IT queue
    --------------------------------------------------------------------- */
 .queue-layout {
-  display: grid; grid-template-columns: 216px minmax(0, 1fr); gap: var(--sp-5);
+  /* The views column grows to fit its longest label, so every count lines up at the right. */
+  display: grid; grid-template-columns: minmax(216px, max-content) minmax(0, 1fr); gap: var(--sp-5);
   max-width: var(--app-max);
   width: 100%;
   margin: 0 auto;
