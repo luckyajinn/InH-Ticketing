@@ -43,7 +43,7 @@ _TAG = re.compile(r"^v[0-9]+\.[0-9]+\.[0-9]+$")
 _DOCS_VERSION = re.compile(r"^(v[0-9]+\.[0-9]+\.[0-9]+)[a-z]$")
 # What a documentation-only update may change, besides the owner-only files.
 DOCS_FOLDER = "docs/"
-DOCS_FILES = {"CHANGELOG.md", "README.md"}
+DOCS_FILES = {"CHANGELOG.md", "README.md", ".env.example"}  # .env.example: a sample, never read by the app
 
 
 def git(*args: str, env: dict | None = None, input: bytes | None = None, check: bool = True) -> str:

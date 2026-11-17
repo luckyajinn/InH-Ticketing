@@ -5,7 +5,8 @@ keep it backed up, update it, and get it back if something goes wrong. What
 the server itself needs is in [server-requirements.md](server-requirements.md).
 
 > **Status: in use.** First written for v0.6.0 and installed on the internal
-> server on 2026-11-09; the server runs **v0.10.4** (reported 2026-11-16).
+> server on 2026-11-09. Reinstalled from scratch on 2026-11-17 (the data
+> from before is gone): it runs **v0.10.7**, cloned from the company's own copy.
 > Before that, the same Docker setup ran on a Debian 13 test VM for a load
 > test (the `stress-test` branch: fake data, a self-signed certificate, no
 > Microsoft 365, no email). Please fix this guide wherever it doesn't match
@@ -17,10 +18,10 @@ What has been checked, and what hasn't:
 |---|---|---|
 | Django production settings | `manage.py check --deploy` is clean; automated tests for the HTTPS redirect, HSTS and `/healthz`; served behind Caddy on the test VM | |
 | `compose.prod.yaml` | The image build and `docker compose` on Linux (test VM): web, worker, database and proxy, under load. Port 80's redirect to HTTPS, on the first install (2026-11-09) | |
-| `deploy/caddy/Caddyfile` | Run by Caddy 2.11.9 on the test VM, serving HTTPS | The internal-CA certificate (the test used a self-signed one). **To fill in:** the date the real certificate went on (item 3 below) |
+| `deploy/caddy/Caddyfile` | Run by Caddy 2.11.9 on the test VM, serving HTTPS | The internal-CA certificate (the test used a self-signed one). **To fill in:** the date the real certificate went on (item 2 below) |
 | `scripts/backup.sh`, `restore.sh` | Syntax-checked with `sh -n` and `dash`; run against a stand-in for `docker` | Real Docker and PostgreSQL; cron (not run on the test VM). **To fill in:** the date of the server's first `Backup OK` (item 5) |
 | Certificate commands (section 3) | Run end to end with a throwaway test CA | The internal CA's own process and files |
-| Firewall, chrony and Entra sign-in on the server | On the first install (2026-11-09), on Debian 13: ufw, chrony's internet time, and Microsoft 365 sign-in through the proxy | |
+| Firewall, chrony and Entra sign-in on the server | On the first install (2026-11-09), on Debian 13: ufw, chrony's internet time, and Microsoft 365 sign-in through the proxy | Sign-in after the 2026-11-17 reinstall (item 3) |
 | Email from the server | | **To fill in:** the date email out (checks 11–12) and email in (check 13) were tested on the server (item 6) |
 
 ## Still to fill in or add
@@ -43,14 +44,12 @@ Open on the server as of 2026-11-17:
 
 | # | Section | Label | What, and with what | When |
 |---|---|---|---|---|
-| 1 | [10](#10-updating-and-rolling-back) | To fill in | Update the server from v0.10.4 to **v0.10.7**, then change the version in the status line at the top. Nothing new in `.env`; check `DJANGO_DEBUG=False` first (it is, 2026-11-16). One migration runs, `tickets.0010` | Now |
-| 2 | [1.6](#16-the-network-dns-and-wi-fi) | To fill in | The help desk's A record in the internal DNS, and a DHCP reservation for the server's address. Then remove any hosts-file entry for the help-desk name from the PCs used to test | Before go-live |
-| 3 | [3](#3-get-the-certificate) | To fill in | The real certificate in place of the temporary one (3.5), which expires **about 2026-12-09**: which CA issues it, its expiry date, and who owns the renewal | Before 2026-12-09 |
+| 1 | [1.6](#16-the-network-dns-and-wi-fi) | To fill in | The help desk's A record in the internal DNS, and a DHCP reservation for the server's address. Then remove any hosts-file entry for the help-desk name from the PCs used to test | Before go-live |
+| 2 | [3](#3-get-the-certificate) | To fill in | The real certificate in place of the temporary one (3.5), which expires **2026-12-17**: which CA issues it, its expiry date, and who owns the renewal | Before 2026-12-17 |
+| 3 | [4](#4-microsoft-entra) | To fill in | Sign-in fails with `AADSTS7000215` after the reinstall (2026-11-17): put the new client secret's **Value** in `.env`, check it with [the secret check](#checking-the-client-secret-without-showing-it), and delete the old server's secret in Entra | Now |
 | 4 | [5.1](#51-still-to-fill-in-on-the-server) | To fill in | The `.env` values not set yet, listed in 5.1 with what goes in each | As listed there |
 | 5 | [8](#8-backups) | To fill in | The nightly backup line in the crontab (`crontab -l` shows none yet), and the first `Backup OK`. The copy off the server is still undecided (2026-11-11) | Before go-live |
 | 6 | [7](#7-post-install-checklist) | To fill in | The checks still open, listed under the checklist | Before go-live |
-| 7 | [2](#2-get-the-code), [2.1](#21-moving-the-server-to-the-companys-own-copy) | To fill in | Point the server at the company's own copy of the repository (2.1) once the owner has moved the deploy key there | When the owner says the key has moved |
-| 8 | [2](#2-get-the-code) | To add | The SSH `Host` alias for the deploy key, so the server can hold a separate key for each repository it fetches from. With: the alias name, once it's settled, in the `~/.ssh/config` block and the clone and `remote set-url` lines | When the name is settled |
 
 ## Contents
 
@@ -234,7 +233,7 @@ network staff PCs use gets its answers from that DNS:
 To check, on a PC run `Resolve-DnsName helpdesk.example.com`: it should give
 the server's address.
 
-> **To fill in** (item 2 of [Still to fill in or add](#still-to-fill-in-or-add)):
+> **To fill in** (item 1 of [Still to fill in or add](#still-to-fill-in-or-add)):
 > the A record and the server's DHCP reservation aren't in place yet
 > (2026-11-17). When they are, record the date here, and remove any
 > hosts-file entry for the help-desk name from the PCs used to test.
@@ -254,45 +253,46 @@ them. Without a key, the server keeps running the release it has installed,
 but it can't fetch new releases. Updates and new releases need the owner's
 written permission.
 
+A fresh Debian has no git:
+
 ```bash
+sudo apt install -y git
 ssh-keygen -t ed25519 -f ~/.ssh/inh_ticketing_deploy -C "inh-ticketing deploy key ($(hostname))"
 cat ~/.ssh/inh_ticketing_deploy.pub
 ```
 
-A passphrase is optional: you'd type it at each update. Then, as a
-repository admin on GitHub: **InH-Ticketing → Settings → Deploy keys → Add
-deploy key**. Title `helpdesk server`, paste the `.pub` line, leave **Allow
-write access** unticked, **Add key**.
+A passphrase is optional: you'd type it at each update. Send the `.pub` line
+(it isn't secret) to the owner, who adds it to the company's copy of the
+repository: **Settings → Deploy keys → Add deploy key**, title `helpdesk
+server`, **Allow write access** unticked.
 
-Tell SSH to use that key for GitHub:
-
-> **To add** (item 8 of [Still to fill in or add](#still-to-fill-in-or-add)):
-> a `Host` alias of its own for this key, in place of `Host github.com`, so
-> the server can keep a separate deploy key for each repository it fetches
-> from. Add with: the alias name once it's settled, in this block and in the
-> `git clone` (below) and `git remote set-url` (2.1) lines. Until then, the
-> block below is what's on the server.
+Tell SSH to use that key, under a name of its own, `github-inh`. Then a key
+for another repository on the same server (another app) can have its own
+name and never gets mixed up with this one:
 
 ```bash
 cat >> ~/.ssh/config <<'EOF'
-Host github.com
+Host github-inh
+    HostName github.com
+    User git
     IdentityFile ~/.ssh/inh_ticketing_deploy
     IdentitiesOnly yes
 EOF
 chmod 600 ~/.ssh/config
-ssh -T git@github.com
+ssh -T github-inh
 ```
 
 The first time, SSH shows GitHub's key fingerprint: compare it with
 [GitHub's published fingerprints](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints)
 before typing `yes`. The reply should name the repository and say *You've
-successfully authenticated*. If outbound port 22 is blocked, add
-`Hostname ssh.github.com` and `Port 443` under `Host github.com`.
+successfully authenticated*. If outbound port 22 is blocked, change
+`HostName github.com` to `HostName ssh.github.com` and add `Port 443`.
 
-Clone, and check out the release you're installing:
+Clone, and check out the release you're installing. `github-inh` stands in
+for `github.com` in the address:
 
 ```bash
-git clone git@github.com:luckyajinn/InH-Ticketing.git /srv/inh-ticketing/app
+git clone git@github-inh:luckyajinn/InH-Ticketing.git /srv/inh-ticketing/app
 cd /srv/inh-ticketing/app
 git tag --list           # the releases
 git checkout v0.10.7     # the newest release in that list; "detached HEAD" is expected
@@ -308,19 +308,21 @@ sends releases to. A server first set up from the owner's repository moves
 to the copy once. The owner moves the deploy key first (a key can belong to
 only one repository), and gives you the copy's `<org>/<repository>` name.
 
-> **To fill in** (item 7 of [Still to fill in or add](#still-to-fill-in-or-add)):
-> not done on the server yet (2026-11-17). Waiting for the owner to move the
-> deploy key. When it's done, record the date here.
+The server reinstalled on 2026-11-17 was cloned from its copy straight
+away, so it didn't need this.
 
 ```bash
 cd /srv/inh-ticketing/app
 git remote -v                                   # where it fetches from now
-git remote set-url origin git@github.com:<org>/<repository>.git
+git remote set-url origin git@github-inh:<org>/<repository>.git   # the alias from section 2
 git tag -d v0.10.7 2>/dev/null                  # only if it was fetched from the old repository; see below
 git fetch --tags origin
 git tag --list                                  # the releases the copy has
 ```
 
+- **An older `~/.ssh/config`** (a `Host github.com` block, from before
+  v0.10.7d of this guide): replace that block with the `github-inh` one from
+  section 2 first, and check it with `ssh -T github-inh`.
 - **`.env` stays as it is:** it isn't tracked, so changing the remote doesn't touch it.
 - **Why the `git tag -d`:** the copy's tags are new objects with the same
   names. If the server already fetched a tag from the old repository, `git
@@ -335,9 +337,9 @@ git tag --list                                  # the releases the copy has
 
 ## 3. Get the certificate
 
-> **To fill in** (item 3 of [Still to fill in or add](#still-to-fill-in-or-add)):
-> the server still has the temporary certificate from 3.5, which expires
-> **about 2026-12-09**. Fill in, once known: which CA issues the real one (an
+> **To fill in** (item 2 of [Still to fill in or add](#still-to-fill-in-or-add)):
+> the server has a temporary certificate from 3.5 (made at the reinstall),
+> which expires **2026-12-17**. Fill in, once known: which CA issues the real one (an
 > internal CA, if the company has one), its expiry date, and who owns the
 > renewal. If it isn't ready by then, make a new temporary one (3.5).
 
@@ -365,6 +367,10 @@ AD CS, usually the *Web Server* template). Ask for:
   it as `internal-root.pem`, in PEM format like the others.
 
 ### 3.2 Put the files together
+
+Only once the CA has sent the certificate files. No files yet? Use a
+temporary certificate (3.5) meanwhile: with nothing to put together, the
+commands below make an empty `fullchain.pem` and every check fails.
 
 If the certificate isn't text starting `-----BEGIN CERTIFICATE-----`, convert it.
 If the chain came as a `.p7b`, take the certificates out of it:
@@ -429,9 +435,14 @@ So the rest of the install can go ahead while the real certificate is
 arranged, the server can make a 30-day certificate for itself. Browsers will
 show a warning, so it's for IT testing only, never for staff.
 
+If you've already made a request in 3.1, move its key out of the way first:
+this writes a new `~/privkey.pem`, which would replace the one the CA's
+certificate will need.
+
 ```bash
 cd ~
 umask 077
+[ -f privkey.pem ] && mkdir -p ~/csr && mv privkey.pem helpdesk.csr ~/csr/   # only after 3.1; move them back for 3.2
 openssl req -x509 -newkey rsa:2048 -noenc -days 30 \
   -keyout privkey.pem -out fullchain.pem \
   -subj "/CN=helpdesk.example.com/O=Example Company (temporary)" \
@@ -459,8 +470,18 @@ An Entra admin:
    exactly (https, no trailing slash). Keep the `localhost` one for PCs. **Save**.
 2. **Certificates & secrets → New client secret.** Description `helpdesk
    server`, expiry 12 months. Copy the **Value** straight into the server's
-   `.env` (section 5) and nowhere else. A separate secret per machine means
-   one can be revoked without breaking the other.
+   `.env` (section 5) and nowhere else. It's shown **only once**, right after
+   you add it. The *Secret ID* column next to it isn't the secret: pasting
+   that gives `AADSTS7000215` at sign-in. If the Value is lost, add a new
+   secret and delete the old one. A separate secret per machine means one can
+   be revoked without breaking the other.
+
+> **To fill in** (item 3 of [Still to fill in or add](#still-to-fill-in-or-add)):
+> sign-in fails with `AADSTS7000215` since the reinstall (2026-11-17). Put
+> the new secret's Value in `.env`, run `docker compose -f compose.yaml -f compose.prod.yaml up -d`,
+> check it with [the secret check](#checking-the-client-secret-without-showing-it),
+> and delete the old server's secret here. Then fill in the new secret's
+> expiry date (step 3).
 3. **Put the secret's expiry in the calendar**, with a reminder a few weeks
    before. An expired secret stops all sign-in and email (`AADSTS7000222`).
 4. **Enterprise applications → InH-Ticketing → Users and groups:** check
@@ -511,7 +532,8 @@ HELPDESK_MAILBOX=helpdesk-test@example.com
 IT_NOTIFY_EMAIL=
 # Shown under "Can't sign in?" and on error pages. Keep the quotes if it has a #.
 HELP_CONTACT="Call IT on ext. 1234, or post in IT Help in Teams."
-INBOUND_EMAIL=graph
+# Email in stays off until it moves to the server (docs/deployment.md 5.1): only one copy may read the mailbox.
+INBOUND_EMAIL=off
 INBOUND_ALLOWED_DOMAINS=example.com
 EOF
 chmod 600 .env
@@ -574,7 +596,7 @@ are left out on purpose: their defaults are right. See `.env.example`.
 
 | Setting | On the server now | Fill in with | When |
 |---|---|---|---|
-| `INBOUND_EMAIL` | `off` | `graph`. First set `INBOUND_EMAIL=off` on every PC that has it on: only one copy may read the mailbox | When email-in moves to the server (checks 13 and 18) |
+| `INBOUND_EMAIL` | `graph`: the reinstall (2026-11-17) used this guide's old template, which had `graph` | `off` **now**, until email-in moves. Then `graph`, after setting `INBOUND_EMAIL=off` on every PC that has it on: only one copy may read the mailbox | Now; `graph` when email-in moves (checks 13 and 18) |
 | `HELP_CONTACT` | Not confirmed | How staff reach IT, in quotes, e.g. `"Call IT on ext. 1234, or post in IT Help in Teams."` | Now: while it's blank, the sign-in page shows the test mailbox's address |
 | `IT_NOTIFY_EMAIL` | Not confirmed (blank on the first install) | One IT address for the "new request" alerts. Never the help-desk mailbox | Before go-live, if IT wants the alerts |
 | `REPORTS_FROM` | Blank | The go-live date, e.g. `2026-11-30` | At go-live |
@@ -630,15 +652,15 @@ the go-live records.
 |---|---|---|---|
 | 1 | Containers running | `docker compose -f compose.yaml -f compose.prod.yaml ps` | `db`, `web` and `worker` healthy, `proxy` up |
 | 2 | Port 8000 not reachable | `ss -tln \| grep 8000` | Nothing |
-| 3 | HTTPS and health check, from the server | `curl -sS --cacert /srv/inh-ticketing/certs/internal-root.pem https://helpdesk.example.com/healthz` | `ok` |
+| 3 | HTTPS and health check, from the server | `sudo curl -sS --cacert /srv/inh-ticketing/certs/internal-root.pem https://helpdesk.example.com/healthz` | `ok` |
 | 4 | HTTP redirects to HTTPS | `curl -sSI http://helpdesk.example.com/queue/` | `301`, `Location: https://helpdesk.example.com/queue/` |
-| 5 | One HSTS header | `curl -sSI --cacert /srv/inh-ticketing/certs/internal-root.pem https://helpdesk.example.com/healthz \| grep -i strict` | One line: `max-age=31536000; includeSubDomains` |
+| 5 | One HSTS header | `sudo curl -sSI --cacert /srv/inh-ticketing/certs/internal-root.pem https://helpdesk.example.com/healthz \| grep -i strict` | One line: `max-age=31536000; includeSubDomains` |
 | 6 | **No browser warning on a company PC** | Open `https://helpdesk.example.com` in Edge | A padlock; certificate issued by the internal CA |
 | 7 | Sign-in works | **Sign in with Microsoft 365** | Back in the app, your name in the header |
 | 8 | **The Admin role shows** | Sign in as someone with the Admin role | **Admin** badge; `/admin/` opens |
 | 9 | Agents see the queue | Sign in with the Agent role | The IT queue |
 | 10 | Attachments, up to the limit | Submit a ticket, then a reply with 5 files of about 9 MB each | All upload; each downloads again |
-| 11 | Worker running | `docker compose -f compose.yaml -f compose.prod.yaml logs --tail 20 worker` | `Email backend: notifications.backends.GraphEmailBackend` and `Email-in: reading helpdesk-test@… every 60s` |
+| 11 | Worker running | `docker compose -f compose.yaml -f compose.prod.yaml logs --tail 20 worker` | `Email backend: notifications.backends.GraphEmailBackend`, and `Email-in: off (INBOUND_EMAIL=off)` on a first install (`Email-in: reading helpdesk-test@… every 60s` once email-in has moved, 5.1) |
 | 12 | **A test email out** | Submit a ticket for yourself | The receipt arrives; the worker logs `Emails: 1 sent` |
 | 13 | A test email in | Email the help-desk mailbox from your account | A new ticket within a minute |
 | 14 | A backup | `/srv/inh-ticketing/app/scripts/backup.sh first-install` | Ends with `Backup OK` (section 8) |
@@ -653,12 +675,14 @@ If the server can't resolve its own name for checks 3–5, add
 `--resolve helpdesk.example.com:443:127.0.0.1` (or `:80:` for check 4).
 
 > **To fill in** (item 6 of [Still to fill in or add](#still-to-fill-in-or-add)):
-> done on the first install (2026-11-09): checks 1, 3, 4, 5 and 7. Not
-> recorded as done yet (2026-11-17): 2 (port 8000), 6 (waits for the real
-> certificate), 8 and 9 (the Admin and Agent roles), 10 (attachments), 11–13
-> (email out and in), 14–15 (backups), 16 (a reboot), 17 (the calendar),
-> 18 (no PC reads the mailbox), 19–20 (staff and guest Wi-Fi). Fill in each
-> one's date and result, here or in the go-live records, as it's done.
+> the server was reinstalled on 2026-11-17, so the first install's results
+> no longer count. Done on the reinstall: checks 1 to 5. **Failing:** 7
+> (sign-in, `AADSTS7000215`: item 3). Not done yet: 6 (waits for the real
+> certificate), 8 and 9 (the Admin and Agent roles, after sign-in), 10
+> (attachments), 11–13 (email out and in), 14–15 (backups), 16 (a reboot),
+> 17 (the calendar), 18 (no PC reads the mailbox), 19–20 (staff and guest
+> Wi-Fi). Fill in each one's date and result, here or in the go-live
+> records, as it's done.
 
 ## 8. Backups
 
@@ -806,16 +830,36 @@ install.)*
    (a restored server counts as a new install), and the cron line in section 8.
    Read "Things to know about restoring" above about emails.
 
+### Reinstalling the server (the same machine, from scratch)
+
+Wiping the machine and installing Debian again (done on 2026-11-17) is a
+new install: sections 1 to 8, then the section 7 checklist from the start.
+To keep the data, take a backup first and copy it off the machine (then
+restore it as above). Also:
+
+1. **The server's SSH host key is new.** The PC you connect from warns
+   `REMOTE HOST IDENTIFICATION HAS CHANGED`. First check the new key at the
+   server's own console:
+   ```bash
+   ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
+   ```
+   On the PC, remove the old entry with `ssh-keygen -R <server address>`.
+   Then connect, and check the fingerprint SSH shows matches that one.
+2. **The old deploy key is gone** with the old disk. Make a new one
+   (section 2), and ask the owner to add it and remove the old one.
+3. **The old `.env` is gone**, and with it the client secret's Value, which
+   Entra never shows again. Make a new client secret (section 4) and delete
+   the old one. A new `.env` gets a new `DJANGO_SECRET_KEY` and
+   `POSTGRES_PASSWORD` too. Store the new values in IT's password vault.
+4. **The address may change.** Check the DHCP reservation and the DNS record
+   (1.6), and any hosts-file entry on the PCs used to test: one pointing at
+   the old address times out (section 12).
+5. **Expiry dates:** the new certificate (3.5 or 3.3) and the new secret go
+   in the calendar, in place of the old ones.
+
 ## 10. Updating and rolling back
 
 ### Updating to a new version
-
-> **To fill in** (item 1 of [Still to fill in or add](#still-to-fill-in-or-add)):
-> the server runs v0.10.4 (2026-11-16); the newest release is v0.10.7. Going
-> from v0.10.4 runs one migration (`tickets.0010`) and needs nothing new in
-> `.env` or `deploy/`. Check `.env` has `DJANGO_DEBUG=False` first (it did on
-> 2026-11-16), or `web` won't start. When it's done, fill in the version and
-> date in the status line at the top of this guide.
 
 Read the release notes first (`docs/releases/vX.Y.Z.md` in the new version):
 they say if there are new `.env` settings or anything else to do.
@@ -933,7 +977,7 @@ Monthly, about ten minutes:
 |---|---|
 | Backups ran every night | `tail -n 40 /srv/inh-ticketing/backups/backup.log`: a `Backup OK` per night |
 | Disk space | `df -h /`; `docker system df` |
-| Certificate expiry | `openssl x509 -in /srv/inh-ticketing/certs/fullchain.pem -noout -enddate` |
+| Certificate expiry | `sudo openssl x509 -in /srv/inh-ticketing/certs/fullchain.pem -noout -enddate` |
 | Client secret expiry | Entra → App registrations → InH-Ticketing → Certificates & secrets |
 | Updates | `sudo apt update && sudo apt upgrade`; reboot if `/var/run/reboot-required` exists |
 | The app's parts: known security issues | `docker compose -f compose.yaml -f compose.prod.yaml exec web python scripts/check_updates.py`. It checks the app's packages and, since v0.10.7, the packages they need. "Known security issues: none." is the all-clear. If it lists one, a new release of the app fixes it (send the output to whoever maintains the app) |
@@ -978,7 +1022,7 @@ Logs: `docker compose -f compose.yaml -f compose.prod.yaml logs --tail 100 <serv
 |---|---|---|
 | Certificate warning on a company PC | The PC doesn't trust the internal root; the name isn't in the certificate's SAN; or the intermediate is missing from `fullchain.pem` | Re-run the checks in 3.2. The root reaches PCs through Group Policy or Intune |
 | Another website opens (a web host's "coming soon" or cPanel page) | That PC looks the name up on the internet: its network (often a Wi-Fi) hands out a public DNS | Section 1.6. Compare its DNS servers with a working PC's (`ipconfig /all`) |
-| Browser can't connect at all | DNS, the network firewall, or `proxy` isn't running | `nslookup helpdesk.example.com`; `docker compose … ps` |
+| Browser can't connect at all, or `ERR_CONNECTION_TIMED_OUT` | DNS, the network firewall, `proxy` isn't running, or a hosts-file entry on that PC points at an old address (after a reinstall or an address change) | `nslookup helpdesk.example.com`; `docker compose … ps`. On the PC, `Test-NetConnection helpdesk.example.com -Port 443` shows the address it really uses. Fix or remove the line in `C:\Windows\System32\drivers\etc\hosts` (as admin), then `ipconfig /flushdns` |
 | `proxy` keeps restarting | A certificate file is missing or unreadable, the key doesn't match, or the Caddyfile has an error | `docker compose … logs proxy`; repeat step 6.2 |
 | `502 Bad Gateway` | `web` is down or still starting | `docker compose … ps`; `logs web` |
 | `web` stops at once with `DJANGO_DEBUG is on, but DJANGO_ALLOWED_HOSTS has …` | `.env` has `DJANGO_DEBUG=True` (as in `.env.example`) | Set `DJANGO_DEBUG=False` in `.env`, then `docker compose … up -d` |
@@ -987,7 +1031,7 @@ Logs: `docker compose -f compose.yaml -f compose.prod.yaml logs --tail 100 <serv
 | Too many redirects | Something in front of the proxy, or `X-Forwarded-Proto` doesn't reach Django | The proxy must be the only thing in front. Check `proxy` logs |
 | `403 CSRF verification failed` | `DJANGO_CSRF_TRUSTED_ORIGINS` doesn't match the address used | Must be `https://helpdesk.example.com` exactly |
 | `AADSTS50011` at sign-in | The server's redirect URI isn't on the app registration | Section 4, step 1 |
-| `AADSTS7000215` or `AADSTS7000222` | Wrong or expired client secret | New secret (section 4), update `.env`, `docker compose … up -d` |
+| `AADSTS7000215` or `AADSTS7000222` | Wrong or expired client secret. Most often the *Secret ID* was pasted instead of the **Value**, or `.env` was edited but the containers weren't recreated | [The secret check](#checking-the-client-secret-without-showing-it) below. If it's wrong: a new secret (section 4), its Value in `.env`, `docker compose … up -d`. To see only the newest attempt: `docker compose … logs --since 2m web` right after trying (plain `logs` shows the older failures too) |
 | Sign-in fails with "not yet valid" or "expired" | The server clock is off | `chronyc tracking`, section 1.2 |
 | `413` when uploading | Over the 60 MB request limit | Fewer or smaller files per reply (10 MB each, 5 at most) |
 | `web` shows `(unhealthy)` | The health check can't reach the app | `docker inspect --format '{{json .State.Health}}' inh-ticketing-web-1`; `logs web` |
@@ -1004,3 +1048,27 @@ Logs: `docker compose -f compose.yaml -f compose.prod.yaml logs --tail 100 <serv
 
 `docker compose …` above is short for `docker compose -f compose.yaml -f compose.prod.yaml`,
 run in `/srv/inh-ticketing/app`.
+
+### Checking the client secret without showing it
+
+This checks `ENTRA_CLIENT_SECRET` in `.env` and in the running app, and
+prints only its length and two yes/no answers, never the secret itself:
+
+```bash
+cd /srv/inh-ticketing/app
+K=ENTRA_CLIENT_SECRET
+V=$(grep "^$K=" .env | tail -1 | cut -d= -f2- | tr -d '\r\n')
+echo "lines: $(grep -c "^$K=" .env)  length: ${#V}  looks like a Secret ID: $(printf %s "$V" | grep -cE '^[0-9a-f]{8}-[0-9a-f]{4}-')"
+[ "$(printf %s "$V" | sha256sum)" = "$(docker compose -f compose.yaml -f compose.prod.yaml exec -T web printenv "$K" | tr -d '\r\n' | sha256sum)" ] \
+  && echo "the app uses this value: yes" || echo "the app uses this value: NO (run docker compose ... up -d)"
+unset K V
+```
+
+What good output looks like:
+- **lines** `1` (two lines means the last one wins; delete the other);
+- **length** about 40. Exactly 36, with **looks like a Secret ID** `1`, means
+  the Secret ID was pasted: put the Value in instead;
+- **looks like a Secret ID** `0`;
+- **the app uses this value** `yes`. `NO` means `.env` changed after the
+  containers started: run `up -d`. Also `NO` if the value has quotes around
+  it in `.env`: it doesn't need them.

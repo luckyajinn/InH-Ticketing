@@ -79,7 +79,17 @@ deleting an old backup frees only the files no newer backup still shares.
 
 - **Ubuntu Server LTS** (24.04 or 26.04), or **Debian stable** (13), as long
   as Docker's [install page](https://docs.docker.com/engine/install/) lists it.
-  A minimal install with the OpenSSH server.
+  A minimal install with the OpenSSH server. In Debian's installer:
+  - **Hostname** and **username** are separate screens. The hostname is the
+    machine's name; the username is the admin's own account, which gets
+    sudo (`inhadmin` in [deployment.md](deployment.md)).
+  - **Leave the root password blank.** The installer then gives that
+    account sudo and locks root.
+  - **Software selection:** untick *Debian desktop environment* and
+    *GNOME*; tick *SSH server* and *standard system utilities* only. A
+    desktop's login screen can put the machine to sleep when idle.
+  - **Keyboard:** the same layout as the admin PCs.
+  - **Disk:** guided, the whole disk with LVM, all files in one partition.
 - **Docker Engine and the Docker Compose plugin from Docker's own apt
   repository** (`docker-ce`, `docker-compose-plugin`). Both are free and open
   source. Compose 2.24 or later is required.

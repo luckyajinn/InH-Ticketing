@@ -26,7 +26,9 @@ On GitHub, signed in as the owner:
    account is its owner. Then, in the organization's **Settings → Member
    privileges**:
    - set **Base permissions** to **No permission**;
-   - untick **Allow forking of private repositories**.
+   - untick **Allow forking of private repositories**;
+   - allow **deploy keys**. A new organization may have them switched off,
+     and then the company's server key can't be added to its copy (step 5).
 2. **The repository:** in the organization, **New repository**, named
    `InH-Ticketing-<Company>`:
    - **Private**;
@@ -78,7 +80,8 @@ python scripts/publish_copy.py --to <org>/InH-Ticketing-<Company> --tag vX.Y.Za 
 ```
 
 They're sent from `main` (`--ref` for something else). The tool refuses
-if anything but the documents (`docs/`, `CHANGELOG.md`, `README.md`) changed
+if anything but the documents (`docs/`, `CHANGELOG.md`, `README.md`, and
+the `.env.example` sample) changed
 since the release, so a change to the app always needs a release. The copy's
 `main` gets the documents, with no tag: its tags stay the releases a server
 can check out.

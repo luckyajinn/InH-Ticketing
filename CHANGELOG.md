@@ -5,6 +5,43 @@ Each version also has illustrated release notes in [docs/releases](docs/releases
 A letter after a version, such as 0.10.0d, marks a documentation-only update:
 the app is the same as that version.
 
+## 0.10.7d - 2026-11-17
+
+Documentation only: the app is the same as 0.10.7. No release of its own.
+What the server's reinstall (2026-11-17) ran into.
+
+### Fixed
+- deployment.md section 5: the `.env` template had `INBOUND_EMAIL=graph`,
+  so a new server read the mailbox at once. It's `off` now, until email-in
+  moves to the server, as the settings table and 5.1 say. `.env.example`'s
+  server sample too.
+- deployment.md section 7: checks 3 and 5 (and section 11's expiry check)
+  use `sudo`, because the certificates folder is root's
+  (`curl: (77) error setting certificate file`). Check 11 expects
+  `Email-in: off` on a first install.
+- deployment.md "Still to fill in or add": the update to v0.10.7, the move
+  to the company's copy and the SSH alias are done (a fresh v0.10.7 from the
+  copy). The temporary certificate now expires 2026-12-17. New: sign-in fails
+  with `AADSTS7000215` after the reinstall.
+
+### Added
+- deployment.md section 2: install git (a fresh Debian has none); the deploy
+  key goes on the company's copy; the `github-inh` SSH alias in the config,
+  the clone and `remote set-url`.
+- deployment.md 3.2 starts only once the CA has sent the files (otherwise
+  3.5), and 3.5 first moves a key from 3.1 out of the way.
+- deployment.md section 4: the client secret's Value is shown only once,
+  and the Secret ID isn't the secret.
+- deployment.md section 9: reinstalling the server (a new SSH host key,
+  deploy key, client secret and `.env`; the address).
+- deployment.md section 12: a check of the client secret that never shows
+  it, `logs --since 2m` after a sign-in attempt, and a hosts-file entry
+  pointing at an old address (`ERR_CONNECTION_TIMED_OUT`).
+- server-requirements.md: the Debian installer's choices (hostname and
+  username, a blank root password, no desktop).
+- company-copies.md: allow deploy keys in the organization.
+  `publish_copy.py` counts `.env.example` as a document.
+
 ## 0.10.7c - 2026-11-17
 
 Documentation only: the app is the same as 0.10.7. No release of its own.
