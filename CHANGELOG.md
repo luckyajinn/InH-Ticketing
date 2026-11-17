@@ -5,6 +5,31 @@ Each version also has illustrated release notes in [docs/releases](docs/releases
 A letter after a version, such as 0.10.0d, marks a documentation-only update:
 the app is the same as that version.
 
+## 0.10.7c - 2026-11-17
+
+Documentation only: the app is the same as 0.10.7. No release of its own.
+
+### Added
+- deployment.md: a *Still to fill in or add* list near the top, and a
+  **To fill in** or **To add** label in each section that's waiting on the
+  server. Each label says what's missing and what goes there: the update to
+  v0.10.7, DNS and DHCP, the real certificate (before about 2026-12-09), the
+  `.env` values still to set (new section 5.1), the backup cron line, the
+  open post-install checks, the move to the company's own copy, and the
+  deploy key's SSH alias. From now on, any change that needs something done
+  on the server updates the guide and its list in the same commit.
+- deployment.md 2.1: moving a server to the company's own copy of the
+  repository (`git remote set-url`, and the tag clash).
+- deployment.md section 5: rows for `TIME_ZONE`, `ENTRA_ROLE_AGENT`,
+  `ENTRA_ROLE_ADMIN`, `IT_NOTIFY_EMAIL`, `INBOUND_ALLOWED_DOMAINS` and
+  `AUTO_CLOSE_RESOLVED_DAYS`, which were in `.env` but not in the table.
+- deployment.md section 10: rolling back from v0.10.6 or later
+  (`migrate tickets 0009`).
+
+### Changed
+- deployment.md's examples use v0.10.7; its status line says the server
+  runs v0.10.4.
+
 ## 0.10.7b - 2026-11-16
 
 Documentation and an owner's tool only: the app is the same as 0.10.7. No release of its own.

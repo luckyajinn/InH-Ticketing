@@ -5,10 +5,11 @@ keep it backed up, update it, and get it back if something goes wrong. What
 the server itself needs is in [server-requirements.md](server-requirements.md).
 
 > **Status: in use.** First written for v0.6.0 and installed on the internal
-> server on 2026-11-09. Before that, the same Docker setup ran on a Debian 13
-> test VM for a load test (the `stress-test` branch: fake data, a self-signed
-> certificate, no Microsoft 365, no email). Please fix this guide wherever it
-> doesn't match what you see.
+> server on 2026-11-09; the server runs **v0.10.4** (reported 2026-11-16).
+> Before that, the same Docker setup ran on a Debian 13 test VM for a load
+> test (the `stress-test` branch: fake data, a self-signed certificate, no
+> Microsoft 365, no email). Please fix this guide wherever it doesn't match
+> what you see.
 
 What has been checked, and what hasn't:
 
@@ -16,13 +17,44 @@ What has been checked, and what hasn't:
 |---|---|---|
 | Django production settings | `manage.py check --deploy` is clean; automated tests for the HTTPS redirect, HSTS and `/healthz`; served behind Caddy on the test VM | |
 | `compose.prod.yaml` | The image build and `docker compose` on Linux (test VM): web, worker, database and proxy, under load. Port 80's redirect to HTTPS, on the first install (2026-11-09) | |
-| `deploy/caddy/Caddyfile` | Run by Caddy 2.11.9 on the test VM, serving HTTPS | The internal-CA certificate (the test used a self-signed one) |
-| `scripts/backup.sh`, `restore.sh` | Syntax-checked with `sh -n` and `dash`; run against a stand-in for `docker` | Real Docker and PostgreSQL; cron (not run on the test VM) |
+| `deploy/caddy/Caddyfile` | Run by Caddy 2.11.9 on the test VM, serving HTTPS | The internal-CA certificate (the test used a self-signed one). **To fill in:** the date the real certificate went on (item 3 below) |
+| `scripts/backup.sh`, `restore.sh` | Syntax-checked with `sh -n` and `dash`; run against a stand-in for `docker` | Real Docker and PostgreSQL; cron (not run on the test VM). **To fill in:** the date of the server's first `Backup OK` (item 5) |
 | Certificate commands (section 3) | Run end to end with a throwaway test CA | The internal CA's own process and files |
 | Firewall, chrony and Entra sign-in on the server | On the first install (2026-11-09), on Debian 13: ufw, chrony's internet time, and Microsoft 365 sign-in through the proxy | |
-| Email from the server | | Not recorded here |
+| Email from the server | | **To fill in:** the date email out (checks 11–12) and email in (check 13) were tested on the server (item 6) |
+
+## Still to fill in or add
+
+*Keeping this guide current:* whenever a release or a decision means
+something has to change on the server (a line in `.env`, the crontab, DNS,
+the certificate, Entra, the deploy key), this guide is changed in the same
+commit, and the change gets a label where it goes:
+
+- **To fill in:** the guide has the place for it, but the server's value,
+  date or result isn't known yet. The label says what to fill in, and with what.
+- **To add:** something the guide doesn't cover yet. The label says what's
+  missing, and what it will be.
+
+Each label is also a row below. When it's done on the server, tell whoever
+maintains the app (or edit this guide): the label and its row are removed,
+and anything worth keeping (a date, a result) stays in the section.
+
+Open on the server as of 2026-11-17:
+
+| # | Section | Label | What, and with what | When |
+|---|---|---|---|---|
+| 1 | [10](#10-updating-and-rolling-back) | To fill in | Update the server from v0.10.4 to **v0.10.7**, then change the version in the status line at the top. Nothing new in `.env`; check `DJANGO_DEBUG=False` first (it is, 2026-11-16). One migration runs, `tickets.0010` | Now |
+| 2 | [1.6](#16-the-network-dns-and-wi-fi) | To fill in | The help desk's A record in the internal DNS, and a DHCP reservation for the server's address. Then remove any hosts-file entry for the help-desk name from the PCs used to test | Before go-live |
+| 3 | [3](#3-get-the-certificate) | To fill in | The real certificate in place of the temporary one (3.5), which expires **about 2026-12-09**: which CA issues it, its expiry date, and who owns the renewal | Before 2026-12-09 |
+| 4 | [5.1](#51-still-to-fill-in-on-the-server) | To fill in | The `.env` values not set yet, listed in 5.1 with what goes in each | As listed there |
+| 5 | [8](#8-backups) | To fill in | The nightly backup line in the crontab (`crontab -l` shows none yet), and the first `Backup OK`. The copy off the server is still undecided (2026-11-11) | Before go-live |
+| 6 | [7](#7-post-install-checklist) | To fill in | The checks still open, listed under the checklist | Before go-live |
+| 7 | [2](#2-get-the-code), [2.1](#21-moving-the-server-to-the-companys-own-copy) | To fill in | Point the server at the company's own copy of the repository (2.1) once the owner has moved the deploy key there | When the owner says the key has moved |
+| 8 | [2](#2-get-the-code) | To add | The SSH `Host` alias for the deploy key, so the server can hold a separate key for each repository it fetches from. With: the alias name, once it's settled, in the `~/.ssh/config` block and the clone and `remote set-url` lines | When the name is settled |
 
 ## Contents
+
+- [Still to fill in or add](#still-to-fill-in-or-add)
 
 1. [Prepare the server](#1-prepare-the-server)
 2. [Get the code](#2-get-the-code)
@@ -202,6 +234,11 @@ network staff PCs use gets its answers from that DNS:
 To check, on a PC run `Resolve-DnsName helpdesk.example.com`: it should give
 the server's address.
 
+> **To fill in** (item 2 of [Still to fill in or add](#still-to-fill-in-or-add)):
+> the A record and the server's DHCP reservation aren't in place yet
+> (2026-11-17). When they are, record the date here, and remove any
+> hosts-file entry for the help-desk name from the PCs used to test.
+
 **Guest Wi-Fi.** Docker's ports skip the server's own firewall (see 1.4), so the
 network firewall in front of the server is what limits ports 80 and 443.
 Allow the staff networks and the VPN, and block the guest Wi-Fi.
@@ -229,6 +266,13 @@ write access** unticked, **Add key**.
 
 Tell SSH to use that key for GitHub:
 
+> **To add** (item 8 of [Still to fill in or add](#still-to-fill-in-or-add)):
+> a `Host` alias of its own for this key, in place of `Host github.com`, so
+> the server can keep a separate deploy key for each repository it fetches
+> from. Add with: the alias name once it's settled, in this block and in the
+> `git clone` (below) and `git remote set-url` (2.1) lines. Until then, the
+> block below is what's on the server.
+
 ```bash
 cat >> ~/.ssh/config <<'EOF'
 Host github.com
@@ -251,13 +295,51 @@ Clone, and check out the release you're installing:
 git clone git@github.com:luckyajinn/InH-Ticketing.git /srv/inh-ticketing/app
 cd /srv/inh-ticketing/app
 git tag --list           # the releases
-git checkout v0.10.5     # the newest release in that list; "detached HEAD" is expected
+git checkout v0.10.7     # the newest release in that list; "detached HEAD" is expected
 file scripts/backup.sh   # "POSIX shell script ... executable", and no "CRLF"
 ```
 
 Always run a release tag on the server, never a branch.
 
+### 2.1 Moving the server to the company's own copy
+
+Each company gets its own private copy of the repository, which the owner
+sends releases to. A server first set up from the owner's repository moves
+to the copy once. The owner moves the deploy key first (a key can belong to
+only one repository), and gives you the copy's `<org>/<repository>` name.
+
+> **To fill in** (item 7 of [Still to fill in or add](#still-to-fill-in-or-add)):
+> not done on the server yet (2026-11-17). Waiting for the owner to move the
+> deploy key. When it's done, record the date here.
+
+```bash
+cd /srv/inh-ticketing/app
+git remote -v                                   # where it fetches from now
+git remote set-url origin git@github.com:<org>/<repository>.git
+git tag -d v0.10.7 2>/dev/null                  # only if it was fetched from the old repository; see below
+git fetch --tags origin
+git tag --list                                  # the releases the copy has
+```
+
+- **`.env` stays as it is:** it isn't tracked, so changing the remote doesn't touch it.
+- **Why the `git tag -d`:** the copy's tags are new objects with the same
+  names. If the server already fetched a tag from the old repository, `git
+  fetch` refuses to replace it (`would clobber existing tag`). Delete just
+  that tag, then fetch again. Never delete the tag that's checked out now
+  (`git describe --tags`).
+- **Rolling back after the move:** the copy holds only the releases the
+  owner sent it, starting with v0.10.7. A release from before that is still
+  on the server if it was fetched earlier (`git tag --list`); otherwise ask
+  the owner.
+- Then update as usual (section 10).
+
 ## 3. Get the certificate
+
+> **To fill in** (item 3 of [Still to fill in or add](#still-to-fill-in-or-add)):
+> the server still has the temporary certificate from 3.5, which expires
+> **about 2026-12-09**. Fill in, once known: which CA issues the real one (an
+> internal CA, if the company has one), its expiry date, and who owns the
+> renewal. If it isn't ready by then, make a new temporary one (3.5).
 
 ### 3.1 Create the key and the request
 
@@ -445,19 +527,24 @@ ls -l .env      # -rw------- 1 inhadmin inhadmin ...
 | `DJANGO_SECRET_KEY` | 64 random hex characters | Signs sessions. New for the server; never copy a PC's |
 | `DJANGO_ALLOWED_HOSTS` | `helpdesk.example.com` | Other names get "400 Bad Request". (`127.0.0.1` is added automatically, for Docker's health check) |
 | `DJANGO_CSRF_TRUSTED_ORIGINS` | `https://helpdesk.example.com` | Forms must come from this address |
+| `TIME_ZONE` | `America/Los_Angeles` | Dates and times in the app and in emails. Same as the server's own time zone (1.1) |
 | `POSTGRES_PASSWORD` | 48 random hex characters | Letters and digits only, so it's safe in `DATABASE_URL` |
 | `ENTRA_TENANT_ID`, `ENTRA_CLIENT_ID` | From the app registration's Overview | Same as on a PC |
 | `ENTRA_CLIENT_SECRET` | The server's own secret (section 4) | |
 | `ENTRA_REDIRECT_URI` | `https://helpdesk.example.com/auth/callback` | Must match Entra exactly |
+| `ENTRA_ROLE_AGENT`, `ENTRA_ROLE_ADMIN` | `Agent`, `Admin` | The *Value* of IT's agent role and the admin role on the app registration. Only change them if the roles were named differently |
 | `EMAIL_BACKEND` | `graph` | Really send email |
 | `SITE_URL` | `https://helpdesk.example.com` | Links in emails |
 | `HELPDESK_MAILBOX` | The test shared mailbox during the pilot | |
+| `IT_NOTIFY_EMAIL` | One IT address, e.g. a distribution list or a Teams channel's address (optional) | Where IT's "new request" alerts go. **Never the help-desk mailbox:** it would read its own alerts as new requests |
 | `HELP_CONTACT` | How to reach IT, e.g. `"Call IT on ext. 1234, or post in IT Help in Teams."` | Shown under "Can't sign in?" and on error pages. Blank shows "Email IT at" the mailbox above, which is the test mailbox during the pilot. Quote it if it contains `#`, or everything after the `#` is dropped |
 | `REPORTS_FROM` | The go-live date, e.g. `2026-11-30` (blank until then) | Reports (`/reports/`, admins only) count tickets from this date, so pilot and test tickets don't skew them. Tickets whose subject starts with "Pilot:" are always left out |
-| `INBOUND_EMAIL` | `graph` | Read the mailbox |
+| `INBOUND_EMAIL` | `graph`, once no PC reads the mailbox (below) | Read the mailbox. `off` until email-in moves to the server (5.1) |
+| `INBOUND_ALLOWED_DOMAINS` | The company's email domain(s), comma-separated | Email from any other domain is ignored. Blank means the help-desk mailbox's domain |
 | `DEPARTMENT_MAILBOXES` | Blank until the department mailboxes are decided | e.g. `mechanics=mechanics-requests@example.com, cleaning=cs@example.com/Requests`. Each needs the Exchange steps in [email-setup.md](email-setup.md), 4d |
 | `DEPARTMENT_NOTIFY_EMAILS`, `ENTRA_ROLE_AGENT_MECHANICS`, `ENTRA_ROLE_AGENT_CLEANING` | Remove (from v0.10.0) | Each department's alert address and Entra role are set in the admin site (Tickets > Departments). The upgrade to v0.10.0 copied these values there, and the logs warn while they're still in `.env` |
 | `ARCHIVE_KEEP_DAYS` | Leave out (default 730, two years) | How long an archived ticket is kept; shown on the ticket |
+| `AUTO_CLOSE_RESOLVED_DAYS` | Leave out (default 7) | Days after IT resolves a ticket before it closes by itself, if the requester doesn't reply. `0` never closes them |
 | `INBOUND_VERIFY_IT_SENDERS` | Leave out (default on) | Emails that only claim to be from IT become internal notes |
 
 Things to know:
@@ -477,6 +564,24 @@ Things to know:
 
 The HTTPS settings (`DJANGO_SECURE_SSL_REDIRECT`, `DJANGO_SECURE_HSTS_SECONDS`)
 are left out on purpose: their defaults are right. See `.env.example`.
+
+### 5.1 Still to fill in on the server
+
+> **To fill in** (item 4 of [Still to fill in or add](#still-to-fill-in-or-add)):
+> the `.env` lines below aren't set to their final values yet (2026-11-17).
+> After changing any of them, run `docker compose -f compose.yaml -f compose.prod.yaml up -d`
+> (section 10, *Changing a setting*), then remove its row here.
+
+| Setting | On the server now | Fill in with | When |
+|---|---|---|---|
+| `INBOUND_EMAIL` | `off` | `graph`. First set `INBOUND_EMAIL=off` on every PC that has it on: only one copy may read the mailbox | When email-in moves to the server (checks 13 and 18) |
+| `HELP_CONTACT` | Not confirmed | How staff reach IT, in quotes, e.g. `"Call IT on ext. 1234, or post in IT Help in Teams."` | Now: while it's blank, the sign-in page shows the test mailbox's address |
+| `IT_NOTIFY_EMAIL` | Not confirmed (blank on the first install) | One IT address for the "new request" alerts. Never the help-desk mailbox | Before go-live, if IT wants the alerts |
+| `REPORTS_FROM` | Blank | The go-live date, e.g. `2026-11-30` | At go-live |
+| `HELPDESK_MAILBOX` | The test shared mailbox | The real help-desk mailbox, once its Exchange steps are done ([email-setup.md](email-setup.md)) | When the pilot ends |
+| `INBOUND_ALLOWED_DOMAINS` | Not confirmed | The company's email domain(s) | With `INBOUND_EMAIL=graph` |
+| `DEPARTMENT_MAILBOXES` | Blank | Each department's mailbox, as in the table above | When the department mailboxes are decided |
+| `DEPARTMENT_NOTIFY_EMAILS`, `ENTRA_ROLE_AGENT_MECHANICS`, `ENTRA_ROLE_AGENT_CLEANING` | Possibly still there from before v0.10.0 | Nothing: delete the lines | If `docker compose … logs web` warns about them |
 
 ## 6. First start
 
@@ -547,6 +652,14 @@ the go-live records.
 If the server can't resolve its own name for checks 3–5, add
 `--resolve helpdesk.example.com:443:127.0.0.1` (or `:80:` for check 4).
 
+> **To fill in** (item 6 of [Still to fill in or add](#still-to-fill-in-or-add)):
+> done on the first install (2026-11-09): checks 1, 3, 4, 5 and 7. Not
+> recorded as done yet (2026-11-17): 2 (port 8000), 6 (waits for the real
+> certificate), 8 and 9 (the Admin and Agent roles), 10 (attachments), 11–13
+> (email out and in), 14–15 (backups), 16 (a reboot), 17 (the calendar),
+> 18 (no PC reads the mailbox), 19–20 (staff and guest Wi-Fi). Fill in each
+> one's date and result, here or in the go-live records, as it's done.
+
 ## 8. Backups
 
 Every night at 02:30, `scripts/backup.sh` saves the database and the
@@ -566,6 +679,11 @@ before every update.
 | Downside | One crontab line outside the repository (below) | |
 
 ### Set it up
+
+> **To fill in** (item 5 of [Still to fill in or add](#still-to-fill-in-or-add)):
+> the cron line isn't on the server yet (2026-11-17). Fill in: the date it
+> was added and the first nightly `Backup OK`. Still to decide: where the copy
+> off the server goes (below).
 
 ```bash
 crontab -e
@@ -663,7 +781,7 @@ install.)*
    the same emails.
 2. **Build the new server:** sections 1 and 2. Then open the backup's
    `manifest.txt` and check out the tag on its "App version" line (the `git:`
-   part), e.g. `git checkout v0.10.5`.
+   part), e.g. `git checkout v0.10.7`.
 3. **A new certificate** for the same name: section 3. The old private key
    wasn't backed up.
 4. **The `.env`** from the password vault: section 5, with the same
@@ -692,6 +810,13 @@ install.)*
 
 ### Updating to a new version
 
+> **To fill in** (item 1 of [Still to fill in or add](#still-to-fill-in-or-add)):
+> the server runs v0.10.4 (2026-11-16); the newest release is v0.10.7. Going
+> from v0.10.4 runs one migration (`tickets.0010`) and needs nothing new in
+> `.env` or `deploy/`. Check `.env` has `DJANGO_DEBUG=False` first (it did on
+> 2026-11-16), or `web` won't start. When it's done, fill in the version and
+> date in the status line at the top of this guide.
+
 Read the release notes first (`docs/releases/vX.Y.Z.md` in the new version):
 they say if there are new `.env` settings or anything else to do.
 
@@ -707,7 +832,7 @@ Set `NEW` to the version you're installing, then run the rest as it is:
 
 ```bash
 cd /srv/inh-ticketing/app
-NEW=v0.10.5                                # the version you're installing
+NEW=v0.10.7                                # the version you're installing
 OLD=$(git describe --tags); echo "$OLD"    # the current version: write it down, rolling back needs it
 ./scripts/backup.sh before-$NEW            # always, before updating
 git fetch --tags
@@ -762,6 +887,12 @@ the backups.
   notes in section 9 about emails. Always finish with `up -d
   --build` as above: plain `up -d` would start the new version's images on
   the restored database, and they would re-apply the new migrations.
+- **From v0.10.6 or later back to v0.10.5 or earlier:** v0.10.6 adds
+  migration `tickets` 0010 (who opened a ticket for someone else). Undo it
+  first, then check out the old version and rebuild:
+  `docker compose -f compose.yaml -f compose.prod.yaml exec web python manage.py migrate tickets 0009`.
+  The tickets opened for someone stay theirs. (v0.10.7 adds no migrations:
+  back to v0.10.6 is a checkout and rebuild.)
 - **From v0.10.0 back to v0.9.1:** v0.10.0 adds migrations `tickets` 0008
   (the departments table) and `accounts` 0003. If no department was added
   besides IT, Mechanics and Cleaning & sanitization, undo them, then check
