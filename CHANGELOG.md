@@ -14,6 +14,10 @@ Documentation and an owner's tool only: the app is the same as 0.10.7. No releas
   its own private copy of the app, one commit per release it's given, that
   its people can read but not change. Both files stay out of the copies.
 
+### Fixed
+- `publish_copy.py` checks for private words before pointing links at the
+  copy, so a copy whose own name contains one isn't refused (2026-11-17).
+
 ## 0.10.7a - 2026-11-16
 
 Documentation only: the app is the same as 0.10.7. No release of its own.

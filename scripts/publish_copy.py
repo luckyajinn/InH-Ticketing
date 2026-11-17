@@ -56,8 +56,12 @@ def previous_copy(url: str, ref: str) -> str | None:
     return git("rev-parse", ref)
 
 
-def build_tree(tag: str, target_slug: str) -> tuple[str, list[str], list[str]]:
-    """(tree id, files left out, files whose links were changed) for the copy of `tag`."""
+def build_tree(tag: str, target_slug: str) -> tuple[str, str, list[str], list[str]]:
+    """
+    (tree id, tree before the links were changed, files left out, files whose
+    links were changed) for the copy of `tag`. The private-words check reads
+    the second: the copy's own name, which the owner chose, may contain one.
+    """
     with tempfile.TemporaryDirectory() as tmp:
         env = {"GIT_INDEX_FILE": str(Path(tmp) / "index")}
         git("read-tree", f"{tag}^{{tree}}", env=env)
@@ -65,6 +69,7 @@ def build_tree(tag: str, target_slug: str) -> tuple[str, list[str], list[str]]:
         left_out = [path for path in OWNER_ONLY if path in files]
         for path in left_out:
             git("rm", "--cached", "--quiet", "--", path, env=env)
+        unlinked_tree = git("write-tree", env=env)
         # Only the files that mention this repository (one `git grep`, not one process per file).
         mentions = {hit.split(":", 1)[1] for hit in
                     git("grep", "-I", "-l", "-F", "-e", SOURCE_SLUG, tag, check=False).splitlines() if hit}
@@ -80,7 +85,7 @@ def build_tree(tag: str, target_slug: str) -> tuple[str, list[str], list[str]]:
                                                                                 target_slug.encode()))
             git("update-index", "--cacheinfo", f"{mode},{new_blob},{path}", env=env)
             relinked.append(path)
-        return git("write-tree", env=env), left_out, relinked
+        return git("write-tree", env=env), unlinked_tree, left_out, relinked
 
 
 def forbidden_found(tree: str) -> list[str]:
@@ -112,14 +117,14 @@ def main() -> int:
     tracking = f"refs/copies/{args.to}/main"
 
     parent = previous_copy(url, tracking)
-    tree, left_out, relinked = build_tree(args.tag, args.to)
+    tree, unlinked_tree, left_out, relinked = build_tree(args.tag, args.to)
     files = len(git("ls-tree", "-r", "--name-only", tree).splitlines())
     print(f"Copy of {args.tag} for {args.to}: {files} files.")
     print(f"  Left out (owner only): {', '.join(left_out) or 'none'}")
     print(f"  Links pointed at {args.to}: {', '.join(relinked) or 'none'}")
     print(f"  On top of: {parent[:10] + ' (the copy as it is now)' if parent else 'nothing: the first release there'}")
 
-    problems = forbidden_found(tree)
+    problems = forbidden_found(unlinked_tree)
     if problems:
         print("\nNot sent: the copy would contain words from .git/info/copy-forbidden:")
         for line in problems:
