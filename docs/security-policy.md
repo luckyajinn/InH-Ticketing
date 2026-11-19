@@ -65,7 +65,7 @@ What staff may put in a ticket is in [usage-rules.md](usage-rules.md), not here.
 | Patching | Docker, the PostgreSQL and Python images, and the app's packages must be checked and refreshed monthly | deployment.md section 11; `scripts/check_updates.py` |
 | Patching | A package with a known security issue must be fixed by a release | The owner ([incident-response.md](incident-response.md) 5.9) |
 | Releases | Each release must pass the full test suite and have release notes and screenshots (demo data only) in the same commit | [docs/releases/README.md](releases/README.md); the notes' *Tests* section |
-| Releases | Each release must be an annotated tag, sent to the company's copy with `scripts/publish_copy.py` after its forbidden-words check | [company-copies.md](company-copies.md) |
+| Releases | Each release must be an annotated tag, sent to the company's copy by the owner's publishing tool, which first checks it for words that must stay private | The owner's own guide and tool (kept out of the company's copy) |
 | Releases | IT must take a backup before every update, and read the release notes of every version installed or skipped | deployment.md section 10 |
 | Backups | The database and attachments must be backed up nightly, checked and kept 14 days | `scripts/backup.sh`, cron; `backup.log` weekly and monthly (deployment.md sections 8, 11) |
 | Logging | Ticket changes, admin-site changes and password warnings must be recorded and must not be deletable | The history, the admin log, the password audit trail |

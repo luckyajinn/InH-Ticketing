@@ -209,7 +209,7 @@ authentication failed`, see deployment.md section 12.
   2. Check the server is on a release tag, unchanged: `git describe --tags`
      and `git status` in `/srv/inh-ticketing/app`.
   3. The owner secures the account, checks the copy's tags against their own
-     repository, and sends a clean release ([company-copies.md](company-copies.md)).
+     repository, and sends a clean release to the copy.
 
 ### 5.7 A password was pasted into a ticket
 
@@ -262,7 +262,7 @@ refuses `.zip` files.
    a fix ships, IT can close the app (`stop proxy`).
 3. The owner fixes it with a test, and ships a normal release with release
    notes (`docs/releases/`), sent to the company's copy
-   ([company-copies.md](company-copies.md), *Each release*), and to every
+   (the owner's publishing tool), and to every
    other company's copy.
 4. IT admins install it ([deployment.md section 10](deployment.md#10-updating-and-rolling-back)).
 
