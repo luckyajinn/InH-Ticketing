@@ -216,6 +216,11 @@ A load test on 2026-11-09 (app held to 2 CPUs and 4 GB): responses averaged
 
 ## 7. Security and compliance
 
+The detail is in the security set (2026-11-19): [security-policy.md](security-policy.md)
+(rules, responsibilities and known exceptions), [threat-model.md](threat-model.md),
+[access-control.md](access-control.md), [data-protection.md](data-protection.md) and
+[incident-response.md](incident-response.md). In short:
+
 - **Non-GxP:** IT support only, no FDA-required records; the risk assessment
   passed. Usage rules say what it's not for (product complaints go to QA the
   same day; regulated-system changes go through change control).
@@ -232,7 +237,8 @@ A load test on 2026-11-09 (app held to 2 CPUs and 4 GB): responses averaged
 - **Passwords:** never seen at sign-in; warned about before sending; audit
   trail without the text; admins can remove one that was pasted, from the
   ticket and the app's copies of sent emails.
-- **Nothing deleted:** tickets can't be deleted; closed ones are archived.
+- **Tickets never deleted:** tickets can't be deleted; closed ones are archived.
+  (Admins can delete the app's records of emails received and sent.)
 - **Admin log:** every change in the admin site, with who, when, and the
   old and new values; read-only. Ticket changes are in each ticket's history.
 - **Files:** always downloaded, never opened in the browser; stored under

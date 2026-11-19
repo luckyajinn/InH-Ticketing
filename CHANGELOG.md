@@ -16,6 +16,37 @@ Small fixes, going out with the next release.
   resolved" was wider than the column, which pushed its count out of line;
   the column now grows to fit its longest label (216px at least).
 
+## 0.10.7f - 2026-11-19
+
+Documentation only: the app is the same as 0.10.7. No release of its own.
+
+### Added
+- The security set, five documents written from the code as it is in v0.10.7:
+  - [security-policy.md](docs/security-policy.md): the rules, who is
+    responsible for what, the standards, and the known exceptions to them.
+  - [threat-model.md](docs/threat-model.md): what's protected, who might
+    attack it and how, what stops them, and 14 remaining risks, ranked.
+  - [access-control.md](docs/access-control.md): sign-in, roles, and one
+    table of who can do what, each cell checked against the code.
+  - [data-protection.md](docs/data-protection.md): what the app holds, where,
+    and how it's protected, or isn't (nothing is encrypted at rest).
+  - [incident-response.md](docs/incident-response.md): the first 15 minutes,
+    11 playbooks, and where the evidence is.
+- **To fill in** labels in each for what the repository can't answer:
+  contacts, MFA, disk encryption, the firewall, who must be told outside.
+
+### Found while writing them (recorded as known exceptions; not fixed yet)
+- A department's Entra role can be set to `Requester`.
+- The email sender check accepts a pass result the sender could have written.
+- An unconfirmed email that quotes a real ticket number creates an account.
+- Admins can delete the records of emails received and sent.
+- Signing out leaves Microsoft 365 signed in.
+- An open session lasts up to 12 hours after a role or account is removed.
+- Archived tickets are never deleted, though staff are told "two years".
+
+### Changed
+- overview.md section 7 points to the set, and says "tickets never deleted".
+
 ## 0.10.7e - 2026-11-17
 
 Documentation only: the app is the same as 0.10.7. No release of its own.
