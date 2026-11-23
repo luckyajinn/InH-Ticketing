@@ -8,6 +8,7 @@ Ticket data model.
     TicketEvent    History: who changed status/priority/assignee/category, and when
     Attachment     A file on a ticket, or on a specific comment
     PasswordWarning  Audit trail of the "this might include a password" check
+    TicketDocumentation  Staff's write-up of the work on a ticket, read by admins in Reports
 """
 
 import uuid
@@ -466,3 +467,49 @@ class PasswordWarning(models.Model):
     def __str__(self) -> str:
         where = f" on #{self.ticket.number}" if self.ticket_id else ""
         return f"{self.get_outcome_display()}: {self.get_place_display()}{where}"
+
+
+class TicketDocumentation(models.Model):
+    """
+    The working department's write-up of a ticket: what they checked, what they
+    did, what fixed it, and anything else they found and fixed along the way.
+    One per ticket, edited by the staff who work it. Never shown or sent to the
+    requester, and not part of the timeline or emails: admins read it in Reports.
+    """
+
+    ticket = models.OneToOneField(Ticket, on_delete=models.CASCADE, related_name="documentation")
+    troubleshooting = models.TextField(blank=True, help_text="What was checked and what was found.")
+    steps_taken = models.TextField(blank=True, help_text="What was done, in order.")
+    solution = models.TextField(blank=True, help_text="What fixed it, or why it couldn't be fixed.")
+    other_problems = models.TextField(
+        "other problems found", blank=True,
+        help_text="Anything else found while working on it, and what was done to fix it.",
+    )
+    # The department that wrote it (the ticket's when last saved), kept as a key like Comment.department.
+    department = models.CharField(max_length=16, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True, db_index=True)
+
+    TEXT_FIELDS = ("troubleshooting", "steps_taken", "solution", "other_problems")
+
+    class Meta:
+        ordering = ["-updated_at", "-pk"]
+        verbose_name = "ticket documentation"
+        verbose_name_plural = "ticket documentation"
+
+    def __str__(self) -> str:
+        return f"Documentation for #{self.ticket.number}"
+
+    @property
+    def is_empty(self) -> bool:
+        return not any((getattr(self, name) or "").strip() for name in self.TEXT_FIELDS)
+
+    @property
+    def department_label(self) -> str:
+        return departments.label(self.department)
