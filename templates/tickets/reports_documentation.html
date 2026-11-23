@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load ticket_tags %}
+
+{% block title %}Ticket documentation{% endblock %}
+
+{% block content %}
+<a class="back-link" href="{% url 'tickets:reports' %}?period={{ period }}{% if team %}&amp;team={{ team }}{% endif %}">{% icon "arrow-left" %}Reports</a>
+<div class="page-head">
+  <div>
+    <p class="eyebrow">Admin · Reports</p>
+    <h1>Ticket documentation</h1>
+    <p class="page-sub">What the staff working each ticket checked, did and found. Never shown to the requester.</p>
+  </div>
+</div>
+
+<form class="filters report-filters" method="get" role="search" aria-label="Filter documentation">
+  <div class="search-field">
+    <label for="d-search" class="visually-hidden">Search documentation</label>
+    {% icon "search" %}
+    <input type="search" id="d-search" name="q" value="{{ q }}" class="input" placeholder="Search number, subject or text" autocomplete="off">
+  </div>
+  <label for="d-period" class="visually-hidden">Period</label>
+  <select id="d-period" name="period" class="select">
+    {% for key, label in periods %}<option value="{{ key }}"{% if key == period %} selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  <label for="d-team" class="visually-hidden">Team</label>
+  <select id="d-team" name="team" class="select">
+    <option value="">All teams</option>
+    {% for key, label in teams %}<option value="{{ key }}"{% if key == team %} selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  <button type="submit" class="btn">Show</button>
+  {% if q %}<a class="btn btn-ghost" href="?period={{ period }}{% if team %}&amp;team={{ team }}{% endif %}">Clear search</a>{% endif %}
+</form>
+
+<p class="queue-summary">
+  {{ page.paginator.count }} ticket{{ page.paginator.count|pluralize }} with documentation updated {{ window.label|lower }}{% if team %}, {{ team_label }}{% endif %}{% if q %}, matching your search{% endif %}
+  &middot; most recently updated first
+</p>
+
+{% for doc in page %}
+<article class="card report-card doc-entry" aria-labelledby="doc-{{ doc.pk }}">
+  <h2 class="report-title" id="doc-{{ doc.pk }}"><a href="{{ doc.ticket.get_absolute_url }}">#{{ doc.ticket.number }} {{ doc.ticket.subject }}</a></h2>
+  <p class="report-sub">{{ doc.team_label }} · {{ doc.ticket.get_status_display }} · updated {{ doc.updated_at|date:"M j, Y, g:i A" }}{% if doc.updated_by %} by {{ doc.updated_by }}{% endif %}{% if doc.written_by_label %} · written by {{ doc.written_by_label }}{% endif %}</p>
+  <div class="doc-sections">
+    {% for heading, text in doc.sections %}
+    <section class="doc-section">
+      <h3 class="report-subtitle">{{ heading }}</h3>
+      {% if text %}<p class="doc-text">{{ text|linebreaksbr }}</p>{% else %}<p class="doc-text muted">Not filled in</p>{% endif %}
+    </section>
+    {% endfor %}
+  </div>
+</article>
+{% empty %}
+<div class="card report-card empty">
+  <p>{% if q %}No documentation matches your search in this period.{% else %}No documentation was written or updated in this period.{% endif %}</p>
+  <p class="small">Try a longer period{% if team %} or all teams{% endif %}.</p>
+</div>
+{% endfor %}
+
+{% include "tickets/partials/pagination.html" %}
+{% endblock %}

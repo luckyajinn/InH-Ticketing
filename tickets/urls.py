@@ -25,7 +25,9 @@ urlpatterns = [
     path("tickets/<int:number>/move/", views.move_ticket, name="move"),
     path("tickets/<int:number>/unarchive/", views.unarchive, name="unarchive"),
     path("tickets/<int:number>/remove/", views.remove_content, name="remove"),
+    path("tickets/<int:number>/documentation/", views.save_documentation, name="documentation"),
     # Admins
     path("reports/", views.reports_page, name="reports"),
     path("reports/requests.csv", views.reports_csv, name="reports_csv"),
+    path("reports/documentation/", views.reports_documentation, name="reports_documentation"),
 ]

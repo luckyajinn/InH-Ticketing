@@ -284,7 +284,12 @@ def find(text: str) -> list[Finding]:
             for f in kept]
 
 
-FIELD_NAMES = {"subject": "the subject", "description": "the description", "body": "your message"}
+FIELD_NAMES = {
+    "subject": "the subject", "description": "the description", "body": "your message",
+    # A ticket's documentation (TicketDocumentation)
+    "troubleshooting": "troubleshooting", "steps_taken": "steps taken", "solution": "the solution",
+    "other_problems": "other problems found",
+}
 
 
 def hints(found: dict[str, list[Finding]]) -> list[str]:

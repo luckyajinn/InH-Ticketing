@@ -17,6 +17,9 @@ Definitions (also shown at the bottom of the page):
   ("This is still a problem") or by IT. A requester's reply to a resolved
   ticket also reopens it, but thank-you replies would inflate that, so it
   isn't counted.
+- Documentation: a ticket's write-up by the staff working it, counted in the
+  period it was last updated, under the ticket's team. Blank write-ups don't
+  count. Who last updated one is shown as a record, never counted per person.
 """
 
 from __future__ import annotations
@@ -30,13 +33,15 @@ from dataclasses import dataclass
 
 from django.conf import settings
 from django.db.models import F, Max, Min, Q
+from django.db.models.functions import Trim
 from django.utils import timezone
+from django.utils.text import capfirst
 
 from core import departments
 from inbound.models import InboundEmail
 from notifications import heartbeat
 from notifications.models import OutboundEmail
-from tickets.models import Category, Comment, PasswordWarning, Ticket, TicketEvent
+from tickets.models import Category, Comment, PasswordWarning, Ticket, TicketDocumentation, TicketEvent
 
 Status = Ticket.Status
 
@@ -512,6 +517,7 @@ def build(period: str = DEFAULT_PERIOD, team: str = "", now: dt.datetime | None 
         "categories": _ranked(categories, 7),
         "common_requests": _ranked(picked, 5),
         "health": health(window, now),
+        "documentation": documentation_summary(window, team, teams),
         "reports_from": reports_from(),
         "now": now,
     }
@@ -577,12 +583,99 @@ def worker_health(now: dt.datetime) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Ticket documentation (admins read it here; staff write it on the ticket)
+# ---------------------------------------------------------------------------
+
+RECENT_DOCUMENTATION = 5
+
+
+def filled_documentation():
+    """Write-ups with something in them. Whitespace alone (spaces) counts as blank, like is_empty."""
+    fields = TicketDocumentation.TEXT_FIELDS
+    return (TicketDocumentation.objects
+            .alias(**{f"trimmed_{name}": Trim(name) for name in fields})
+            .exclude(**{f"trimmed_{name}": "" for name in fields}))
+
+
+def documentation_in(window: Window, team: str = ""):
+    """Filled write-ups last updated in the period, on tickets the reports count (pilot ones out)."""
+    return filled_documentation().filter(
+        ticket__in=counted_tickets(team), updated_at__gte=window.start, updated_at__lt=window.end,
+    )
+
+
+def documentation_summary(window: Window, team: str = "", teams: Teams | None = None) -> dict:
+    """The Reports card: how many were written or updated, how many finished tickets have none, the latest few."""
+    teams = teams or Teams()
+    # One light query for the count and the latest rows (no text fields), one for the gaps.
+    rows = list(documentation_in(window, team).order_by("-updated_at", "-pk").values(
+        "updated_at", "ticket_id", "ticket__subject", "ticket__status", "ticket__category__department",
+        "updated_by__display_name", "updated_by__email",
+    ))
+    missing = (
+        counted_tickets(team)
+        .filter(resolved_at__gte=window.start, resolved_at__lt=window.end, status__in=[Status.RESOLVED, Status.CLOSED])
+        .exclude(pk__in=filled_documentation().values("ticket_id"))
+        .count()
+    )
+    return {
+        "count": len(rows),
+        "missing": missing,
+        "recent": [{
+            "number": r["ticket_id"] + settings.TICKET_NUMBER_OFFSET, "subject": r["ticket__subject"],
+            "team": teams.labels[teams.of(r["ticket__category__department"])],
+            "status": Status(r["ticket__status"]).label, "updated_at": r["updated_at"],
+            "updated_by": r["updated_by__display_name"] or r["updated_by__email"] or "",
+        } for r in rows[:RECENT_DOCUMENTATION]],
+    }
+
+
+def documentation_entries(period: str = DEFAULT_PERIOD, team: str = "", q: str = "",
+                          now: dt.datetime | None = None) -> dict:
+    """The full list (/reports/documentation/): the card's write-ups, newest first, searchable."""
+    now = now or timezone.now()
+    teams = Teams()
+    team = team if team in teams else ""
+    window = window_for(period, now)
+    entries = documentation_in(window, team)
+    q = q.strip()
+    if q:
+        term = q.lstrip("#").strip()
+        match = Q(ticket__subject__icontains=term)
+        for name in TicketDocumentation.TEXT_FIELDS:
+            match |= Q(**{f"{name}__icontains": term})
+        if term.isdecimal() and len(term) < 10:  # a ticket number, not a number too big for the database
+            match |= Q(ticket_id=Ticket.pk_from_number(int(term)))
+        entries = entries.filter(match)
+    entries = entries.select_related("ticket__category", "updated_by").order_by("-updated_at", "-pk")
+    return {
+        "entries": entries, "window": window, "period": window.key, "team": team, "q": q,
+        "team_label": teams.labels.get(team, "All teams"),
+        "periods": [(key, label) for key, (_, label) in PERIODS.items()],
+        "teams": teams.choices, "team_names": teams,
+    }
+
+
+def label_entries(entries, teams: Teams) -> None:
+    """Team names and headed sections for a page of write-ups (team names from one lookup, not a query each)."""
+    headings = [(name, capfirst(TicketDocumentation._meta.get_field(name).verbose_name))
+                for name in TicketDocumentation.TEXT_FIELDS]
+    for doc in entries:
+        doc.sections = [(heading, getattr(doc, name).strip()) for name, heading in headings]
+        team = teams.of(doc.ticket.category.department)
+        doc.team_label = teams.labels[team]
+        # The department that wrote it, when the ticket has moved to another team since.
+        doc.written_by_label = (teams.labels[doc.department]
+                                if doc.department in teams and doc.department != team else "")
+
+
+# ---------------------------------------------------------------------------
 # CSV
 # ---------------------------------------------------------------------------
 
 CSV_HEADER = [
     "Ticket", "Created", "Team", "Category", "Priority", "Source", "Status", "Blocking",
-    "First response (hours)", "Time to resolve (hours)", "Resolved", "Subject",
+    "First response (hours)", "Time to resolve (hours)", "Resolved", "Documented", "Subject",
 ]
 
 
@@ -593,7 +686,7 @@ def _cell(value) -> str:
 
 
 def csv_export(period: str = DEFAULT_PERIOD, team: str = "", now: dt.datetime | None = None) -> str:
-    """One row per request created in the period. No descriptions, no names."""
+    """One row per request created in the period. No descriptions, no names, no documentation text."""
     now = now or timezone.now()
     teams = Teams()
     team = team if team in teams else ""
@@ -601,6 +694,7 @@ def csv_export(period: str = DEFAULT_PERIOD, team: str = "", now: dt.datetime | 
     tickets = counted_tickets(team).filter(created_at__gte=window.start, created_at__lt=window.end)
     first = first_responses(tickets)
     resolve = resolve_seconds(tickets.filter(status__in=[Status.RESOLVED, Status.CLOSED], resolved_at__isnull=False))
+    documented = set(filled_documentation().filter(ticket__in=tickets).values_list("ticket_id", flat=True))
     out = io.StringIO()
     out.write("﻿")  # so Excel reads it as UTF-8
     writer = csv.writer(out)
@@ -614,6 +708,7 @@ def csv_export(period: str = DEFAULT_PERIOD, team: str = "", now: dt.datetime | 
             f"{(first[t.pk] - t.created_at).total_seconds() / 3600:.1f}" if t.pk in first else "",
             f"{resolve[t.pk] / 3600:.1f}" if t.pk in resolve else "",
             f"{timezone.localtime(t.resolved_at):%Y-%m-%d %H:%M}" if t.resolved_at else "",
+            "Yes" if t.pk in documented else "No",
             t.subject,
         ]])
     return out.getvalue()

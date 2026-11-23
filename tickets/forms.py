@@ -9,7 +9,7 @@ from accounts import people
 from accounts.models import User
 from core import departments
 from tickets import password_guard
-from tickets.models import TEXT_MAX_CHARS, Category, Ticket
+from tickets.models import TEXT_MAX_CHARS, Category, Ticket, TicketDocumentation
 
 POSSIBLE_PASSWORD = "possible_password"
 
@@ -313,6 +313,50 @@ class ReplyForm(PasswordCheckMixin, forms.Form):
     def shares_on_move(self) -> bool:
         """An internal note marked to go with the ticket if it moves department."""
         return self.is_internal and bool(self.cleaned_data.get("share_on_move"))
+
+
+def _documentation_box(label: str, placeholder: str):
+    return forms.CharField(
+        label=label, required=False, validators=[not_too_long],
+        widget=forms.Textarea(attrs={"class": "textarea", "rows": 3, "placeholder": placeholder}),
+    )
+
+
+class DocumentationForm(PasswordCheckMixin, forms.Form):
+    """
+    The staff write-up of a ticket (TicketDocumentation). Every box is
+    optional: people fill it in as they go. Admins read it in Reports, so a
+    pasted password gets the same check as a reply.
+    """
+
+    password_fields = TicketDocumentation.TEXT_FIELDS
+
+    troubleshooting = _documentation_box("Troubleshooting", "What you checked and what you found")
+    steps_taken = _documentation_box("Steps taken", "What you did, in order")
+    solution = _documentation_box("Solution", "What fixed it, or why it couldn't be fixed")
+    other_problems = _documentation_box("Other problems found", "Anything else you found, and what you did to fix it")
+    password_ack = forms.BooleanField(required=False)
+    password_warned = forms.BooleanField(required=False)
+
+    def __init__(self, *args, documentation: TicketDocumentation | None = None, **kwargs):
+        if documentation is not None:
+            kwargs.setdefault("initial", {name: getattr(documentation, name) for name in self.password_fields})
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned = super().clean()
+        self.check_for_passwords(cleaned)
+        return cleaned
+
+    @property
+    def text_fields(self) -> list:
+        """The four boxes as bound fields, in order, for the ticket page."""
+        return [self[name] for name in self.password_fields]
+
+    @property
+    def texts(self) -> dict[str, str]:
+        """The four boxes, for services.save_documentation()."""
+        return {name: self.cleaned_data.get(name) or "" for name in self.password_fields}
 
 
 def agent_choices(ticket: Ticket | None = None):

@@ -26,7 +26,7 @@ from django.utils.formats import date_format
 
 from core import departments
 from notifications import notify
-from tickets.models import Attachment, Category, Comment, Ticket, TicketEvent
+from tickets.models import Attachment, Category, Comment, Ticket, TicketDocumentation, TicketEvent
 
 Status = Ticket.Status
 _UNSET = object()
@@ -414,6 +414,39 @@ def remove_content(*, ticket: Ticket, actor, part: str, comment: Comment | None 
     _log(ticket, actor, TicketEvent.Kind.REMOVED, "", summary[:200])
     _save(ticket, [])
     return summary
+
+
+@transaction.atomic
+def save_documentation(*, ticket: Ticket, actor, data: dict[str, str]) -> bool:
+    """
+    Staff write up the work on a ticket: troubleshooting, steps taken, the
+    solution, other problems found. One row per ticket, created on the first
+    save that has something in it. Returns whether anything changed; nothing
+    is written when nothing did, so "last updated by" stays true.
+
+    Deliberately quiet: no history line, no email, no alert. The requester
+    never sees it; admins read it in Reports.
+    """
+    if not actor.works_on(ticket):
+        raise PermissionDenied("Only staff working this ticket can write its documentation.")
+    if ticket.is_archived:
+        raise PermissionDenied(ARCHIVED)
+    texts = {name: (data.get(name) or "").strip() for name in TicketDocumentation.TEXT_FIELDS}
+    # Lock the ticket, so two people saving the first write-up at once don't both create one.
+    list(Ticket.objects.select_for_update().filter(pk=ticket.pk).values_list("pk", flat=True))
+    documentation = TicketDocumentation.objects.filter(ticket=ticket).first()
+    if documentation is None:
+        if not any(texts.values()):
+            return False  # an empty form saved: nothing to keep
+        documentation = TicketDocumentation(ticket=ticket, created_by=actor)
+    elif all(getattr(documentation, name) == text for name, text in texts.items()):
+        return False
+    for name, text in texts.items():
+        setattr(documentation, name, text)
+    documentation.department = ticket.department
+    documentation.updated_by = actor
+    documentation.save()
+    return True
 
 
 @transaction.atomic

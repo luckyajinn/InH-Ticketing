@@ -11,6 +11,25 @@ of v0.10.0).
 
 Small fixes, going out with the next release.
 
+### Added
+- **Ticket documentation.** A Documentation section on every ticket, under
+  the reply box, for the staff working it: Troubleshooting, Steps taken,
+  Solution, and Other problems found (and what was done about them). One
+  write-up per ticket, saved in the database (`tickets_ticketdocumentation`)
+  with who wrote it, who last updated it and when.
+  - Never shown or emailed to the requester, and not part of the timeline,
+    the history or any email. Read-only once the ticket is archived.
+  - Checked for passwords like replies and notes. Sending one anyway is kept
+    in the password audit trail with the new place "Documentation".
+  - Admins read it in Reports: a **Ticket documentation** card (written or
+    updated in the period, tickets resolved or closed without any, the
+    latest five) and the full list at `/reports/documentation/`, with the
+    period and team filters and a search by number, subject or text.
+  - The Reports CSV has a new **Documented** column (Yes or No). The
+    write-up itself is not in the CSV.
+  - Two migrations: `0011_ticket_documentation` and
+    `0012_documentation_password_place`.
+
 ### Fixed
 - The queue's Views list: the counts line up on the right again. "Recently
   resolved" was wider than the column, which pushed its count out of line;

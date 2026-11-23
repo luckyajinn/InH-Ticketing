@@ -428,6 +428,7 @@ class PasswordWarning(models.Model):
         REPLY = "reply", "Reply"
         INTERNAL_NOTE = "internal_note", "Internal note"
         EMAIL = "email", "Email"
+        DOCUMENTATION = "documentation", "Documentation"
 
     class Outcome(models.TextChoices):
         REMOVED = "removed", "Removed before sending"
@@ -440,6 +441,7 @@ class PasswordWarning(models.Model):
         Place.REPLY: "a reply",
         Place.INTERNAL_NOTE: "an internal note",
         Place.EMAIL: "an email",
+        Place.DOCUMENTATION: "the documentation",
     }
 
     created_at = models.DateTimeField(auto_now_add=True)
