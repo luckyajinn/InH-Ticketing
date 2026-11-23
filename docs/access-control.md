@@ -109,6 +109,8 @@ once and is read-only for everyone until an admin takes it out.
 | Add an internal note | No | Own department | Any |
 | Read internal notes | Never | Own department's, plus notes shared on a move | All |
 | Read a ticket's history | Never | Own department | Any |
+| Write or edit a ticket's documentation | Never | Own department, on its ticket page, unless archived | Any, unless archived |
+| Read documentation across tickets | Never | No (403): only on the ticket page of their own department's tickets | Yes, in Reports (`/reports/documentation/`) |
 | Change status, priority, assignee, category | No (403) | Own department; category within the department only; assignee from that department's agents and the admins | Any |
 | Move a ticket to another department | No | No: can ask an admin ("Ask to move") | Yes |
 | Resolve | Own open tickets ("Mark as resolved") | Own department (status, or "Send and resolve") | Any |
@@ -121,7 +123,8 @@ once and is read-only for everyone until an admin takes it out.
 | The admin site | No (403) | No (403) | Yes (below) |
 
 Reports show counts and times per team. Its CSV has one row per request
-(number, team, category, status, times and subject), with no names.
+(number, team, category, status, times, subject and whether it has
+documentation), with no names and none of the documentation text.
 
 **The admin site** (admins only):
 

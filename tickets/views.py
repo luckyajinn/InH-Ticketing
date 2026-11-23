@@ -16,8 +16,10 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from accounts import people
 from core import departments
 from tickets import password_guard, reports, selectors, services
-from tickets.forms import MoveForm, MoveRequestForm, NewTicketForm, RemovalForm, ReplyForm, TicketPropertiesForm
-from tickets.models import Attachment, Category, PasswordWarning, Ticket
+from tickets.forms import (
+    DocumentationForm, MoveForm, MoveRequestForm, NewTicketForm, RemovalForm, ReplyForm, TicketPropertiesForm,
+)
+from tickets.models import Attachment, Category, PasswordWarning, Ticket, TicketDocumentation
 
 Status = Ticket.Status
 
@@ -160,7 +162,7 @@ def go_to_ticket(request):
 # Ticket detail (one URL, two views: IT sees everything, requesters see public)
 # ---------------------------------------------------------------------------
 def _render_detail(request, ticket, *, reply_form=None, props_form=None, move_form=None,
-                   move_request_form=None, status=200):
+                   move_request_form=None, documentation_form=None, status=200):
     user = request.user
     context = {
         "ticket": ticket,
@@ -187,6 +189,10 @@ def _render_detail(request, ticket, *, reply_form=None, props_form=None, move_fo
             context["move_request"] = services.pending_move_request(ticket)
         elif elsewhere:
             context["move_request_form"] = move_request_form or MoveRequestForm(ticket=ticket)
+        # The staff write-up. Only here: the requester's page never gets it.
+        documentation = TicketDocumentation.objects.filter(ticket=ticket).select_related("updated_by").first()
+        context["documentation"] = documentation
+        context["documentation_form"] = documentation_form or DocumentationForm(documentation=documentation)
         template = "tickets/detail_agent.html"
     else:
         context["reopened"] = request.GET.get("reopened") == "1"
@@ -250,7 +256,7 @@ def check_text(request):
     was sent, and stores nothing; the form is checked again when it arrives.
     """
     found = {}
-    for name in ("subject", "description", "body"):
+    for name in ("subject", "description", "body", *TicketDocumentation.TEXT_FIELDS):
         findings = password_guard.find(request.POST.get(name, "")[:50_000])
         if findings:
             found[name] = findings
@@ -359,6 +365,30 @@ def ask_to_move(request, number: int):
     messages.success(request, f"Asked an admin to move it to {departments.label(department)}. "
                               "Let them know once that team has agreed to take it.")
     return redirect(ticket)
+
+
+@agent_required
+@require_POST
+def save_documentation(request, number: int):
+    """
+    Save the ticket's documentation: staff working it only. No history line or
+    email (services.save_documentation); the requester never sees it.
+    """
+    ticket = _get_worked_ticket(request, number)
+    if ticket.is_archived:
+        messages.error(request, services.ARCHIVED)
+        return redirect(ticket)
+    documentation = TicketDocumentation.objects.filter(ticket=ticket).first()
+    form = DocumentationForm(request.POST, documentation=documentation)
+    if not form.is_valid():
+        return _render_detail(request, ticket, documentation_form=form, status=400)
+    changed = services.save_documentation(ticket=ticket, actor=request.user, data=form.texts)
+    password_guard.record_form(form, user=request.user, place=PasswordWarning.Place.DOCUMENTATION, ticket=ticket)
+    if changed:
+        messages.success(request, "Documentation saved. The requester can't see it.")
+    else:
+        messages.info(request, "No changes to the documentation.")
+    return redirect(ticket.get_absolute_url() + "#documentation")
 
 
 def _removal_part(ticket: Ticket, raw: str):
@@ -596,3 +626,17 @@ def reports_csv(request):
     name = f"inh-requests-{timezone.localtime(window.start):%Y-%m-%d}-to-{timezone.localtime(window.end):%Y-%m-%d}.csv"
     response["Content-Disposition"] = f'attachment; filename="{name}"'
     return response
+
+
+@admin_required
+@never_cache
+@require_GET
+def reports_documentation(request):
+    """Every ticket's write-up for the period and team, newest first. Admins only, never the requester."""
+    data = reports.documentation_entries(
+        request.GET.get("period", reports.DEFAULT_PERIOD), request.GET.get("team", ""), request.GET.get("q", "")
+    )
+    page = Paginator(data.pop("entries"), 25).get_page(request.GET.get("page"))
+    page.object_list = list(page.object_list)  # labelled once, then rendered as is
+    reports.label_entries(page.object_list, data.pop("team_names"))
+    return render(request, "tickets/reports_documentation.html", {**data, "page": page})

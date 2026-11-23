@@ -45,6 +45,12 @@ See the [release notes with screenshots](docs/releases/README.md) for how it loo
   the category; choosing "None" lets people type their own.
 - **Reports** (admins only, `/reports/`): requests, response and resolve times,
   open tickets by age and email health, per team, never per person; CSV download.
+- **Documentation:** every ticket has a Documentation section under the reply
+  box, where the staff working it write up the troubleshooting, the steps
+  taken, the solution, and any other problems found and how they were fixed.
+  It's saved in the database, never shown or emailed to the requester, and
+  not in the timeline or history. Admins read every ticket's write-up in
+  Reports (`/reports/documentation/`), by period and team, with a search.
 - **Admins** manage categories and their common requests at `/admin/`.
 
 ### Ticket rules

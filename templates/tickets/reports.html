@@ -184,6 +184,30 @@
   </div>
 </div>
 
+{% with d=documentation %}
+<section class="card report-card" aria-labelledby="r-docs">
+  <div class="report-card-head">
+    <div>
+      <h2 class="report-title" id="r-docs">Ticket documentation</h2>
+      <p class="report-sub">{{ window.label }}{% if team %}, {{ team_label }}{% endif %}. Written by the staff working each ticket, never shown to the requester.</p>
+    </div>
+    <a class="btn btn-ghost" href="{% url 'tickets:reports_documentation' %}?period={{ period }}{% if team %}&amp;team={{ team }}{% endif %}">See all documentation</a>
+  </div>
+  <dl class="health-figures doc-figures">
+    <div><dt>Written or updated</dt><dd>{{ d.count }}</dd></div>
+    <div><dt>Resolved or closed without any</dt><dd>{{ d.missing }}</dd></div>
+  </dl>
+  <h3 class="report-subtitle">Recently updated</h3>
+  <ol class="oldest-list">
+    {% for e in d.recent %}
+    <li><a href="{% url 'tickets:detail' e.number %}">#{{ e.number }} {{ e.subject }}</a><span class="muted small">{{ e.team }} · {{ e.status }} · updated {{ e.updated_at|date:"M j, g:i A" }}{% if e.updated_by %} by {{ e.updated_by }}{% endif %}</span></li>
+    {% empty %}
+    <li class="muted">Nothing written in this period.</li>
+    {% endfor %}
+  </ol>
+</section>
+{% endwith %}
+
 <section class="card report-card" aria-labelledby="r-health">
   <h2 class="report-title" id="r-health">Email and safety checks</h2>
   <p class="report-sub">{{ window.label }}, all teams</p>
@@ -272,6 +296,7 @@
     Reopened: put back to Open by the requester or IT (a reply to a resolved request isn't counted).
     Blocking: the share of web requests that ticked "This is blocking my work" (emails can't say).
     A request's team is its category's department.
+    Documentation counts in the period it was last updated; blank write-ups don't count.
     Pilot feedback ("Pilot:" subjects) is left out{% if reports_from %}, and so is everything before {{ reports_from|date:"M j, Y" }}{% endif %}.
   </p>
   <p>Figures read {{ now|date:"M j, Y" }} at {{ now|date:"g:i A" }}.</p>

@@ -109,6 +109,43 @@
       </div>
     </form>
     {% endif %}
+
+    {# The staff write-up (TicketDocumentation). Not in the timeline or emails, never on the requester's page. #}
+    {% with doc_form=documentation_form %}
+    <details class="panel doc" id="documentation"{% if doc_form.errors or documentation and not documentation.is_empty %} open{% endif %}>
+      <summary>
+        <span class="doc-title">{% icon "lock" %}Documentation</span>
+        <span class="doc-meta">{% if documentation and documentation.updated_by %}Last updated by {{ documentation.updated_by }}, {{ documentation.updated_at|date:"M j, g:i A" }}{% elif documentation %}Last updated {{ documentation.updated_at|date:"M j, g:i A" }}{% else %}Nothing written yet{% endif %}</span>
+      </summary>
+      <p class="hint doc-hint">Not shown to the requester. Admins read it in Reports.</p>
+      {% if ticket.is_archived %}
+        {% if documentation and not documentation.is_empty %}
+        <dl class="doc-read">
+          {% for field in doc_form.text_fields %}{% if field.value %}
+          <dt>{{ field.label }}</dt><dd>{{ field.value|linebreaks }}</dd>
+          {% endif %}{% endfor %}
+        </dl>
+        {% endif %}
+        <p class="muted small">Read-only: the ticket is archived.</p>
+      {% else %}
+      <form method="post" action="{% url 'tickets:documentation' ticket.number %}" class="doc-form" novalidate
+            data-password-check="{% url 'tickets:check_text' %}" data-password-fields="troubleshooting steps_taken solution other_problems">
+        {% csrf_token %}
+        {% for field in doc_form.text_fields %}
+        <div class="field">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<p class="field-error" id="{{ field.auto_id }}_error">{% icon "alert" %}{{ field.errors.0 }}</p>{% endif %}
+        </div>
+        {% endfor %}
+        {% include "tickets/partials/password_warning.html" with form=doc_form ack_id="doc-password-ack" why="Passwords shouldn't go in tickets: admins read this in Reports." %}
+        <div class="doc-actions">
+          <button type="submit" class="btn btn-primary btn-sm">Save documentation</button>
+        </div>
+      </form>
+      {% endif %}
+    </details>
+    {% endwith %}
   </div>
 
   <aside class="side-panel" aria-label="Ticket properties">

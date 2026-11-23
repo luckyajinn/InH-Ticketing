@@ -1491,6 +1491,30 @@ form.is-saving .props-hint { color: var(--accent-soft-text); font-weight: 650; }
 .move-form .btn { justify-self: start; }
 .move-ask { margin-top: var(--sp-4); padding-top: var(--sp-3); border-top: 1px solid var(--border-soft); font-size: var(--fs-sm); }
 .move-ask summary { color: var(--link); font-weight: 600; cursor: pointer; }
+
+/* Documentation: staff's write-up under the composer (agent page only) */
+.doc { margin-top: var(--sp-6); }
+.doc > summary {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-1) var(--sp-3);
+  border-radius: var(--radius-sm); cursor: pointer; list-style: none;
+}
+.doc > summary::-webkit-details-marker { display: none; }
+.doc > summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
+.doc-title { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-display); font-size: var(--fs-md); font-weight: 700; }
+.doc-title::after {
+  content: ""; width: 0; height: 0;
+  border-top: 4px solid transparent; border-bottom: 4px solid transparent; border-left: 6px solid var(--text-muted);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.doc[open] .doc-title::after { transform: rotate(90deg); }
+.doc-meta { color: var(--text-muted); font-size: var(--fs-sm); }
+.doc-hint { margin: var(--sp-2) 0 var(--sp-4); }
+.doc-form .field { margin-bottom: var(--sp-4); }
+.doc-actions { display: flex; justify-content: flex-end; }
+.doc-read { margin: 0 0 var(--sp-3); }
+.doc-read dt { font-weight: 650; }
+.doc-read dd { margin: 4px 0 var(--sp-4); overflow-wrap: anywhere; }
+.doc-read dd p { margin: 0 0 6px; }
 .input-sm { min-height: 38px; padding: 6px 12px; font-size: var(--fs-sm); }
 .remove-link { margin-left: var(--sp-2); color: var(--text-muted); font-size: var(--fs-xs); font-weight: 600; text-decoration: none; }
 .remove-link:hover { color: var(--danger); text-decoration: underline; }
@@ -1627,6 +1651,14 @@ th .swatch { margin-right: 8px; vertical-align: -1px; }
 .report-notes { margin-top: var(--sp-6); color: var(--text-muted); font-size: var(--fs-xs); }
 .report-notes p + p { margin-top: 6px; }
 
+/* Ticket documentation: the card on Reports and its full list (reports_documentation.html). */
+.doc-figures { max-width: 360px; }
+.doc-entry .report-title a { color: inherit; text-decoration: none; }
+.doc-entry .report-title a:hover { text-decoration: underline; }
+.doc-sections { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--sp-5); }
+.doc-section .report-subtitle { margin-top: var(--sp-4); }
+.doc-text { font-size: var(--fs-sm); overflow-wrap: anywhere; }
+
 @media (max-width: 960px) {
   .report-tiles, .health-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .report-grid { grid-template-columns: minmax(0, 1fr); }
@@ -1635,6 +1667,7 @@ th .swatch { margin-right: 8px; vertical-align: -1px; }
   .report-tiles, .health-grid { grid-template-columns: minmax(0, 1fr); }
   .report-card { padding: var(--sp-5); }
   .bar-table th { width: 50%; }
+  .doc-sections { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* ---------------------------------------------------------------------
